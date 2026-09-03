@@ -297,6 +297,18 @@ body.crt #content{margin:10px;width:calc(100% - 20px);height:calc(100% - 20px);}
 .codebox:hover{background:#0a0d05;}
 .cnote{margin-top:11px;font-size:11px;line-height:1.6;color:var(--text);border-left:2px solid var(--amber);padding-left:10px;}
 .cnote b{color:var(--amber);text-transform:uppercase;}
+#jobPanel{position:absolute;right:16px;bottom:80px;z-index:6800;width:250px;
+  background:linear-gradient(180deg,#0e2436,#081420);border:1px solid var(--edge-hot);border-radius:5px;
+  padding:11px 13px;box-shadow:0 12px 30px rgba(0,0,0,.6);}
+#jobPanel .jh{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);margin-bottom:3px;}
+#jobPanel .jt{font-size:12px;color:#eafcff;line-height:1.3;margin-bottom:2px;}
+#jobPanel .jc{font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:7px;}
+#jobPanel .jip{font-size:11px;color:var(--phos);background:#03070c;border:1px solid var(--edge);
+  border-radius:2px;padding:4px 7px;margin-bottom:8px;user-select:text;-webkit-user-select:text;}
+#jobPanel .jstep{font-size:10.5px;color:var(--dim);padding:2px 0;line-height:1.35;}
+#jobPanel .jstep.cur{color:#eafcff;}
+#jobPanel .jstep.done{color:var(--green);opacity:.65;}
+#jobPanel .jstep .bx{display:inline-block;width:14px;}
 #tutTask .tuttip{margin-top:8px;padding-top:7px;border-top:1px solid var(--edge);font-size:9px;color:var(--dim);line-height:1.4;}
 </style>
 </head>
@@ -367,6 +379,7 @@ body.crt #content{margin:10px;width:calc(100% - 20px);height:calc(100% - 20px);}
       <div id="toast"></div>
       <div id="dock"></div>
       <div id="tutTask" hidden></div>
+      <div id="jobPanel" hidden></div>
       <div id="coach" hidden><div id="coachRing"></div><div id="coachTip"></div></div>
       <div id="progModal" hidden></div>
     </div>
@@ -427,7 +440,7 @@ function file(name,tags,content,opts){return {name,enc:tags.includes('enc'),obj:
 
 /* ---------- targets ---------- */
 const TARGETS={
- t_practice:{ip:'127.44.0.9',name:'Uplink Test Server',org:'UNITS Agency',locks:['password'],traceRate:1.0,
+ t_practice:{ip:'127.44.0.9',name:'Uplink Test Server',org:'UNITS Agency',locks:['password'],traceRate:0,safe:true,
   files:[file('readme.txt',[], 'Practice box. Nothing here can hurt you.\nTry: ls, download a file, deletelogs, disconnect.'),
          file('sample.dat',['obj'],'[ training payload ]')]},
  t_finch:{ip:'196.4.55.120',name:'Finch & Roe Billing',org:'Finch & Roe LLP',locks:['password'],traceRate:2.0,
@@ -507,28 +520,28 @@ const TARGETS={
 const MISSIONS=[
  {id:'m0',from:'SABLE',subj:'orientation — your first run',rankReq:0,target:'t_practice',
   obj:{type:'download',file:'sample.dat'},pay:250,rating:1,
-  body:`New blood. Good.\nI'm Sable — I hand you work, you don't ask who I answer to.\n\nYour deck is empty. Nobody hands you tools here — you pull them.\n\n  1. Get the package manager:  <b>getbrew stable</b>\n  2. Then pull a cracker:  <b>brew install havencracker</b>\n\nHavenCracker 1.0. I wrote it years ago and gave it away; half this city breaks locks with my code. Run <b>brew list</b> if you want to see what else is on the free shelf.\n\nThen the box at 127.44.0.9. One password. Run <b>hc</b> on it, pull sample.dat, wipe your logs, disconnect. That box can't trace you — learn the rhythm here, because nothing after it is this kind.`},
+  body:`New blood. Good.\nI'm Sable — I hand you work, you don't ask who I answer to.\n\nYour deck is empty. Nobody hands you tools here — you pull them.\n\n  1. Get the package manager:  <b>getbrew stable</b>\n  2. Then pull a cracker:  <b>brew install havencracker</b>\n\nHavenCracker 1.0. I wrote it years ago and gave it away; half this city breaks locks with my code. Run <b>brew list</b> if you want to see what else is on the free shelf.\n\nThen the practice box. One password. Run <b>hc</b> on it, pull sample.dat, wipe your logs, disconnect. That box can't trace you — learn the rhythm here, because nothing after it is this kind.`},
  {id:'m1',from:'R. Vale',subj:'copy a ledger, quietly',rankReq:1,target:'t_finch',
   obj:{type:'download',file:'ledger_q3.xls'},pay:600,rating:1,
-  body:`My partners are skimming client accounts and blaming a junior. Their billing box (196.4.55.120) has one password lock. Pull ledger_q3.xls — the proof. Touch nothing else. Leave it clean.`},
+  body:`My partners are skimming client accounts and blaming a junior. Their billing box has one password lock. Pull ledger_q3.xls — the proof. Touch nothing else. Leave it clean.`},
  {id:'m1b',from:'R. Vale',subj:'the collection list',rankReq:1,target:'t_kestrel',
   obj:{type:'download',file:'collections.db'},pay:750,rating:1,
   body:`Different client, same city.\n\nKestrel Dental sold their unpaid-balance list to a collections outfit that puts people in court over four hundred credits. I want the list — every name on it — before they start filing.\n\nOne password lock on their billing host. You've done this exact job once already; do it faster this time.\n\nAnd runner: read the memo while you're in there. You'll want to know who bought it.`},
  {id:'m2',from:'Anonymous',subj:'bury a bad trial',rankReq:2,target:'t_helix',
   obj:{type:'delete',file:'trials.db'},pay:1100,rating:2,
-  body:`Helix sat on a drug trial that killed people, and they're about to IPO on it.\nRecords box 77.230.9.14 — password AND firewall. Delete trials.db. Make it look like it was never written.\nSome of us still think that matters.`},
+  body:`Helix sat on a drug trial that killed people, and they're about to IPO on it.\nTheir records box — password AND firewall. Delete trials.db. Make it look like it was never written.\nSome of us still think that matters.`},
  {id:'mb',from:'cr4sh',subj:'somebody needs to shut kr0nos up',rankReq:2,boot:true,
   obj:{type:'boot',handle:'kr0nos'},pay:900,rating:2,
   body:`You've seen kr0nos in the threads. He's not a rival, he's a parasite — he's been threatening to post people's gateway logs, and two runners I know have gone dark over it.\n\nHere's the thing nobody tells rookies: <b>you cannot boot a handle.</b> A forum shows you a name, not an origin. You need his real IP first, and there are exactly two ways to get one:\n\n1. <b>Social engineering</b> — 'bait kr0nos'. You post something he can't resist clicking. When he bites, his origin leaks. Free. He's arrogant, he'll bite.\n2. <b>Software</b> — a Bloodhound Resolver correlates a handle across boards. Costs real credits, works on people too careful to click.\n\nOnce you have the IP: 'boot <ip>' with a booter loaded. Drop him. The wire will remember it.`},
  {id:'m3',from:'a friend',subj:'fix a frame job',rankReq:3,target:'t_metro',
   obj:{type:'modify',file:'record_4471.dat'},pay:1500,rating:2,
-  body:`A nineteen-year-old is doing eight years for something he didn't do. Metro PD records (88.100.7.42), password + firewall.\nrecord_4471.dat says CONVICTED. Use 'modify' to rewrite it to CLEARED. One keystroke changes a life. Don't overthink it.`},
+  body:`A nineteen-year-old is doing eight years for something he didn't do. Metro PD records — password + firewall.\nrecord_4471.dat says CONVICTED. Use 'modify' to rewrite it to CLEARED. One keystroke changes a life. Don't overthink it.`},
  {id:'m3b',from:'cr4sh',subj:'the anatomical fork',rankReq:4,target:'t_dropbox',
   obj:{type:'download',file:'heavencrackr.pkg'},pay:1600,rating:2,
-  body:`Story for you. Years back somebody called <b>Anatomical</b> took Sable's HavenCracker source and forked it into something else — polymorphic, rewrites itself every pass, tears through a password lock. Called it <b>HeavenCrackR</b>. Then they went quiet and the build went private.\n\nA copy sits on a dead-drop at 91.5.77.30, encrypted, password + firewall. Nobody's claimed it because nobody's bothered.\n\nPull it and it's yours. You'll need a Decrypter. Consider it the best money you'll ever not spend.`},
+  body:`Story for you. Years back somebody called <b>Anatomical</b> took Sable's HavenCracker source and forked it into something else — polymorphic, rewrites itself every pass, tears through a password lock. Called it <b>HeavenCrackR</b>. Then they went quiet and the build went private.\n\nA copy sits on an anonymous dead-drop — encrypted, password + firewall. Nobody's claimed it because nobody's bothered.\n\nPull it and it's yours. You'll need a Decrypter. Consider it the best money you'll ever not spend.`},
  {id:'m4',from:'J. Okafor',subj:'decrypt the slush fund',rankReq:4,target:'t_argus',
   obj:{type:'download',file:'slush.xls'},pay:2000,rating:2,
-  body:`Argus bribes senators to keep their spy contracts. slush.xls (45.19.88.201) is encrypted — you'll need a Decrypter. Password + firewall on the box.\nBring me that file and I'll put three careers in the ground.`},
+  body:`Argus bribes senators to keep their spy contracts. slush.xls is encrypted — you'll need a Decrypter. Password + firewall on the box.\nBring me that file and I'll put three careers in the ground.`},
  {id:'m4b',from:'Anonymous',subj:'take the audit, bury the incident',rankReq:5,target:'t_brackwater',
   obj:{type:'multi',parts:[{type:'download',file:'safety_audit.enc'},{type:'delete',file:'incident_log.db'}]},
   pay:2200,rating:2,
@@ -538,7 +551,7 @@ const MISSIONS=[
   body:`I told you kr0nos was a parasite. V01D is worse, because V01D is <em>good</em>.\n\nHe's been logging every run you make and selling the telemetry. That's why the traces have been getting faster.\n\nAnd he's not kr0nos — you will not bait him. He's been on this wire too long to click a link, and he sits behind an <b>amorphous botnet</b>. Baiting won't touch him.\n\nYou'll have to decode him: <b>resolve V01D</b> with a real decoder — Parity at absolute minimum, and expect it to collapse. Then hit the IP with something bigger than a LOIC. He's not going down to a starter flood.`},
  {id:'m5',from:'SABLE',subj:'drain the holding account',rankReq:7,target:'t_meridian',
   obj:{type:'transfer',amount:120000},pay:1500,rating:3,
-  body:`Meridian Savings launders through a holding account — #887 on 50.7.244.10. Password, firewall, AND a proxy.\nOnce you're in, 'transfer' at least 120,000c out. Whatever you pull, you keep on top of the fee. But money moves loud — their trace is fast and long routes are your only friend.\nDon't be greedy. Greedy gets traced.`},
+  body:`Meridian Savings launders through a holding account — #887. Password, firewall, AND a proxy.\nOnce you're in, 'transfer' at least 120,000c out. Whatever you pull, you keep on top of the fee. But money moves loud — their trace is fast and long routes are your only friend.\nDon't be greedy. Greedy gets traced.`},
  {id:'m5d',from:'ghosthz',subj:'the hot host — expect to lose IPs',rankReq:8,target:'t_ostrand',
   obj:{type:'download',file:'customs.db'},pay:2600,rating:3,
   body:`Fair warning, this one bites.\n\nOstrand Freight runs active counter-intrusion. Their reverse-trace is the fastest thing outside a government host, and it <em>will</em> chew through your botnet while you're still working.\n\nThis is what monitors are for. Keep <b>MonitorMe</b> open. When a node lights up TRACED, <b>burn &lt;ip&gt;</b> — you lose that IP but the trace loses the thread and you buy yourself another thirty seconds. You may burn three or four before you're out.\n\nBring more IPs than you think you need. Anyone who tells you they cleared Ostrand without burning is lying.`},
@@ -550,22 +563,22 @@ const MISSIONS=[
   body:`You pulled a manifest and handed it over unopened. Obedient.\n\nHere's what you didn't see: your name was in it. So was Sable's — flagged COMPLIANT, with a review date.\n\nThe agency's own relay keeps personnel files. Pull sable_file.enc and decrypt it. You will not like what Sable has been trading to keep you working, but you deserve to know who you're taking orders from.`},
  {id:'m6a',from:'cr4sh',subj:'someone is selling runner telemetry',rankReq:9,mesh:'m6a',
   obj:{type:'trace'},pay:2600,rating:3,
-  body:`Three people I know got traced in a week. That's not luck — someone is selling our telemetry, and the buyer's drop point is <b>77.14.203.6</b>.\n\nThat address is a lie. It's an <b>amorphous mesh</b> — a cloud of relay IPs with the real machine buried inside it. You can't scan it and you can't connect to it. You have to <b>decode</b> it: peel the mesh node by node until you reach the mother IP underneath.\n\nYou'll need a decoder. 1NetLynx won't touch a mesh — get <b>parity</b> off the free shelf at minimum, and expect it to collapse on you. Better decoders peel more nodes per pass.\n\nWhen you reach the bottom, send me the mother IP.`},
+  body:`Three people I know got traced in a week. That's not luck — someone is selling our telemetry, and the buyer's drop point is a single address I'll send you.\n\nThat address is a lie. It's an <b>amorphous mesh</b> — a cloud of relay IPs with the real machine buried inside it. You can't scan it and you can't connect to it. You have to <b>decode</b> it: peel the mesh node by node until you reach the mother IP underneath.\n\nYou'll need a decoder. 1NetLynx won't touch a mesh — get <b>parity</b> off the free shelf at minimum, and expect it to collapse on you. Better decoders peel more nodes per pass.\n\nWhen you reach the bottom, send me the mother IP.`},
  {id:'m6b',from:'0RACLE',subj:'the archivist',rankReq:11,mesh:'m6b',
   obj:{type:'trace'},pay:3400,rating:4,
-  body:`Whoever bought V01D's telemetry didn't keep it. They archived it — indexed, cross-referenced, sold on.\n\nThe archivist sits at <b>204.88.6.19</b>, and this is not the soft mesh you peeled last time. It's a <b>R00tKernel chain</b>: twenty-two nodes, peer-to-peer, no encryption to break — you simply have to walk every single hop from the outside in. There is no shortcut and no way around it.\n\nParity won't touch a R00tKernel. Parity Prime can walk it sequentially. Partisan Occulus can bruteforce it four hops at a time and will save you your sanity.\n\nGet me the mother IP. Then I'll show you who's been reading your mail.`},
+  body:`Whoever bought V01D's telemetry didn't keep it. They archived it — indexed, cross-referenced, sold on.\n\nThe archivist sits behind one address, and this is not the soft mesh you peeled last time. It's a <b>R00tKernel chain</b>: twenty-two nodes, peer-to-peer, no encryption to break — you simply have to walk every single hop from the outside in. There is no shortcut and no way around it.\n\nParity won't touch a R00tKernel. Parity Prime can walk it sequentially. Partisan Occulus can bruteforce it four hops at a time and will save you your sanity.\n\nGet me the mother IP. Then I'll show you who's been reading your mail.`},
  {id:'m6',from:'0RACLE',subj:'who is watching you',rankReq:12,target:'t_relaywatch',
   obj:{type:'trace',answer:'6.0.0.1'},pay:2200,rating:3,
-  body:`You still think Sable is on your side. Cute.\nSomeone has been tracing every run you make. Connect to the Kowloon exchange (160.44.2.88), read access.log, and find the IP that's been deep-probing your origin. When you have it, 'submit <ip>'.\nThen you'll understand what the last job really is.`},
+  body:`You still think Sable is on your side. Cute.\nSomeone has been tracing every run you make. Connect to the Kowloon exchange, read access.log, and find the IP that's been deep-probing your origin. When you have it, 'submit <ip>'.\nThen you'll understand what the last job really is.`},
  {id:'m7',from:'0RACLE',subj:'THE NORAD JOB',rankReq:10,target:'t_norad',finale:true,
   obj:{type:'download',file:'killswitch.bin'},pay:12000,rating:8,
-  body:`6.0.0.1. SHIELD Core. The grid that's been watching all of us — Sable included.\nFull stack: password, firewall, proxy, and the fastest trace you will ever outrun. Decrypt and pull killswitch.bin, wipe every log, and vanish.\nWhen it's done, the terminal will ask you what to do with it. Choose carefully. There's no undo.`},
+  body:`SHIELD Core. The address you pulled out of the Kowloon logs. The grid that's been watching all of us — Sable included.\nFull stack: password, firewall, proxy, and the fastest trace you will ever outrun. Decrypt and pull killswitch.bin, wipe every log, and vanish.\nWhen it's done, the terminal will ask you what to do with it. Choose carefully. There's no undo.`},
  {id:'m8',from:'0RACLE',subj:'the skeleton key',rankReq:14,target:'t_nmia',postEnding:true,
   obj:{type:'download',file:'blackwing.pkg'},pay:15000,rating:6,
-  body:`You're past the grid now. There's one thing left worth taking.\n\nNew Milos Intelligence keeps its own arsenal at 88.99.99.99 — the hardest host in the city. Inside is <b>Mythos Blackwing</b>: their bruteforcer, running an unpatched Skeletonkey 0-day. Ring0. Near-zero acquisition. It doesn't even leave logs, because it loads under the layer that writes them.\n\nEverything you own, all at once. Bring a real botnet.`},
+  body:`You're past the grid now. There's one thing left worth taking.\n\nNew Milos Intelligence keeps its own arsenal on the hardest host in the city. Inside is <b>Mythos Blackwing</b>: their bruteforcer, running an unpatched Skeletonkey 0-day. Ring0. Near-zero acquisition. It doesn't even leave logs, because it loads under the layer that writes them.\n\nEverything you own, all at once. Bring a real botnet.`},
  {id:'m9',from:'Anatomical',subj:'virtual echolocation',rankReq:16,mesh:'m9',postEnding:true,
   obj:{type:'trace'},reward:{tool:'ppop',key:'decoders'},pay:20000,rating:8,
-  body:`So you're the one who took Blackwing out of an intelligence host. Good. Then you're the only person left I can hand this to.\n\nYes — that Anatomical. I forked Sable's cracker a long time ago and then I stopped answering, because I'd started building something that made people want to find me.\n\n<b>Partisan Parity Occulus Prime.</b> PPOP. It doesn't peel a mesh node by node like everything else — it emits a shaped pulse and listens to what comes back. <b>VirtualEcholocation.</b> One pass, and the entire botnet renders at once: every node, every route, the mother IP, all of it. Amorphous, sequential, R00tKernel — it doesn't care.\n\nThe only build is on my testbed at <b>19.88.240.11</b>, and I hid it the way you'd expect: behind <b>thirty amorphous nodes</b>. Occulus will take you eight passes. Anything less will take all night.\n\nPeel it, send me the mother IP, and the renderer is yours. Consider it a fork of a fork — Sable gave me something free once, and I've been waiting a long time to pass it on.`},
+  body:`So you're the one who took Blackwing out of an intelligence host. Good. Then you're the only person left I can hand this to.\n\nYes — that Anatomical. I forked Sable's cracker a long time ago and then I stopped answering, because I'd started building something that made people want to find me.\n\n<b>Partisan Parity Occulus Prime.</b> PPOP. It doesn't peel a mesh node by node like everything else — it emits a shaped pulse and listens to what comes back. <b>VirtualEcholocation.</b> One pass, and the entire botnet renders at once: every node, every route, the mother IP, all of it. Amorphous, sequential, R00tKernel — it doesn't care.\n\nThe only build is on my testbed, and I hid it the way you'd expect: behind <b>thirty amorphous nodes</b>. Occulus will take you eight passes. Anything less will take all night.\n\nPeel it, send me the mother IP, and the renderer is yours. Consider it a fork of a fork — Sable gave me something free once, and I've been waiting a long time to pass it on.`},
  /* narrative interludes (read-only, no objective) */
  {id:'n1',from:'0RACLE',subj:'you don\'t know who you work for',note:true,unlockAfter:'m2',
   body:`I've been reading your logs. Don't bother tracing this — it won't resolve.\nEvery file you steal, someone above Sable is cataloguing. You think you're a freelancer. You're a collection method.\nKeep working. I'll be in touch. Get your rank up — you'll need the tools.`},
@@ -746,7 +759,7 @@ function cmdGig(a){const id=(a[0]||'').toLowerCase();
   const g=GIGS.find(x=>x.id.toLowerCase()===id);
   if(!g){pr('no open gig with that id. <span class="c">gig list</span>','err');return;}
   if(S.active){pr('finish or drop your current job first.','warn');return;}
-  S.active=g.id;S.activeGig=g.id;g._done=false;persist();
+  S.active=g.id;S.activeGig=g.id;g._done=false;S.jobStarted=true;persist();
   pr(`accepted gig: <span class="c">${g.subj}</span> — target <span class="warn">${TARGETS[g.target].ip}</span>`,'ok');
   pr(`objective: <span class="warn">${objText(g)}</span>. begin with <span class="c">scan ${TARGETS[g.target].ip}</span>.`);}
 
@@ -756,43 +769,49 @@ function cmdSqlaudit(a){
   if(!owned('tools','sqlaudit')){pr('SQLaudit File Manager is not installed.','err');
     pr('<span class="dim">pull it from the free shelf: <span class="c">brew install sqlaudit</span></span>');return;}
   const sub=(a[0]||'').toLowerCase();
-  if(sub==='exit'||sub==='disconnect'||sub==='quit'){if(!G.fm){pr('SQLaudit is not attached.','dim');return;}
+  if(sub==='exit'||sub==='disconnect'||sub==='quit'||sub==='close'){if(!G.fm){pr('SQLaudit is not open.','dim');return;}
     G.fm=null;prompt();pr('<span class="ok">✓ SQLaudit closed — audit session ended cleanly.</span>');tutHook('fmdetach');return;}
   if(sub==='seelogs'||sub==='logs'){return fmSeeLogs();}
-  if(sub){pr('usage: <span class="c">sq seelogs</span> · <span class="c">delete log &lt;#&gt;</span> · <span class="c">sq exit</span>','dim');return;}
+  if(sub==='delete'||sub==='del'||sub==='rm'){return cmdDeleteLog(a.slice(1));}
+  if(sub&&sub!=='open'){pr('SQLaudit commands:','dim');
+    pr('  <span class="c">sqlaudit</span>        <span class="dim">open a session on the host</span>');
+    pr('  <span class="c">sql seelogs</span>     <span class="dim">list what they logged about you</span>');
+    pr('  <span class="c">sql delete all</span>  <span class="dim">wipe every log (or: sql delete 2)</span>');
+    pr('  <span class="c">sql exit</span>        <span class="dim">close the session</span>');return;}
   if(!needConn())return;
-  if(G.fm){pr('SQLaudit is already open. <span class="c">sq seelogs</span>','warn');return;}
+  if(G.fm){pr('SQLaudit is already open. <span class="c">sql seelogs</span>','warn');return;}
   if(!G.access){pr('you need file access on the host first.','err');return;}
   runOp('SQLaudit → opening audit session',2.0,()=>{
     G.fm={open:true};prompt();artLine(ART.sqlaudit);
     pr('<span class="ok">◈ SQLaudit open.</span> you can read and write this host\'s audit records.');
-    pr('<span class="dim">list what they logged about you: <span class="c">sq seelogs</span></span>');
+    pr('<span class="dim">list what they logged about you: <span class="c">sql seelogs</span></span>');
     tutHook('fmattach');explain('sqlaudit');});}
 function fmSeeLogs(){if(!G.fm){pr('SQLaudit isn\'t open. run <span class="c">sqlaudit</span> first.','err');return;}
   const files=G.logFiles||[];
   pr('<span class="c">access logs on this host</span>');
   if(!files.length){pr('  <span class="ok">(none — you were never here)</span>');return;}
   files.forEach((f,i)=>pr(`  <span class="warn">${i+1}.</span> ${f}`));
-  pr(`<span class="dim">delete them one at a time: <span class="c">delete log 1</span>  (or <span class="c">delete log all</span>)</span>`);
+  pr(`<span class="dim">one at a time:</span> <span class="c">delete log 1</span>`);
+  pr(`<span class="phos">▸ TIP: <span class="c">sql delete all</span> wipes every log in one pass.</span>`);
   tutHook('fmls');}
 function cmdDeleteLog(a){if(!G.fm){pr('SQLaudit isn\'t open. run <span class="c">sqlaudit</span> first.','err');return;}
   const files=G.logFiles||[];
   if(!files.length){pr('there are no logs left.','dim');return;}
   const arg=(a[0]||'').toLowerCase();
-  if(!arg){pr('usage: <span class="c">delete log &lt;#&gt;</span> — see the numbers with <span class="c">sq seelogs</span>','dim');return;}
+  if(!arg){pr('usage: <span class="c">delete log &lt;#&gt;</span> — see the numbers with <span class="c">sql seelogs</span>','dim');return;}
   const all=arg==='all'||arg==='*';
   let doomed;
   if(all)doomed=files.slice();
   else{const n=parseInt(arg);
-    if(!n||n<1||n>files.length){pr(`no log #${escapeHtml(arg)}. there are ${files.length}. try <span class="c">sq seelogs</span>.`,'err');return;}
+    if(!n||n<1||n>files.length){pr(`no log #${escapeHtml(arg)}. there are ${files.length}. try <span class="c">sql seelogs</span>.`,'err');return;}
     doomed=[files[n-1]];}
   runOp(`SQLaudit → shredding ${doomed.length} record(s)`,1.0+doomed.length*0.3,()=>{
     doomed.forEach(f=>{G.logFiles=G.logFiles.filter(x=>x!==f);pr(`  <span class="warn">✗ ${f} shredded</span>`);});
     if(!G.logFiles.length){G.logsDeleted=true;
       pr('<span class="ok">✓ every access log gone — you were never on this host.</span>');
-      pr('<span class="dim">close the session: <span class="c">sq exit</span></span>');
+      pr('<span class="dim">close the session: <span class="c">sql exit</span></span>');
       tutHook('fmrm');blip(900,0.16,'sine',0.06,1300);}
-    else pr(`<span class="dim">${G.logFiles.length} log(s) remain — <span class="c">sq seelogs</span></span>`);});}
+    else pr(`<span class="dim">${G.logFiles.length} log(s) remain — <span class="c">sql seelogs</span></span>`);});}
 
 /* ---------- MFMMO early-access reward codes ---------- */
 const CODES={
@@ -840,7 +859,7 @@ function cmdCodes(){const list=(S.codes||[]);
 const PROGINFO={
  brew:{n:'brew',tag:'package manager',what:'Fetches and installs free software onto your deck. Nobody in New Milos pays for tools that were given away.',how:'brew list · brew install &lt;pkg&gt;'},
  hc:{n:'HavenCracker 1.0',tag:'password cracker',what:'Bruteforces a host\'s password lock. Sable wrote it and gave it away — it is the baseline every runner learns on. Faster crackers exist; none are free.',how:'hc  (or just: crack)'},
- sqlaudit:{n:'SQLaudit File Manager',tag:'audit records',what:'Opens a session on the target\'s audit records so you can read and shred what they logged about you. This is how you cover your tracks — there is no one-shot command for it.',how:'sqlaudit → sq seelogs → delete log &lt;#&gt; → sq exit'},
+ sqlaudit:{n:'SQLaudit File Manager',tag:'audit records',what:'Opens a session on the target\'s audit records so you can read and shred what they logged about you. This is how you cover your tracks — there is no one-shot command for it.',how:'sqlaudit → sql seelogs → sql delete all → sql exit'},
  netlynx:{n:'1NetLynx',tag:'decoder',what:'Peels a target\'s botnet back toward its real origin. Sequential chains only — an amorphous mesh will defeat it.',how:'resolve &lt;handle&gt; · decode &lt;ip&gt;'},
  loic:{n:'Low Orbit Ion Cannon',tag:'booter',what:'Floods a resolved IP until the person behind it drops off the wire. Loud and easy to fingerprint — but it drops anyone who is not watching their pipe.',how:'boot &lt;ip&gt;'},
  monitorme:{n:'MonitorMe GUI',tag:'botnet monitor',what:'Pings the IPs in your botnet and tells you which one a reverse-trace has reached. Burn that IP and the trace loses the thread.',how:'monitor · burn &lt;ip&gt;'},
@@ -908,6 +927,54 @@ function cmdDecode(a){const ip=(a[0]||'').trim();
       pr(`<span class="dim">report it: <span class="c">submit ${M.mother}</span></span>`);blip(1000,0.18,'sine',0.06,1500);}
     else{persist();pr(`<span class="dim">${M.revealed.length}/${M.total} nodes peeled. run <span class="c">decode ${ip}</span> again.</span>`);}
   });}
+
+/* ---------- job briefing → start job → live objective checklist ---------- */
+function jobBriefDM(m){
+  const t=m.target?TARGETS[m.target]:null;
+  let d=`contract accepted: ${m.subj}\n\n`;
+  if(m.boot)      d+=`mark: @${m.obj.handle}\nhis origin is unknown — forums don't hand out IPs. you'll have to get it out of him yourself.\n`;
+  else if(m.mesh) d+=`mesh relay: ${MESHES[m.mesh].ip}\n${MESHES[m.mesh].layers} nodes, ${MESHES[m.mesh].type}. you can't connect to it — you decode it.\n`;
+  else if(t)      d+=`target: ${t.ip}  (${t.name})\nsecurity: ${t.locks.length?t.locks.join(' + '):'none'}\n`;
+  d+=`objective: ${objText(m)}\npays ${m.pay}c\n\nthat's everything. hit start when you're ready.`;
+  imSend(m.from,d,[{label:'▶ START JOB',action:'startjob',mission:m.id}]);}
+function startJobNow(id){const m=MISSIONS.find(x=>x.id===id)||GIGS.find(g=>g.id===id);
+  if(!m){pr('that contract is gone.','err');return;}
+  if(S.active!==m.id){pr('that isn\'t your active contract.','warn');return;}
+  S.jobStarted=true;persist();openWin('Terminal',true);
+  const t=m.target?TARGETS[m.target]:null;
+  pr('');pr(`<span class="phos">◈ JOB STARTED — ${m.subj}</span>`);
+  if(m.boot)      pr(`<span class="dim">mark @${m.obj.handle}. get his origin first: <span class="c">bait ${m.obj.handle}</span></span>`);
+  else if(m.mesh) pr(`<span class="dim">mesh at <span class="c">${MESHES[m.mesh].ip}</span> — <span class="c">decode ${MESHES[m.mesh].ip}</span></span>`);
+  else if(t)      pr(`<span class="dim">target unlocked: <span class="c">${t.ip}</span> — start with <span class="c">scan ${t.ip}</span></span>`);
+  pr('<span class="dim">your objectives are tracked on the right.</span>');
+  renderJobPanel();blip(900,0.12,'sine',0.06,1300);}
+function jobSteps(m){
+  const t=m.target?TARGETS[m.target]:null,steps=[];
+  if(m.boot){const ip=(S.resolved||{})[m.obj.handle];
+    steps.push({l:`get @${m.obj.handle}'s origin`,d:!!ip});
+    steps.push({l:'own a booter',d:!!bestBooter()});
+    steps.push({l:'boot his IP',d:(S.booted||[]).includes(m.obj.handle)});
+    return steps;}
+  if(m.mesh){const M=(S.meshes||{})[m.mesh]||{revealed:[],total:MESHES[m.mesh].layers};
+    steps.push({l:`decode the mesh (${(M.revealed||[]).length}/${M.total})`,d:!!M.done});
+    steps.push({l:'submit the mother IP',d:!!m._done});
+    return steps;}
+  steps.push({l:`connect to ${t?t.ip:'target'}`,d:!!G.conn||!!m._done});
+  if(t&&t.locks.length)steps.push({l:'defeat security ('+t.locks.join(', ')+')',d:G.access||!!m._done});
+  steps.push({l:objText(m),d:!!m._done});
+  if(!t||!t.safe)steps.push({l:'wipe their logs',d:!!G.logsDeleted});
+  steps.push({l:'disconnect',d:false});
+  return steps;}
+function renderJobPanel(){const p=$('jobPanel');if(!p)return;
+  const m=activeMission();
+  if(!m||!S.jobStarted){p.hidden=true;return;}
+  const t=m.target?TARGETS[m.target]:null;
+  const loc=m.boot?('@'+m.obj.handle):m.mesh?MESHES[m.mesh].ip:(t?t.ip:'—');
+  const steps=jobSteps(m);const cur=steps.findIndex(s=>!s.d);
+  let h=`<div class="jh">◈ active contract</div><div class="jt">${m.subj}</div><div class="jc">client: ${m.from}</div>
+    <div class="jip">${loc}</div>`;
+  steps.forEach((s,i)=>{h+=`<div class="jstep ${s.d?'done':i===cur?'cur':''}"><span class="bx">${s.d?'✓':i===cur?'▸':'○'}</span>${s.l}</div>`;});
+  p.innerHTML=h;p.hidden=false;}
 
 /* ---------- brew: package manager ---------- */
 function hasBrew(){return !!S.flags.brew;}
@@ -1165,7 +1232,7 @@ const KEY='units_os_save', PKEY='units_os_prefs';
 let S=null, P={crt:true,snd:true,music:true,vol:0.8,scan:0.6,autohint:false};
 function defaultSave(h){const soft={};for(const k in SOFT)soft[k]=SOFT[k].start;
   return {handle:h,creds:200,rating:0,soft,completed:[],active:null,seen:['m0'],read:[],flags:{},heat:0,discovered:[],im:{},imUnread:{},
-    crackers:[],booters:[],monitors:[],decoders:[],tools:[],explained:[],mesh:null,botnet:null,rep:0,booted:[],rerouted:0,resolved:{},unaware:{},trollIps:{},activeGig:null};}
+    crackers:[],booters:[],monitors:[],decoders:[],tools:[],explained:[],mesh:null,botnet:null,rep:0,booted:[],jobStarted:false,rerouted:0,resolved:{},unaware:{},trollIps:{},activeGig:null};}
 /* storage is per-browser and per-visitor: every player gets their own private save */
 let storageOK=null,storageWarned=false;
 function storageAvailable(){if(storageOK!==null)return storageOK;
@@ -1293,6 +1360,7 @@ function submitCmd(raw){const line=raw.trim();prompt();
   const parts=line.split(/\s+/),cmd=parts[0].toLowerCase(),args=parts.slice(1);
   if(cmd==='abort'){abortOp();return;}
   (COMMANDS[cmd]||cmdUnknown)(args,line);
+  renderJobPanel();
   if(!['hint','next','what','help','clear'].includes(cmd)&&!G.ops.length)maybeHint();}
 function cmdUnknown(a,line){const w=line.split(/\s+/)[0].toLowerCase();
   const near=Object.keys(COMMANDS).filter(c=>c.startsWith(w.slice(0,3))&&w.length>2).slice(0,4);
@@ -1322,6 +1390,7 @@ function cmdHint(){const m=activeMission();
   if(!hasBrew())return say('your deck has no tools yet. install the package manager: <span class="c">getbrew stable</span>');
   if(!bestCracker())return say('you need something that can break a password: <span class="c">brew install havencracker</span>');
   if(!m)return say('you have no job. open your <span class="c">mail</span> (Inbox) and accept a contract — or take a freeplay gig with <span class="c">gig list</span>.');
+  if(!S.jobStarted&&!m.gig)return say(`${m.from} sent you the details — open <span class="c">Messenger</span> and hit <span class="c">▶ START JOB</span>.`);
   if(m.boot){const ip=(S.resolved||{})[m.obj.handle];
     if(!ip)return say(`you need @${m.obj.handle}'s real IP. forums don't show IPs — trick it out of him: <span class="c">bait ${m.obj.handle}</span>`);
     if(!bestBooter())return say('you have his IP but nothing to hit it with. buy a booter in <span class="c">shop</span> (Software).');
@@ -1352,8 +1421,8 @@ function cmdHint(){const m=activeMission();
   if(!G.logsDeleted){
     if(!owned('tools','sqlaudit'))return say('before you leave, you must wipe their logs. get the tool: <span class="c">brew install sqlaudit</span>');
     if(!G.fm)return say('open the audit session: <span class="c">sqlaudit</span>');
-    return say(`shred them: <span class="c">sq seelogs</span> to list them, then <span class="c">delete log 1</span> (or <span class="c">delete log all</span>)`);}
-  if(G.fm)return say('close the session: <span class="c">sq exit</span>');
+    return say(`shred them: <span class="c">sql seelogs</span> to list them, then <span class="c">sql delete all</span> to wipe the lot`);}
+  if(G.fm)return say('close the session: <span class="c">sql exit</span>');
   return say('you\'re done here — get out: <span class="c">disconnect</span>');}
 
 const COMMANDS={
@@ -1375,7 +1444,7 @@ const COMMANDS={
   monitor:()=>{openWin('Monitor',true);pr('opening monitor…','dim');},
   rep:()=>pr(`<span class="c">forum rep</span> ${S.rep||0} — <span class="phos">${forumRank()}</span>   <span class="dim">boot the mouthy ones to climb.</span>`),
   ls:()=>cmdLs(),dir:()=>cmdLs(),cat:a=>cmdCat(a),read:a=>cmdCat(a),
-  sqlaudit:a=>cmdSqlaudit(a),sq:a=>cmdSqlaudit(a.length?a:['?']),seelogs:()=>fmSeeLogs(),
+  sqlaudit:a=>cmdSqlaudit(a),sql:a=>cmdSqlaudit(a.length?a:['?']),sq:a=>cmdSqlaudit(a.length?a:['?']),seelogs:()=>fmSeeLogs(),
   decrypt:a=>cmdDecrypt(a),download:a=>cmdDownload(a),copy:a=>cmdDownload(a),
   delete:a=>((a[0]||'').toLowerCase()==='log'?cmdDeleteLog(a.slice(1)):cmdDelete(a)),
   rm:a=>((a[0]||'').toLowerCase()==='log'?cmdDeleteLog(a.slice(1)):cmdDelete(a)),
@@ -1433,18 +1502,11 @@ function cmdAccept(a){const id=a[0];const m=MISSIONS.find(x=>x.id===id&&!x.note)
   if(!m){pr('unknown job id. open <span class="c">mail</span>.','err');return;}
   if(S.completed.includes(m.id)){pr('already done.','warn');return;}
   if(S.rating<m.rankReq){pr('your rank is too low for that contract.','err');return;}
-  S.active=m.id;m._done=false;persist();
-  if(m.mesh){const D=MESHES[m.mesh];
-    pr(`accepted: <span class="c">${m.subj}</span> — mesh relay <span class="warn">${D.ip}</span> (${D.layers} nodes, ${D.type})`,'ok');
-    pr('objective: <span class="warn">peel the mesh to its mother IP</span>.');
-    pr(`<span class="dim">you can't connect to a mesh — decode it: <span class="c">decode ${D.ip}</span></span>`);}
-  else if(m.boot){pr(`accepted: <span class="c">${m.subj}</span> — mark: <span class="warn">@${m.obj.handle}</span>`,'ok');
-    pr(`objective: <span class="warn">${objText(m)}</span>.`);
-    pr('<span class="dim">a forum shows you a name, never an origin. get his IP first: <span class="c">bait '+m.obj.handle+'</span></span>');
-    if(!S.flags.wireTutDone)setTimeout(()=>startTutSeq(TUT_WIRE,'The Wire · First Boot'),500);}
-  else{pr(`accepted: <span class="c">${m.subj}</span> — target <span class="warn">${TARGETS[m.target].ip}</span>`,'ok');
-    pr(`objective: <span class="warn">${objText(m)}</span>. begin with <span class="c">scan ${TARGETS[m.target].ip}</span>.`);}
-  renderInbox();blip(720,0.08);tutHook('accept');}
+  S.active=m.id;m._done=false;S.jobStarted=false;persist();
+  pr(`<span class="ok">◈ contract accepted — ${m.subj}</span>`);
+  pr(`<span class="dim">${m.from} is sending you the details on <span class="c">Messenger</span>. open it and hit <span class="c">▶ START JOB</span>.</span>`);
+  openWin('Messenger',true);jobBriefDM(m);renderInbox();renderJobPanel();blip(720,0.08);tutHook('accept');
+  if(m.boot&&!S.flags.wireTutDone)setTimeout(()=>startTutSeq(TUT_WIRE,'The Wire · First Boot'),600);}
 function objText(m){const o=m.obj;const one=p=>p.type==='download'?'steal '+p.file:p.type==='delete'?'destroy '+p.file:p.type==='modify'?'alter '+p.file:p.type;
   return o.type==='multi'?o.parts.map(one).join(' + '):o.type==='transfer'?'transfer '+o.amount+'c':o.type==='trace'?'find the origin IP':o.type==='boot'?'boot '+o.handle+' off the wire':one(o);}
 
@@ -1471,17 +1533,29 @@ function cmdScan(a){const ip=a[0];if(!ip){pr('usage: scan &lt;ip&gt;','dim');ret
 function cmdConnect(a){const ip=a[0];if(!ip){pr('usage: connect &lt;ip&gt;','dim');return;}
   if(G.conn){pr('already connected. disconnect first.','warn');return;}
   const t=targetByIp(ip);if(!t){pr('cannot connect: unknown host.','err');return;}
+  // story targets are locked to the contract you're actually running
+  const owner=MISSIONS.find(x=>x.target&&TARGETS[x.target]===t);
+  if(owner&&!t.hidden){
+    if(S.active!==owner.id){pr('you have no contract for that host — and you don\'t break into things for free.','err');
+      pr('<span class="dim">open your <span class="c">mail</span> and accept the job first.</span>');return;}
+    if(!S.jobStarted){pr(`${owner.from} hasn't handed off yet.`,'warn');
+      pr('<span class="dim">open <span class="c">Messenger</span> and hit <span class="c">▶ START JOB</span>.</span>');return;}}
   const hops=G.route.length;dialup();
   runOp(`handshaking through ${hops} relay(s)`,1.0+hops*0.3,()=>{
     G.conn=t;G.cleared=new Set();G.access=t.locks.length===0;G.trace=0;G.tracedNode=hops;G.active2=false;
     G.logsDeleted=false;G.stolen=0;G.submitted=null;G.fm=null;
+    G.graceUntil=performance.now()+(tutOn?1e9:7000);           // 7s to get your bearings; the whole tutorial if training
     G.logFiles=['access.log','auth.log','session.log','conn_'+RI(1000,9999)+'.log'];
     pr(`<span class="ok">▶ connected — ${t.ip} (${t.name})</span>`);
-    pr(`<span class="err">⚠ intrusion detected by host. reverse-trace initialising…</span>`);
-    pr(`route home: ${hops?'target → '+[...G.route].reverse().join(' → ')+' → YOU':'<span class="err">DIRECT — they land on you the moment the bar fills!</span>'}`);
+    if(t.safe){pr('<span class="ok">✓ practice host — no counter-intrusion. nothing here can trace you.</span>');
+      pr('<span class="dim">take your time. read everything. this is the only host in New Milos that will let you.</span>');}
+    else{pr(`<span class="err">⚠ intrusion detected by host. reverse-trace initialising…</span>`);
+      pr(`route home: ${hops?'target → '+[...G.route].reverse().join(' → ')+' → YOU':'<span class="err">DIRECT — they land on you the moment the bar fills!</span>'}`);}
     if(G.access)pr('no security. <span class="c">ls</span> to list files.');
     else pr('locks: '+t.locks.map(l=>`<span class="warn">${l}</span>`).join(' · ')+' — <span class="c">crack</span> / <span class="c">bypass firewall|proxy</span>.');
-    $('tbConn').textContent=t.ip;$('tracePill').classList.remove('hidden2');$('tracePill').classList.add('active');
+    $('tbConn').textContent=t.ip;$('tracePill').classList.remove('hidden2');
+    $('tracePill').classList.toggle('active',!t.safe);
+    if(t.safe)$('tbTracePct').textContent='SAFE';
     prompt();drawMap();humStart();tutHook('connect');});}
 
 /* ---------- locks ---------- */
@@ -1568,9 +1642,9 @@ function cmdDeleteLogs(){if(!needConn())return;
   pr('<span class="dim">procedure:</span>');
   pr(`  1. <span class="c">brew install sqlaudit</span> <span class="dim">(once)</span>`);
   pr(`  2. <span class="c">sqlaudit</span> <span class="dim">— open an audit session</span>`);
-  pr(`  3. <span class="c">sq seelogs</span> <span class="dim">— see what they logged</span>`);
-  pr(`  4. <span class="c">delete log 1</span> <span class="dim">— repeat, or</span> <span class="c">delete log all</span>`);
-  pr(`  5. <span class="c">sq exit</span> <span class="dim">then</span> <span class="c">disconnect</span>`);}
+  pr(`  3. <span class="c">sql seelogs</span> <span class="dim">— see what they logged</span>`);
+  pr(`  4. <span class="c">sql delete all</span> <span class="dim">— or one at a time with</span> <span class="c">delete log 1</span>`);
+  pr(`  5. <span class="c">sql exit</span> <span class="dim">then</span> <span class="c">disconnect</span>`);}
 
 /* ---------- objective ---------- */
 function checkObjective(){const m=activeMission();if(!m||!m.obj||m._done)return;
@@ -1591,7 +1665,7 @@ function checkObjective(){const m=activeMission();if(!m||!m.obj||m._done)return;
 function cmdDisconnect(){if(!G.conn){pr('not connected.','dim');return;}const t=G.conn,m=activeMission();
   if(G.fm){G.fm=null;S.heat=clamp((S.heat||0)+6,0,100);updateHeat();
     pr('<span class="warn">⚠ you dropped the line with SQLaudit still mounted — the orphaned audit session is evidence. heat +6.</span>');
-    pr('<span class="dim">next time: <span class="c">sq exit</span> before you disconnect.</span>');}
+    pr('<span class="dim">next time: <span class="c">sql exit</span> before you disconnect.</span>');}
   pr(`<span class="dim">closing connection to ${t.ip}…</span>`);const objDone=m&&m._done&&t===TARGETS[m.target];
   G.conn=null;G.access=false;G.trace=0;G.tracedNode=-1;G.cleared=new Set();
   $('tbConn').textContent='offline';$('tracePill').classList.add('hidden2');$('tracePill').classList.remove('active');
@@ -1603,7 +1677,7 @@ function completeMission(m){let pay=m.pay;
   if(!clean){pay=Math.floor(pay*0.55);const gain=S.soft.spoofer?7:15;S.heat=clamp(S.heat+gain,0,100);
     pr('<span class="warn">you left logs — admins clawed back part of the fee, and your heat is climbing. ('+'+'+gain+' heat) — try <span class="c">laylow</span>.</span>');}
   else if(!remote){S.heat=clamp(S.heat-5,0,100);}
-  S.creds+=pay;S.rating+=m.rating;if(!S.completed.includes(m.id))S.completed.push(m.id);S.active=null;m._done=false;
+  S.creds+=pay;S.rating+=m.rating;if(!S.completed.includes(m.id))S.completed.push(m.id);S.active=null;m._done=false;S.jobStarted=false;renderJobPanel();
   unlockStory();updateHeat();persist();
   pr(`<span class="ok">◈ CONTRACT COMPLETE — +${pay}c, +${m.rating} rating.</span>`);
   pr(`<span class="c">rank:</span> ${rankName(S.rating)}   <span class="c">balance:</span> <span class="ok">${S.creds}c</span>`);
@@ -1640,7 +1714,10 @@ function finaleChoice(w){if(!['burn','seize','walk'].includes(w)){pr('type <span
 function chord(fs){fs.forEach(f=>blip(f,0.6,'sawtooth',0.04));}
 
 /* ---------- caught ---------- */
-function caught(){pr('');typeLine('██ REVERSE-TRACE COMPLETE — THEY ARE AT YOUR GATEWAY ██',' err');
+function caught(){
+  if(tutOn||(G.conn&&G.conn.safe)){G.trace=Math.min(G.trace,70);   // never fail a player who is still learning
+    pr('<span class="warn">⚠ the trace got close — but this is training. nothing happened.</span>');return;}
+  pr('');typeLine('██ REVERSE-TRACE COMPLETE — THEY ARE AT YOUR GATEWAY ██',' err');
   pr('<span class="err">connection killed. gateway flagged.</span>','err');
   const fine=Math.min(S.creds,Math.floor(250+S.rating*30));S.creds-=fine;S.rating=Math.max(0,S.rating-1);S.heat=clamp(S.heat+25,0,100);updateHeat();
   pr(`<span class="warn">fine −${fine}c · rating −1 · heat +25. next time: longer route, faster tools, don't dawdle.</span>`);
@@ -1659,14 +1736,17 @@ function runOp(label,secs,onDone){
   op.iv=setInterval(()=>{if(op.cancel){clearInterval(op.iv);span.innerHTML='<span class="warn">[ aborted ]</span>';G.ops=G.ops.filter(o=>o!==op);return;}
     const p=clamp((performance.now()-t0)/(secs*1000),0,1),fill=Math.round(p*10);
     span.textContent=`[${'#'.repeat(fill)}${' '.repeat(10-fill)}] ${Math.floor(p*100)}%`;
-    if(p>=1){clearInterval(op.iv);span.innerHTML='<span class="ok">[##########] done</span>';G.ops=G.ops.filter(o=>o!==op);onDone&&onDone();maybeHint();}},55);
+    if(p>=1){clearInterval(op.iv);span.innerHTML='<span class="ok">[##########] done</span>';G.ops=G.ops.filter(o=>o!==op);onDone&&onDone();renderJobPanel();maybeHint();}},55);
   return true;}
 function abortOp(){if(G.ops.length){G.ops.forEach(o=>o.cancel=true);pr('aborted running op(s).','warn');}else pr('nothing running.','dim');}
 
 /* ================= trace tick ================= */
 setInterval(()=>{if(!G.conn)return;const hops=G.route.length;
+  if(G.conn.safe||!G.conn.traceRate)return;                    // practice hosts never trace you
+  if(performance.now()<(G.graceUntil||0))return;               // brief grace while the host notices you
   const rate=(G.conn.traceRate*(G.active2?1.35:0.8))/traceDiv();
   G.trace=clamp(G.trace+rate*0.1,0,100);
+  if(tutOn)G.trace=Math.min(G.trace,88);                       // training wheels: never fatal mid-tutorial
   const seg=100/(hops+1);const reached=hops-Math.floor(G.trace/seg);
   G.tracedIp=reached>0?G.route[reached-1]:null;
   if(reached<G.tracedNode){G.tracedNode=reached;const label=reached<=0?'YOUR GATEWAY':(G.route[reached-1]||G.conn.ip);
@@ -1725,9 +1805,11 @@ function showMail(m,avail,done,active,isNote){const d=$('mdetail');d.classList.a
   d.innerHTML=`<div class="fr" style="color:${isNote?'var(--magenta)':'var(--cyan)'}">from: ${m.from}</div>
     <div style="font-size:14px;color:#eafcff;margin:3px 0;">${m.subj}</div>
     <div class="body">${m.body}</div>`+(isNote?'':
-    `<div><span class="k">target:</span> <span class="vc">${m.boot?'@'+m.obj.handle:m.mesh?MESHES[m.mesh].ip:t.ip}</span> <span class="k">(${m.boot?'forum user — origin unknown':m.mesh?MESHES[m.mesh].type+' mesh — decode it':t.name})</span></div>
+    `<div><span class="k">target:</span> ${(active||done)
+        ?`<span class="vc">${m.boot?'@'+m.obj.handle:m.mesh?MESHES[m.mesh].ip:t.ip}</span> <span class="k">(${m.boot?'forum user — origin unknown':m.mesh?MESHES[m.mesh].type+' mesh':t.name})</span>`
+        :`<span class="k">withheld — sent by ${m.from} on acceptance</span>`}</div>
      <div><span class="k">objective:</span> <span class="v">${objText(m)}</span></div>
-     <div><span class="k">security:</span> ${m.boot?'unknown — resolve him first':m.mesh?MESHES[m.mesh].layers+' mesh nodes ('+MESHES[m.mesh].type+')':(t.locks.length?t.locks.join(' · '):'none')}</div>
+     <div><span class="k">security:</span> ${(active||done)?(m.boot?'unknown — resolve him first':m.mesh?MESHES[m.mesh].layers+' mesh nodes ('+MESHES[m.mesh].type+')':(t.locks.length?t.locks.join(' · '):'none')):'<span class="k">withheld</span>'}</div>
      <div><span class="k">reward:</span> <span class="v">+${m.pay}c</span> · +${m.rating} rating</div>
      <button class="mbtn" id="acceptBtn" ${(!avail||active)?'disabled':''}>${done?'completed':active?'active':avail?'accept contract':'rank too low'}</button>`);
   const b=$('acceptBtn');if(b&&avail&&!active)b.onclick=()=>{cmdAccept([m.id]);openWin('Terminal',true);};}
@@ -1876,7 +1958,9 @@ const CONTACTS={
 };
 let imOpen=null;
 function imChime(){blip(1100,0.08,'sine',0.05,1500);setTimeout(()=>blip(1450,0.08,'sine',0.04),80);}
-function imSend(id,text,replies){ if(!CONTACTS[id])return; if(!S.im[id])S.im[id]=[];
+function imSend(id,text,replies){
+  if(!CONTACTS[id])CONTACTS[id]={n:id,tag:'client'};   // clients become contacts the moment they write to you
+  if(!S.im[id])S.im[id]=[];
   if(imOpen===id&&!$('winMessenger').hidden)showTyping(true);
   const delay=Math.min(2400,700+text.length*7);
   setTimeout(()=>{ if(imOpen===id)showTyping(false);
@@ -1903,6 +1987,7 @@ function renderChat(){const chat=$('imChat');if(!imOpen||!S.im[imOpen]){chat.inn
   if(last&&last.who==='them'&&last.replies){html+='<div class="imreplies">';last.replies.forEach((r,i)=>html+=`<button data-i="${i}">${escapeHtml(r.label)}</button>`);html+='</div>';}
   chat.innerHTML=html;const log=chat.querySelector('.imlog');log.scrollTop=log.scrollHeight;
   chat.querySelectorAll('.imreplies button').forEach(b=>b.onclick=()=>{const r=last.replies[+b.dataset.i];last.replies=null;
+    if(r.action==='startjob'){persist();renderChat();startJobNow(r.mission);return;}
     S.im[imOpen].push({who:'me',text:r.label});persist();renderChat();
     if(r.reply)imSend(imOpen,r.reply);
     if(r.creds){S.creds+=r.creds;syncTop();pr(`<span class="ok">$ ${CONTACTS[imOpen].n} sent you +${r.creds}c.</span>`);}
@@ -2151,9 +2236,9 @@ const TUT=[
  {id:'download',label:'steal sample.dat  (download sample.dat)'},
  {id:'brewinstall_sqlaudit',label:'get the audit tool  (brew install sqlaudit)'},
  {id:'fmattach',label:'open it  (sqlaudit)'},
- {id:'fmls',label:'see what they logged  (sq seelogs)'},
- {id:'fmrm',label:'shred the logs  (delete log 1 … or delete log all)'},
- {id:'fmdetach',label:'close the session  (sq exit)'},
+ {id:'fmls',label:'see what they logged  (sql seelogs)'},
+ {id:'fmrm',label:'shred the logs  (sql delete all)'},
+ {id:'fmdetach',label:'close the session  (sql exit)'},
  {id:'disconnect',label:'leave  (disconnect)'},
 ];
 let tutOn=false,tutIdx=0,coachIdx=0;
@@ -2226,6 +2311,7 @@ function boot(){const saved=loadSave();
   $('continueBtn').onclick=()=>{ai();S=saved;S.seen=S.seen||['m0'];S.read=S.read||[];S.flags=S.flags||{};S.heat=S.heat||0;S.discovered=S.discovered||[];S.im=S.im||{};S.imUnread=S.imUnread||{};
     S.crackers=S.crackers||[];S.booters=S.booters||[];S.monitors=S.monitors||[];S.decoders=S.decoders||[];S.botnet=S.botnet||null;S.rep=S.rep||0;S.booted=S.booted||[];S.rerouted=S.rerouted||0;
     S.resolved=S.resolved||{};S.unaware=S.unaware||{};S.trollIps=S.trollIps||{};S.tools=S.tools||[];S.explained=S.explained||[];
+    if(S.jobStarted==null)S.jobStarted=!!S.active;   // old saves mid-job stay playable
     for(const k in SOFT)if(S.soft[k]==null)S.soft[k]=SOFT[k].start;syncRoute();startDesktop();};
   $('wipeLink').onclick=()=>{localStorage.removeItem(KEY);location.reload();};}
 window.addEventListener('load',()=>{loadPrefs();applyPrefs();
