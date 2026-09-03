@@ -135,6 +135,15 @@ body.crt #content{margin:10px;width:calc(100% - 20px);height:calc(100% - 20px);}
   padding:7px 14px;cursor:pointer;font-family:var(--mono);font-size:12px;letter-spacing:2px;text-transform:uppercase;}
 .mbtn:hover{box-shadow:0 0 12px rgba(56,225,255,.2);color:#eafcff;}
 .mbtn:disabled{opacity:.4;cursor:not-allowed;}
+.mbtn.claim{border-color:var(--green);color:#04120b;background:linear-gradient(180deg,#37ffa8,#1fb877);
+  font-weight:700;text-shadow:none;box-shadow:0 0 18px rgba(55,255,168,.35);animation:claimpulse 1.6s ease-in-out infinite;}
+.mbtn.claim:hover{filter:brightness(1.12);box-shadow:0 0 26px rgba(55,255,168,.55);}
+@keyframes claimpulse{50%{box-shadow:0 0 26px rgba(55,255,168,.6);}}
+.kind{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;padding:1px 5px;border-radius:2px;margin-left:6px;vertical-align:1px;}
+.kind.story{background:rgba(56,225,255,.14);color:var(--cyan);border:1px solid var(--cyan-dim);}
+.kind.gig{background:rgba(255,182,56,.13);color:var(--amber);border:1px solid #7a5a1e;}
+.kind.msg{background:rgba(255,77,210,.12);color:var(--magenta);border:1px solid #7a2f66;}
+.mail .bdg.pend{color:#04120b;background:var(--green);padding:1px 5px;border-radius:2px;font-weight:700;}
 
 /* software */
 #winShop{left:730px;top:404px;width:372px;height:290px;}
@@ -685,6 +694,7 @@ const PKGS={
  parity      :{n:'Parity via 1NetLynx',key:'decoders',id:'parity',d:'weak amorphous decoder'},
  monitorme   :{n:'MonitorMe GUI',   key:'monitors',id:'monitorme',d:'text botnet monitor'},
  sqlaudit    :{n:'SQLaudit File Manager',key:'tools',id:'sqlaudit',d:'mount remote filesystems · wipe logs'},
+ wire        :{n:'WireCLI',        key:'tools',id:'wirecli',  d:'job-board client for The Wire · freeplay gigs'},
 };
 const BOTNETS={
  fullz :{n:'Fullz Botlist',    min:1, max:5, per:480,d:'cheap dummy IPs · stalls medium-speed traces'},
@@ -750,15 +760,32 @@ function refreshGigs(){const stale=GIGS.filter(g=>S.completed.includes(g.id));
   GIGS=GIGS.filter(g=>!S.completed.includes(g.id));
   while(GIGS.length<3)GIGS.push(genGig());}
 function gigThread(){refreshGigs();
+  const head=owned('tools','wirecli')
+    ?{by:'the wire',text:`board client detected. take one with  gig <id>  ·  walk away with  gig drop`}
+    :{by:'the wire',text:`this board is machine-readable only. install the client to bid:  brew install wire`};
   return {id:'jobs',title:'▸ paid work — open gigs (freeplay)',by:'the wire',jobs:true,
-    posts:GIGS.map(g=>({by:g.from,text:`[${g.id}] ${g.subj} · ${TARGETS[g.target].ip} · ${TARGETS[g.target].locks.join('+')} · pays ${g.pay}c   →  take it:  gig ${g.id}`}))};}
+    posts:[head].concat(GIGS.map(g=>({by:g.from,
+      text:owned('tools','wirecli')
+        ?`[${g.id}] ${g.subj} · ${TARGETS[g.target].ip} · ${TARGETS[g.target].locks.join('+')} · pays ${g.pay}c   →  gig ${g.id}`
+        :`[${g.id}] ${g.subj} · ${TARGETS[g.target].locks.length} lock(s) · pays ${g.pay}c   →  [client required]`})))};}
 function cmdGig(a){const id=(a[0]||'').toLowerCase();
+  if(!owned('tools','wirecli')){
+    pr('<span class="err">gig: command not found.</span>');
+    pr('<span class="dim">The Wire\'s board has its own client. pull it: <span class="c">brew install wire</span></span>');return;}
+  if(id==='drop'||id==='leave'||id==='abandon'){
+    const cur=activeMission();
+    if(!cur||!cur.gig){pr('you have no gig to drop.','dim');return;}
+    if(G.conn){pr('disconnect first — don\'t abandon a job while you\'re still inside it.','warn');return;}
+    pr(`<span class="warn">dropped: ${cur.subj}</span>`);
+    pr('<span class="dim">no fee, no penalty. the poster will find someone else. it stays on the board.</span>');
+    S.active=null;S.activeGig=null;S.jobStarted=false;cur._done=false;persist();
+    renderJobPanel();renderInbox();renderForum();return;}
   if(!id||id==='list'){refreshGigs();pr('<span class="c">open gigs on the wire</span>');
     GIGS.forEach(g=>pr(`  <span class="ok">${g.id}</span>  ${g.subj} <span class="dim">· ${TARGETS[g.target].ip} · pays ${g.pay}c</span>`));
-    pr('<span class="dim">take one with <span class="c">gig &lt;id&gt;</span>. these repeat forever — grind them between contracts.</span>');return;}
+    pr('<span class="dim">take one with <span class="c">gig &lt;id&gt;</span> · walk away with <span class="c">gig drop</span>. these repeat forever.</span>');return;}
   const g=GIGS.find(x=>x.id.toLowerCase()===id);
   if(!g){pr('no open gig with that id. <span class="c">gig list</span>','err');return;}
-  if(S.active){pr('finish or drop your current job first.','warn');return;}
+  if(S.active){pr('finish your current job first — or <span class="c">gig drop</span> if it\'s too hot.','warn');return;}
   S.active=g.id;S.activeGig=g.id;g._done=false;S.jobStarted=true;persist();
   pr(`accepted gig: <span class="c">${g.subj}</span> — target <span class="warn">${TARGETS[g.target].ip}</span>`,'ok');
   pr(`objective: <span class="warn">${objText(g)}</span>. begin with <span class="c">scan ${TARGETS[g.target].ip}</span>.`);}
@@ -863,6 +890,7 @@ const PROGINFO={
  netlynx:{n:'1NetLynx',tag:'decoder',what:'Peels a target\'s botnet back toward its real origin. Sequential chains only — an amorphous mesh will defeat it.',how:'resolve &lt;handle&gt; · decode &lt;ip&gt;'},
  loic:{n:'Low Orbit Ion Cannon',tag:'booter',what:'Floods a resolved IP until the person behind it drops off the wire. Loud and easy to fingerprint — but it drops anyone who is not watching their pipe.',how:'boot &lt;ip&gt;'},
  monitorme:{n:'MonitorMe GUI',tag:'botnet monitor',what:'Pings the IPs in your botnet and tells you which one a reverse-trace has reached. Burn that IP and the trace loses the thread.',how:'monitor · burn &lt;ip&gt;'},
+ wirecli:{n:'WireCLI',tag:'job board client',what:'The Wire\'s paid-work board is machine-readable — this is the client that reads it. Lists open freeplay gigs, takes one, and lets you walk away from a job that turns out hotter than it paid for.',how:'gig list · gig &lt;id&gt; · gig drop'},
  parity:{n:'Parity via 1NetLynx',tag:'decoder',what:'Adds shaky amorphous-mesh support to 1NetLynx. It peels one node per pass and collapses about 4 times in 10 — but it is free, and it is the only free thing that touches a mesh.',how:'decode &lt;ip&gt;'},
  prime:{n:'Parity Prime',tag:'decoder',what:'A real amorphous decoder. Two nodes per pass, no collapses, and it walks sequential R00tKernel chains without complaining.',how:'decode &lt;ip&gt; · resolve &lt;handle&gt;'},
  occulus:{n:'Partisan Occulus',tag:'decoder',what:'Multicore. Basetracks four mesh nodes per pass and bruteforces R00tKernel chains. This is the decoder people save up for.',how:'decode &lt;ip&gt;'},
@@ -1232,7 +1260,7 @@ const KEY='units_os_save', PKEY='units_os_prefs';
 let S=null, P={crt:true,snd:true,music:true,vol:0.8,scan:0.6,autohint:false};
 function defaultSave(h){const soft={};for(const k in SOFT)soft[k]=SOFT[k].start;
   return {handle:h,creds:200,rating:0,soft,completed:[],active:null,seen:['m0'],read:[],flags:{},heat:0,discovered:[],im:{},imUnread:{},
-    crackers:[],booters:[],monitors:[],decoders:[],tools:[],explained:[],mesh:null,botnet:null,rep:0,booted:[],jobStarted:false,rerouted:0,resolved:{},unaware:{},trollIps:{},activeGig:null};}
+    crackers:[],booters:[],monitors:[],decoders:[],tools:[],explained:[],mesh:null,botnet:null,rep:0,booted:[],jobStarted:false,pendingClaim:null,rerouted:0,resolved:{},unaware:{},trollIps:{},activeGig:null};}
 /* storage is per-browser and per-visitor: every player gets their own private save */
 let storageOK=null,storageWarned=false;
 function storageAvailable(){if(storageOK!==null)return storageOK;
@@ -1389,7 +1417,8 @@ function cmdHint(){const m=activeMission();
   const say=(t,c)=>pr('<span class="phos">▸ next:</span> '+t,c);
   if(!hasBrew())return say('your deck has no tools yet. install the package manager: <span class="c">getbrew stable</span>');
   if(!bestCracker())return say('you need something that can break a password: <span class="c">brew install havencracker</span>');
-  if(!m)return say('you have no job. open your <span class="c">mail</span> (Inbox) and accept a contract — or take a freeplay gig with <span class="c">gig list</span>.');
+  if(S.pendingClaim)return say('your work is done — open your <span class="c">Inbox</span> and hit the green <span class="c">COMPLETE TASK</span> button to get paid.');
+  if(!m)return say('you have no job. open your <span class="c">mail</span> (Inbox) and accept a contract'+(owned('tools','wirecli')?' — or take a freeplay gig with <span class="c">gig list</span>.':'.'));
   if(!S.jobStarted&&!m.gig)return say(`${m.from} sent you the details — open <span class="c">Messenger</span> and hit <span class="c">▶ START JOB</span>.`);
   if(m.boot){const ip=(S.resolved||{})[m.obj.handle];
     if(!ip)return say(`you need @${m.obj.handle}'s real IP. forums don't show IPs — trick it out of him: <span class="c">bait ${m.obj.handle}</span>`);
@@ -1472,7 +1501,7 @@ function cmdHelp(){pr('<span class="c">── command reference ──</span>');
   g('the payload',[['ls / cat &lt;f&gt;','list / read files'],['decrypt &lt;f&gt;','decrypt a file'],['download &lt;f&gt;','copy a file'],['delete &lt;f&gt;','delete a file'],['modify &lt;f&gt;','alter a record'],['transfer &lt;amt&gt;','move funds to you'],['submit &lt;ip&gt;','answer an investigation']]);
   g('the exit',[['deletelogs','wipe your trail — do it BEFORE leaving (or heat rises)'],['disconnect','drop the line'],['abort','cancel running tool(s)']]);
   g('software',[['brew list','free packages on the wire'],['brew install &lt;pkg&gt;','install one (havencracker, 1netlynx…)'],['shop / buy &lt;id&gt;','paid gear & hardware']]);
-  if(S.flags.tutDone)g('freeplay',[['gig list','open gigs posted on the Forums'],['gig &lt;id&gt;','take one — repeatable, grind between contracts']]);
+  if(S.flags.tutDone)g('freeplay',[['brew install wire','the job-board client (once)'],['gig list','open gigs on The Wire'],['gig &lt;id&gt;','take one — repeatable'],['gig drop','walk away from a job that got too hot']]);
   if(S.flags.booterUnlocked)g('people',[['bait &lt;handle&gt;','social-engineer their origin out of them'],['resolve &lt;handle&gt;','decode their botnet to expose them'],['boot &lt;ip&gt;','flood a resolved origin']]);
   g('life admin',[['mail','contracts & messages'],['laylow','burn heat when trails follow you'],['settings','crt, sound, music'],['status','who you are']]);
   pr('<span class="dim">Memory Banks let you run tools in parallel — crack + decrypt at once beats a fast trace.</span>');
@@ -1671,7 +1700,21 @@ function cmdDisconnect(){if(!G.conn){pr('not connected.','dim');return;}const t=
   $('tbConn').textContent='offline';$('tracePill').classList.add('hidden2');$('tracePill').classList.remove('active');
   $('tbTrace').style.width='0%';$('tbTracePct').textContent='—';prompt();drawMap();humStop();
   if(objDone)completeMission(m);else pr('disconnected.','ok');tutHook('disconnect');blip(300,0.1,'sine',0.05,180);}
-function completeMission(m){let pay=m.pay;
+/* finishing the work and collecting the fee are two separate beats */
+function completeMission(m){
+  if(m.gig)return awardJob(m);                       // freeplay gigs pay out instantly
+  m._done=true;S.pendingClaim=m.id;S.active=null;S.jobStarted=false;persist();
+  pr('');pr(`<span class="ok">◈ WORK COMPLETE — ${m.subj}</span>`);
+  pr(`<span class="phos">▸ collect your fee: open your <span class="c">Inbox</span> and hit COMPLETE TASK.</span>`);
+  renderJobPanel();openWin('Inbox',true);selMail=m.id;renderInbox();refreshOpenMail();
+  blip(880,0.16,'sine',0.06,1250);}
+function claimJob(){const m=MISSIONS.find(x=>x.id===S.pendingClaim);if(!m)return;
+  S.pendingClaim=null;awardJob(m);
+  selMail=null;$('mdetail').classList.remove('show');$('mdetail').innerHTML='';   // collapse so the next contract is visible
+  renderInbox();
+  const nxt=MISSIONS.find(x=>missionAvail(x));
+  if(nxt)pr(`<span class="phos">▸ new contract available: ${nxt.subj} — from ${nxt.from}</span>`);}
+function awardJob(m){let pay=m.pay;
   const remote=!!(m.mesh||m.boot);            // no host was entered — there are no logs to leave
   const clean=remote||G.logsDeleted;
   if(!clean){pay=Math.floor(pay*0.55);const gain=S.soft.spoofer?7:15;S.heat=clamp(S.heat+gain,0,100);
@@ -1789,30 +1832,51 @@ function notify(from,subj){const box=$('toast');const el=document.createElement(
   el.innerHTML=`<div class="tf">✉ ${from}</div><div class="ts">${subj}</div>`;box.appendChild(el);blip(1100,0.09,'sine',0.05,1500);setTimeout(()=>blip(1400,0.09,'sine',0.05),90);
   updateBadge();renderInbox();setTimeout(()=>{el.style.transition='opacity .5s';el.style.opacity='0';setTimeout(()=>el.remove(),500);},5200);}
 let selMail=null;
+function mailState(m){return {isNote:!!m.note,done:S.completed.includes(m.id),active:S.active===m.id,
+  pending:S.pendingClaim===m.id,avail:m.note?noteUnlocked(m):missionAvail(m)};}
+function refreshOpenMail(){if(!selMail)return;
+  const m=MISSIONS.find(x=>x.id===selMail)||GIGS.find(g=>g.id===selMail);if(m)showMail(m);}
 function renderInbox(){const list=$('mlist');list.innerHTML='';
-  MISSIONS.forEach(m=>{const isNote=m.note,unlocked=isNote?noteUnlocked(m):true;if(isNote&&!unlocked)return;
-    const avail=missionAvail(m),done=S.completed.includes(m.id),active=S.active===m.id;
-    if(!isNote&&!avail&&!done&&!active)return; // never reveal contracts you haven't earned
-    const unread=!S.read.includes(m.id)&&(avail||active||isNote);
+  const items=MISSIONS.slice();
+  const ag=GIGS.find(g=>g.id===S.active);if(ag)items.push(ag);   // your live gig shows here too
+  items.forEach(m=>{const st=mailState(m);
+    if(st.isNote&&!st.avail)return;
+    if(!st.isNote&&!m.gig&&!st.avail&&!st.done&&!st.active&&!st.pending)return; // never reveal unearned contracts
+    const unread=!S.read.includes(m.id)&&(st.avail||st.active||st.isNote);
     const el=document.createElement('div');
-    el.className='mail'+(done?' done':'')+(active?' sel':'')+(!avail&&!done&&!active&&!isNote?' locked':'')+(unread?' unread':'');
-    const bdg=isNote?'<span class="bdg msg">✦ message</span>':done?'<span class="bdg done">✓ done</span>':active?'<span class="bdg act">● active</span>':(!avail?`<span class="bdg lock">🔒 rank ${m.rankReq}</span>`:'<span class="bdg act">● open</span>');
-    el.innerHTML=`${bdg}<div class="fr">from: ${m.from}</div><div class="su">${m.subj}</div>${isNote?'':`<div class="pay">+${m.pay}c · +${m.rating} rating</div>`}`;
+    el.className='mail'+(st.done?' done':'')+((st.active||st.pending)?' sel':'')+(unread?' unread':'');
+    const kind=st.isNote?'<span class="kind msg">message</span>'
+      :m.gig?'<span class="kind gig">gig</span>':'<span class="kind story">story</span>';
+    const bdg=st.pending?'<span class="bdg pend">✓ ready to collect</span>'
+      :st.isNote?'<span class="bdg msg">✦ message</span>'
+      :st.done?'<span class="bdg done">✓ done</span>'
+      :st.active?'<span class="bdg act">● active</span>'
+      :'<span class="bdg act">● open</span>';
+    el.innerHTML=`${bdg}${kind}<div class="fr">from: ${m.from}</div><div class="su">${m.subj}</div>${st.isNote?'':`<div class="pay">+${m.pay}c · +${m.rating} rating</div>`}`;
     el.onclick=()=>{selMail=m.id;if(!S.read.includes(m.id)){S.read.push(m.id);persist();updateBadge();}
-      showMail(m,avail,done,active,isNote);document.querySelectorAll('.mail').forEach(x=>x.classList.remove('sel','unread'));el.classList.add('sel');blip(700,0.04);};
+      showMail(m);document.querySelectorAll('.mail').forEach(x=>x.classList.remove('sel','unread'));el.classList.add('sel');blip(700,0.04);};
     list.appendChild(el);});updateBadge();}
-function showMail(m,avail,done,active,isNote){const d=$('mdetail');d.classList.add('show');const t=TARGETS[m.target];
-  d.innerHTML=`<div class="fr" style="color:${isNote?'var(--magenta)':'var(--cyan)'}">from: ${m.from}</div>
+function showMail(m){const d=$('mdetail');d.classList.add('show');
+  const st=mailState(m),t=TARGETS[m.target],reveal=st.active||st.done||st.pending;
+  const kind=st.isNote?'<span class="kind msg">message</span>':m.gig?'<span class="kind gig">gig</span>':'<span class="kind story">story</span>';
+  let btn;
+  if(st.pending)      btn=`<button class="mbtn claim" id="claimBtn">✓ complete task — collect ${m.pay}c</button>`;
+  else if(st.done)    btn=`<button class="mbtn" disabled>completed</button>`;
+  else if(st.active)  btn=`<button class="mbtn" disabled>in progress — see Messenger</button>`;
+  else if(st.avail)   btn=`<button class="mbtn" id="acceptBtn">accept contract</button>`;
+  else                btn=`<button class="mbtn" disabled>rank ${m.rankReq} required</button>`;
+  d.innerHTML=`<div class="fr" style="color:${st.isNote?'var(--magenta)':'var(--cyan)'}">from: ${m.from} ${kind}</div>
     <div style="font-size:14px;color:#eafcff;margin:3px 0;">${m.subj}</div>
-    <div class="body">${m.body}</div>`+(isNote?'':
-    `<div><span class="k">target:</span> ${(active||done)
-        ?`<span class="vc">${m.boot?'@'+m.obj.handle:m.mesh?MESHES[m.mesh].ip:t.ip}</span> <span class="k">(${m.boot?'forum user — origin unknown':m.mesh?MESHES[m.mesh].type+' mesh':t.name})</span>`
+    <div class="body">${m.body}</div>`+(st.isNote?'':
+    `<div><span class="k">target:</span> ${reveal
+        ?`<span class="vc">${m.boot?'@'+m.obj.handle:m.mesh?MESHES[m.mesh].ip:(t?t.ip:'—')}</span> <span class="k">(${m.boot?'forum user — origin unknown':m.mesh?MESHES[m.mesh].type+' mesh':(t?t.name:'')})</span>`
         :`<span class="k">withheld — sent by ${m.from} on acceptance</span>`}</div>
      <div><span class="k">objective:</span> <span class="v">${objText(m)}</span></div>
-     <div><span class="k">security:</span> ${(active||done)?(m.boot?'unknown — resolve him first':m.mesh?MESHES[m.mesh].layers+' mesh nodes ('+MESHES[m.mesh].type+')':(t.locks.length?t.locks.join(' · '):'none')):'<span class="k">withheld</span>'}</div>
+     <div><span class="k">security:</span> ${reveal?(m.boot?'unknown — resolve him first':m.mesh?MESHES[m.mesh].layers+' mesh nodes ('+MESHES[m.mesh].type+')':(t&&t.locks.length?t.locks.join(' · '):'none')):'<span class="k">withheld</span>'}</div>
      <div><span class="k">reward:</span> <span class="v">+${m.pay}c</span> · +${m.rating} rating</div>
-     <button class="mbtn" id="acceptBtn" ${(!avail||active)?'disabled':''}>${done?'completed':active?'active':avail?'accept contract':'rank too low'}</button>`);
-  const b=$('acceptBtn');if(b&&avail&&!active)b.onclick=()=>{cmdAccept([m.id]);openWin('Terminal',true);};}
+     ${btn}`);
+  const a=$('acceptBtn');if(a)a.onclick=()=>{cmdAccept([m.id]);renderInbox();refreshOpenMail();};
+  const c=$('claimBtn');if(c)c.onclick=()=>{claimJob();chord([523,659,784]);};}
 function renderShop(){const b=$('shopBody');b.innerHTML='';
   const mk=(title,keys)=>{const h=document.createElement('div');h.className='shophd';h.textContent=title;b.appendChild(h);
     keys.forEach(k=>{const s=SOFT[k],lvl=S.soft[k],maxed=lvl>=s.max,cost=Math.round(s.base*Math.pow(1.7,lvl));
@@ -2311,7 +2375,8 @@ function boot(){const saved=loadSave();
   $('continueBtn').onclick=()=>{ai();S=saved;S.seen=S.seen||['m0'];S.read=S.read||[];S.flags=S.flags||{};S.heat=S.heat||0;S.discovered=S.discovered||[];S.im=S.im||{};S.imUnread=S.imUnread||{};
     S.crackers=S.crackers||[];S.booters=S.booters||[];S.monitors=S.monitors||[];S.decoders=S.decoders||[];S.botnet=S.botnet||null;S.rep=S.rep||0;S.booted=S.booted||[];S.rerouted=S.rerouted||0;
     S.resolved=S.resolved||{};S.unaware=S.unaware||{};S.trollIps=S.trollIps||{};S.tools=S.tools||[];S.explained=S.explained||[];
-    if(S.jobStarted==null)S.jobStarted=!!S.active;   // old saves mid-job stay playable
+    if(S.jobStarted==null)S.jobStarted=!!S.active;
+    if(S.pendingClaim===undefined)S.pendingClaim=null;   // old saves mid-job stay playable
     for(const k in SOFT)if(S.soft[k]==null)S.soft[k]=SOFT[k].start;syncRoute();startDesktop();};
   $('wipeLink').onclick=()=>{localStorage.removeItem(KEY);location.reload();};}
 window.addEventListener('load',()=>{loadPrefs();applyPrefs();
