@@ -751,66 +751,48 @@ function cmdGig(a){const id=(a[0]||'').toLowerCase();
   pr(`objective: <span class="warn">${objText(g)}</span>. begin with <span class="c">scan ${TARGETS[g.target].ip}</span>.`);}
 
 /* ---------- SQLaudit File Manager: the real way to wipe your trail ---------- */
-function logDate(){const d=new Date();return pad(d.getMonth()+1)+'-'+pad(d.getDate())+'-'+String(d.getFullYear()).slice(2);}
-function logPath(){return '~/logs/'+logDate()+'/logs';}
-function fsDirs(){const d=logDate(),p={};
-  p['~']=['logs/','www/','etc/','tmp/'];
-  p['~/logs']=[d+'/'];
-  p['~/logs/'+d]=['logs/','audit/'];
-  p['~/logs/'+d+'/logs']=G.logFiles||[];
-  p['~/logs/'+d+'/audit']=['checksum.idx'];
-  p['~/www']=['index.html','assets/'];
-  p['~/etc']=['passwd.shadow','hosts'];
-  p['~/tmp']=[];
-  return p;}
+/* SQLaudit — mount, list, delete by number, exit. No path navigation. */
 function cmdSqlaudit(a){
   if(!owned('tools','sqlaudit')){pr('SQLaudit File Manager is not installed.','err');
     pr('<span class="dim">pull it from the free shelf: <span class="c">brew install sqlaudit</span></span>');return;}
   const sub=(a[0]||'').toLowerCase();
-  if(sub==='disconnect'||sub==='exit'){if(!G.fm){pr('SQLaudit is not attached.','dim');return;}
-    G.fm=null;prompt();pr('<span class="ok">✓ SQLaudit detached — audit session closed cleanly.</span>');tutHook('fmdetach');return;}
+  if(sub==='exit'||sub==='disconnect'||sub==='quit'){if(!G.fm){pr('SQLaudit is not attached.','dim');return;}
+    G.fm=null;prompt();pr('<span class="ok">✓ SQLaudit closed — audit session ended cleanly.</span>');tutHook('fmdetach');return;}
+  if(sub==='seelogs'||sub==='logs'){return fmSeeLogs();}
+  if(sub){pr('usage: <span class="c">sq seelogs</span> · <span class="c">delete log &lt;#&gt;</span> · <span class="c">sq exit</span>','dim');return;}
   if(!needConn())return;
-  if(G.fm){pr('SQLaudit already attached. <span class="c">cd</span> / <span class="c">ls</span> / <span class="c">rm</span>','warn');return;}
+  if(G.fm){pr('SQLaudit is already open. <span class="c">sq seelogs</span>','warn');return;}
   if(!G.access){pr('you need file access on the host first.','err');return;}
-  runOp('SQLaudit → mounting remote filesystem',2.0,()=>{
-    G.fm={cwd:'~'};prompt();artLine(ART.sqlaudit);
-    pr('<span class="ok">◈ SQLaudit attached.</span> remote filesystem mounted read/write.');
-    pr(`<span class="dim">their access logs live under <span class="c">${logPath()}</span> — navigate with <span class="c">cd</span>, list with <span class="c">ls</span>, wipe with <span class="c">rm *</span>.</span>`);
+  runOp('SQLaudit → opening audit session',2.0,()=>{
+    G.fm={open:true};prompt();artLine(ART.sqlaudit);
+    pr('<span class="ok">◈ SQLaudit open.</span> you can read and write this host\'s audit records.');
+    pr('<span class="dim">list what they logged about you: <span class="c">sq seelogs</span></span>');
     tutHook('fmattach');explain('sqlaudit');});}
-function normPath(cur,arg){
-  if(!arg||arg==='.')return cur;
-  if(arg==='~')return '~';
-  if(arg.startsWith('~'))return arg.replace(/\/+$/,'');
-  let parts=cur.split('/');
-  arg.split('/').forEach(seg=>{if(!seg||seg==='.')return;
-    if(seg==='..'){if(parts.length>1)parts.pop();}else parts.push(seg);});
-  return parts.join('/').replace(/\/+$/,'');}
-function cmdCd(a){if(!G.fm){pr('no filesystem mounted. attach <span class="c">sqlaudit</span> first.','err');return;}
-  const dirs=fsDirs(),target=normPath(G.fm.cwd,(a[0]||'~').replace(/\/+$/,''));
-  if(!(target in dirs)){pr(`cd: no such directory: ${escapeHtml(a[0]||'')}`,'err');return;}
-  G.fm.cwd=target;prompt();pr(`<span class="dim">${target}</span>`);
-  if(target===logPath())tutHook('fmcd');}
-function fmLs(){const dirs=fsDirs(),cur=G.fm.cwd,items=dirs[cur]||[];
-  pr(`<span class="c">${cur}</span>`);
-  if(!items.length){pr('  <span class="dim">(empty)</span>');return;}
-  items.forEach(x=>pr(`  ${x.endsWith('/')?`<span class="c">${x}</span>`:`<span class="ok">${x}</span>`}`));
-  if(cur===logPath())tutHook('fmls');}
-function cmdRm(a){if(!G.fm){pr('rm: no filesystem mounted. attach <span class="c">sqlaudit</span>.','err');return;}
-  const cur=G.fm.cwd,arg=(a[0]||'').replace('-rf','').trim()||a[1]||'';
-  if(cur!==logPath()){pr('rm: permission denied — SQLaudit only has write access to the audit tree.','err');
-    pr(`<span class="dim">the logs you want are in <span class="c">${logPath()}</span></span>`);return;}
+function fmSeeLogs(){if(!G.fm){pr('SQLaudit isn\'t open. run <span class="c">sqlaudit</span> first.','err');return;}
   const files=G.logFiles||[];
-  if(!files.length){pr('nothing left to delete here.','dim');return;}
-  const all=arg==='*'||arg==='-rf'||arg==='';
-  if(!all&&!files.includes(arg)){pr(`rm: no such file: ${escapeHtml(arg)}`,'err');return;}
-  const doomed=all?files.slice():[arg];
-  runOp(`SQLaudit → shredding ${doomed.length} file(s)`,1.2+doomed.length*0.35,()=>{
+  pr('<span class="c">access logs on this host</span>');
+  if(!files.length){pr('  <span class="ok">(none — you were never here)</span>');return;}
+  files.forEach((f,i)=>pr(`  <span class="warn">${i+1}.</span> ${f}`));
+  pr(`<span class="dim">delete them one at a time: <span class="c">delete log 1</span>  (or <span class="c">delete log all</span>)</span>`);
+  tutHook('fmls');}
+function cmdDeleteLog(a){if(!G.fm){pr('SQLaudit isn\'t open. run <span class="c">sqlaudit</span> first.','err');return;}
+  const files=G.logFiles||[];
+  if(!files.length){pr('there are no logs left.','dim');return;}
+  const arg=(a[0]||'').toLowerCase();
+  if(!arg){pr('usage: <span class="c">delete log &lt;#&gt;</span> — see the numbers with <span class="c">sq seelogs</span>','dim');return;}
+  const all=arg==='all'||arg==='*';
+  let doomed;
+  if(all)doomed=files.slice();
+  else{const n=parseInt(arg);
+    if(!n||n<1||n>files.length){pr(`no log #${escapeHtml(arg)}. there are ${files.length}. try <span class="c">sq seelogs</span>.`,'err');return;}
+    doomed=[files[n-1]];}
+  runOp(`SQLaudit → shredding ${doomed.length} record(s)`,1.0+doomed.length*0.3,()=>{
     doomed.forEach(f=>{G.logFiles=G.logFiles.filter(x=>x!==f);pr(`  <span class="warn">✗ ${f} shredded</span>`);});
     if(!G.logFiles.length){G.logsDeleted=true;
-      pr('<span class="ok">✓ access log directory empty — you were never on this host.</span>');
-      pr('<span class="dim">now detach cleanly: <span class="c">sqlaudit disconnect</span></span>');
+      pr('<span class="ok">✓ every access log gone — you were never on this host.</span>');
+      pr('<span class="dim">close the session: <span class="c">sq exit</span></span>');
       tutHook('fmrm');blip(900,0.16,'sine',0.06,1300);}
-    else pr(`<span class="dim">${G.logFiles.length} log file(s) remain.</span>`);});}
+    else pr(`<span class="dim">${G.logFiles.length} log(s) remain — <span class="c">sq seelogs</span></span>`);});}
 
 /* ---------- MFMMO early-access reward codes ---------- */
 const CODES={
@@ -858,7 +840,7 @@ function cmdCodes(){const list=(S.codes||[]);
 const PROGINFO={
  brew:{n:'brew',tag:'package manager',what:'Fetches and installs free software onto your deck. Nobody in New Milos pays for tools that were given away.',how:'brew list · brew install &lt;pkg&gt;'},
  hc:{n:'HavenCracker 1.0',tag:'password cracker',what:'Bruteforces a host\'s password lock. Sable wrote it and gave it away — it is the baseline every runner learns on. Faster crackers exist; none are free.',how:'hc  (or just: crack)'},
- sqlaudit:{n:'SQLaudit File Manager',tag:'remote filesystem',what:'Mounts the target\'s filesystem so you can walk it like your own. This is how you delete your access logs — there is no magic one-shot command for covering your tracks.',how:'sqlaudit → cd &lt;dir&gt; → ls → rm * → sqlaudit disconnect'},
+ sqlaudit:{n:'SQLaudit File Manager',tag:'audit records',what:'Opens a session on the target\'s audit records so you can read and shred what they logged about you. This is how you cover your tracks — there is no one-shot command for it.',how:'sqlaudit → sq seelogs → delete log &lt;#&gt; → sq exit'},
  netlynx:{n:'1NetLynx',tag:'decoder',what:'Peels a target\'s botnet back toward its real origin. Sequential chains only — an amorphous mesh will defeat it.',how:'resolve &lt;handle&gt; · decode &lt;ip&gt;'},
  loic:{n:'Low Orbit Ion Cannon',tag:'booter',what:'Floods a resolved IP until the person behind it drops off the wire. Loud and easy to fingerprint — but it drops anyone who is not watching their pipe.',how:'boot &lt;ip&gt;'},
  monitorme:{n:'MonitorMe GUI',tag:'botnet monitor',what:'Pings the IPs in your botnet and tells you which one a reverse-trace has reached. Burn that IP and the trace loses the thread.',how:'monitor · burn &lt;ip&gt;'},
@@ -1184,10 +1166,29 @@ let S=null, P={crt:true,snd:true,music:true,vol:0.8,scan:0.6,autohint:false};
 function defaultSave(h){const soft={};for(const k in SOFT)soft[k]=SOFT[k].start;
   return {handle:h,creds:200,rating:0,soft,completed:[],active:null,seen:['m0'],read:[],flags:{},heat:0,discovered:[],im:{},imUnread:{},
     crackers:[],booters:[],monitors:[],decoders:[],tools:[],explained:[],mesh:null,botnet:null,rep:0,booted:[],rerouted:0,resolved:{},unaware:{},trollIps:{},activeGig:null};}
-function loadSave(){try{return JSON.parse(localStorage.getItem(KEY));}catch(e){return null;}}
-function persist(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+/* storage is per-browser and per-visitor: every player gets their own private save */
+let storageOK=null,storageWarned=false;
+function storageAvailable(){if(storageOK!==null)return storageOK;
+  try{const k='__units_probe';localStorage.setItem(k,'1');localStorage.removeItem(k);storageOK=true;}
+  catch(e){storageOK=false;}
+  return storageOK;}
+function storageWarn(msg){if(storageWarned)return;storageWarned=true;
+  try{pr('');pr('<span class="err">⚠ PROGRESS CANNOT BE SAVED</span>');
+    pr(`<span class="warn">${msg}</span>`);
+    pr('<span class="dim">your run will work normally but will be lost when you close this tab. private/incognito windows and blocked site-data settings cause this.</span>');}catch(e){}}
+function loadSave(){if(!storageAvailable())return null;
+  try{const raw=localStorage.getItem(KEY);return raw?JSON.parse(raw):null;}
+  catch(e){return null;}}                                   // corrupt save → start fresh rather than crash
+function persist(){if(!S)return;
+  if(!storageAvailable()){storageWarn('this browser is blocking site storage.');return;}
+  try{localStorage.setItem(KEY,JSON.stringify(S));}
+  catch(e){storageWarn(e&&e.name==='QuotaExceededError'?'browser storage is full.':'the browser refused to write your save.');}}
+/* belt and braces for a public build: periodic autosave + save on the way out */
+setInterval(()=>{if(S)persist();},20000);
+window.addEventListener('beforeunload',()=>{if(S)persist();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&S)persist();});
 function loadPrefs(){try{const p=JSON.parse(localStorage.getItem(PKEY));if(p)P=p;}catch(e){}}
-function savePrefs(){try{localStorage.setItem(PKEY,JSON.stringify(P));}catch(e){}}
+function savePrefs(){if(!storageAvailable())return;try{localStorage.setItem(PKEY,JSON.stringify(P));}catch(e){}}
 
 /* ================= runtime ================= */
 const G={conn:null,cleared:new Set(),access:false,trace:0,tracedNode:-1,active2:false,logsDeleted:false,
@@ -1233,7 +1234,7 @@ function pr(txt,cls){const d=document.createElement('div');if(cls)d.className=cl
 function typeLine(txt,cls,cb){ // typewriter for dramatic lines
   const d=pr('',cls);let i=0;const iv=setInterval(()=>{d.innerHTML=txt.slice(0,i)+'<span class="curs"></span>';i++;out.scrollTop=out.scrollHeight;
     if(i>txt.length){clearInterval(iv);d.innerHTML=txt;cb&&cb();}},14);return d;}
-function prompt(){$('prompt').textContent=G.fm?`sqlaudit:${G.fm.cwd}#`:(G.conn?`agent@${G.conn.ip}#`:`${S?S.handle:'agent'}@units:~$`);}
+function prompt(){$('prompt').textContent=G.fm?`sqlaudit@${G.conn?G.conn.ip:'host'}#`:(G.conn?`agent@${G.conn.ip}#`:`${S?S.handle:'agent'}@units:~$`);}
 function escapeHtml(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
 
 /* ================= boot ================= */
@@ -1349,11 +1350,10 @@ function cmdHint(){const m=activeMission();
       if(!doneP){if(f&&f.enc)return say(`${p.file} is encrypted — <span class="c">decrypt ${p.file}</span> first`);
         return say(`${p.type==='download'?'take':p.type==='delete'?'destroy':'rewrite'} it: <span class="c">${p.type} ${p.file}</span>`);}}}}
   if(!G.logsDeleted){
-    if(!owned('tools','sqlaudit'))return say('before you leave, you must wipe their logs. get the file manager: <span class="c">brew install sqlaudit</span>');
-    if(!G.fm)return say('mount their filesystem: <span class="c">sqlaudit</span>');
-    if(G.fm.cwd!==logPath())return say(`go to their log folder: <span class="c">cd ${logPath()}</span>`);
-    return say('shred them: <span class="c">ls</span> to see them, then <span class="c">rm *</span>');}
-  if(G.fm)return say('detach cleanly: <span class="c">sqlaudit disconnect</span>');
+    if(!owned('tools','sqlaudit'))return say('before you leave, you must wipe their logs. get the tool: <span class="c">brew install sqlaudit</span>');
+    if(!G.fm)return say('open the audit session: <span class="c">sqlaudit</span>');
+    return say(`shred them: <span class="c">sq seelogs</span> to list them, then <span class="c">delete log 1</span> (or <span class="c">delete log all</span>)`);}
+  if(G.fm)return say('close the session: <span class="c">sq exit</span>');
   return say('you\'re done here — get out: <span class="c">disconnect</span>');}
 
 const COMMANDS={
@@ -1375,9 +1375,11 @@ const COMMANDS={
   monitor:()=>{openWin('Monitor',true);pr('opening monitor…','dim');},
   rep:()=>pr(`<span class="c">forum rep</span> ${S.rep||0} — <span class="phos">${forumRank()}</span>   <span class="dim">boot the mouthy ones to climb.</span>`),
   ls:()=>cmdLs(),dir:()=>cmdLs(),cat:a=>cmdCat(a),read:a=>cmdCat(a),
-  sqlaudit:a=>cmdSqlaudit(a),cd:a=>cmdCd(a),
+  sqlaudit:a=>cmdSqlaudit(a),sq:a=>cmdSqlaudit(a.length?a:['?']),seelogs:()=>fmSeeLogs(),
   decrypt:a=>cmdDecrypt(a),download:a=>cmdDownload(a),copy:a=>cmdDownload(a),
-  delete:a=>cmdDelete(a),rm:a=>(G.fm?cmdRm(a):cmdDelete(a)),modify:a=>cmdModify(a),edit:a=>cmdModify(a),
+  delete:a=>((a[0]||'').toLowerCase()==='log'?cmdDeleteLog(a.slice(1)):cmdDelete(a)),
+  rm:a=>((a[0]||'').toLowerCase()==='log'?cmdDeleteLog(a.slice(1)):cmdDelete(a)),
+  modify:a=>cmdModify(a),edit:a=>cmdModify(a),
   transfer:a=>cmdTransfer(a),submit:a=>cmdSubmit(a),
   deletelogs:()=>cmdDeleteLogs(),cleanlogs:()=>cmdDeleteLogs(),
   disconnect:()=>cmdDisconnect(),exit:()=>cmdDisconnect(),
@@ -1518,7 +1520,7 @@ function cmdBypass(a){const w=(a[0]||'').toLowerCase();if(w==='firewall')return 
 /* ---------- files ---------- */
 function needAccess(){if(!needConn())return false;if(!G.access){pr('access denied — the locks are still up.','err');return false;}return true;}
 function findFile(n){return G.conn&&G.conn.files.find(f=>f.name===n&&!f.deleted);}
-function cmdLs(){if(G.fm)return fmLs();
+function cmdLs(){if(G.fm)return fmSeeLogs();
   if(!needAccess())return;pr(`<span class="c">${G.conn.ip}:/</span>`);
   G.conn.files.filter(f=>!f.deleted).forEach(f=>{const t=[];if(f.enc)t.push('<span class="err">enc</span>');if(f.obj)t.push('<span class="warn">◈</span>');if(f.got)t.push('<span class="ok">copied</span>');if(f.modified)t.push('<span class="ok">edited</span>');
     pr(`  ${f.name.padEnd(20)} <span class="dim">${t.join(' ')}</span>`);});
@@ -1565,11 +1567,10 @@ function cmdDeleteLogs(){if(!needConn())return;
   pr('<span class="warn">there is no one-shot for this.</span> logs live on <em>their</em> filesystem — you have to go in and shred them yourself.');
   pr('<span class="dim">procedure:</span>');
   pr(`  1. <span class="c">brew install sqlaudit</span> <span class="dim">(once)</span>`);
-  pr(`  2. <span class="c">sqlaudit</span> <span class="dim">— mount their filesystem</span>`);
-  pr(`  3. <span class="c">cd ${logPath()}</span>`);
-  pr(`  4. <span class="c">ls</span> <span class="dim">— see what they logged</span>`);
-  pr(`  5. <span class="c">rm *</span> <span class="dim">— shred it all</span>`);
-  pr(`  6. <span class="c">sqlaudit disconnect</span> <span class="dim">then</span> <span class="c">disconnect</span>`);}
+  pr(`  2. <span class="c">sqlaudit</span> <span class="dim">— open an audit session</span>`);
+  pr(`  3. <span class="c">sq seelogs</span> <span class="dim">— see what they logged</span>`);
+  pr(`  4. <span class="c">delete log 1</span> <span class="dim">— repeat, or</span> <span class="c">delete log all</span>`);
+  pr(`  5. <span class="c">sq exit</span> <span class="dim">then</span> <span class="c">disconnect</span>`);}
 
 /* ---------- objective ---------- */
 function checkObjective(){const m=activeMission();if(!m||!m.obj||m._done)return;
@@ -1590,7 +1591,7 @@ function checkObjective(){const m=activeMission();if(!m||!m.obj||m._done)return;
 function cmdDisconnect(){if(!G.conn){pr('not connected.','dim');return;}const t=G.conn,m=activeMission();
   if(G.fm){G.fm=null;S.heat=clamp((S.heat||0)+6,0,100);updateHeat();
     pr('<span class="warn">⚠ you dropped the line with SQLaudit still mounted — the orphaned audit session is evidence. heat +6.</span>');
-    pr('<span class="dim">next time: <span class="c">sqlaudit disconnect</span> before you disconnect.</span>');}
+    pr('<span class="dim">next time: <span class="c">sq exit</span> before you disconnect.</span>');}
   pr(`<span class="dim">closing connection to ${t.ip}…</span>`);const objDone=m&&m._done&&t===TARGETS[m.target];
   G.conn=null;G.access=false;G.trace=0;G.tracedNode=-1;G.cleared=new Set();
   $('tbConn').textContent='offline';$('tracePill').classList.add('hidden2');$('tracePill').classList.remove('active');
@@ -2148,11 +2149,11 @@ const TUT=[
  {id:'crack',label:'break the password  (hc)'},
  {id:'ls',label:'list its files  (ls)'},
  {id:'download',label:'steal sample.dat  (download sample.dat)'},
- {id:'brewinstall_sqlaudit',label:'get a file manager  (brew install sqlaudit)'},
- {id:'fmattach',label:'mount their filesystem  (sqlaudit)'},
- {id:'fmcd',label:'find their log folder  (cd ~/logs/…/logs)'},
- {id:'fmrm',label:'shred the logs  (ls, then rm *)'},
- {id:'fmdetach',label:'detach cleanly  (sqlaudit disconnect)'},
+ {id:'brewinstall_sqlaudit',label:'get the audit tool  (brew install sqlaudit)'},
+ {id:'fmattach',label:'open it  (sqlaudit)'},
+ {id:'fmls',label:'see what they logged  (sq seelogs)'},
+ {id:'fmrm',label:'shred the logs  (delete log 1 … or delete log all)'},
+ {id:'fmdetach',label:'close the session  (sq exit)'},
  {id:'disconnect',label:'leave  (disconnect)'},
 ];
 let tutOn=false,tutIdx=0,coachIdx=0;
@@ -2215,7 +2216,9 @@ function startDesktop(){$('login').hidden=true;$('desktop').hidden=false;
   pr(`<span class="c">UNITS///OS</span> online. welcome to the wire, <span class="ok">${S.handle}</span>.`);
   pr(`type <span class="c">help</span>, or open your <span class="c">mail</span> and read what Sable sent.`);
   pr(`<span class="dim">the first contract (orientation) is a safe practice run. everything after it can trace you.</span>`);
-  cmdInput.focus();worldMsg('login');
+  cmdInput.focus();
+  if(!storageAvailable())storageWarn('this browser is blocking site storage (private window, or site data disabled).');
+  worldMsg('login');
   if(!S.flags.tutDone)setTimeout(tutStart,600);}
 function boot(){const saved=loadSave();
   if(saved&&saved.handle){$('continueBtn').hidden=false;$('wipeRow').hidden=false;$('continueBtn').textContent=`▷ RESUME — ${saved.handle} · ${rankName(saved.rating)}`;}
