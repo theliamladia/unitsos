@@ -1,0 +1,2233 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- UNITS///OS — a CRT-terminal hacker sim in the spirit of Uplink. Pure client-side fiction. No real networking. -->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNITS///OS</title>
+<style>
+:root{
+  --bg:#04070c;--desk:#060b12;--win:#0a1420;--edge:#123043;--edge-hot:#1c5772;
+  --cyan:#38e1ff;--cyan-dim:#1a8fb0;--green:#37ffa8;--amber:#ffb638;--red:#ff4d5e;--magenta:#ff4dd2;
+  --text:#bfe6f2;--dim:#5f8aa0;--phos:#8affc8;--mono:"SFMono-Regular","Menlo","Consolas","Liberation Mono",monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;height:100%;}
+body{background:#020407;color:var(--text);font-family:var(--mono);font-size:11.5px;overflow:hidden;height:100vh;
+  letter-spacing:.2px;user-select:none;-webkit-user-select:none;}
+
+/* ===== the physical monitor ===== */
+#screen{position:fixed;inset:0;overflow:hidden;
+  background:
+    radial-gradient(1100px 760px at 70% -12%,rgba(20,60,80,.18),transparent 60%),
+    radial-gradient(900px 620px at 8% 110%,rgba(20,40,70,.16),transparent 60%),
+    linear-gradient(0deg,var(--desk),#04080e);}
+body.crt #screen{border-radius:22px/34px;box-shadow:inset 0 0 140px 20px rgba(0,0,0,.85), inset 0 0 40px rgba(0,20,30,.6);}
+body.crt #screen::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:9600;border-radius:22px/34px;
+  box-shadow:inset 0 0 120px 30px rgba(0,0,0,.8);}
+body.crt #content{animation:warp 8s ease-in-out infinite;transform-origin:center;}
+@keyframes warp{0%,100%{transform:scale(1.004);}50%{transform:scale(1.0);}}
+
+/* CRT overlays */
+#crtfx{position:absolute;inset:0;pointer-events:none;z-index:9500;display:none;}
+body.crt #crtfx{display:block;}
+#crtfx .scan{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.20) 0 1px,transparent 1px 3px);mix-blend-mode:multiply;opacity:.6;}
+#crtfx .glow{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(0,0,0,.55) 100%);}
+#crtfx .roll{position:absolute;left:0;right:0;height:120px;top:-140px;
+  background:linear-gradient(180deg,transparent,rgba(120,220,255,.05) 40%,rgba(120,220,255,.08) 50%,rgba(120,220,255,.05) 60%,transparent);
+  animation:roll 7s linear infinite;}
+@keyframes roll{0%{top:-140px;}100%{top:110%;}}
+#crtfx .flick{position:absolute;inset:0;background:rgba(120,220,255,.015);animation:flick .12s steps(2) infinite;}
+@keyframes flick{0%{opacity:.5;}50%{opacity:.9;}100%{opacity:.4;}}
+body.crt #content{text-shadow:0.4px 0 rgba(255,40,90,.28),-0.4px 0 rgba(40,180,255,.28);}
+body.crt #screen{filter:saturate(1.12) contrast(1.04) brightness(1.02);}
+
+/* power-on */
+#power{position:absolute;inset:0;z-index:9700;background:#000;pointer-events:none;}
+#power.on{animation:pwr 1s ease-out forwards;}
+@keyframes pwr{0%{clip-path:inset(50% 0 50% 0);background:#cdeefc;}
+  8%{clip-path:inset(49.6% 0 49.6% 0);background:#eafcff;}
+  20%{clip-path:inset(0 0 0 0);background:rgba(180,240,255,.5);}
+  55%{background:rgba(20,40,50,.2);}100%{background:transparent;clip-path:inset(0);}}
+
+#content{position:absolute;inset:0;}
+body.crt #content{margin:10px;width:calc(100% - 20px);height:calc(100% - 20px);}
+
+[hidden]{display:none!important;}
+
+/* ===== desktop ===== */
+#desktop{position:absolute;inset:0;}
+.deskmark{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;opacity:.07;z-index:0;}
+.deskmark .m{font-size:150px;letter-spacing:10px;font-weight:700;color:var(--cyan);}
+.deskmark .s{font-size:16px;letter-spacing:14px;color:var(--cyan);}
+
+/* top bar */
+#topbar{position:absolute;top:0;left:0;right:0;height:30px;z-index:7000;display:flex;align-items:center;gap:13px;
+  padding:0 12px;background:linear-gradient(180deg,#0b1826,#060d16);border-bottom:1px solid var(--edge);font-size:11px;}
+#topbar .logo{font-weight:700;letter-spacing:3px;color:#eafcff;text-shadow:0 0 10px rgba(56,225,255,.5);}
+#topbar .logo b{color:var(--cyan);}
+#topbar .spacer{flex:1;}
+#topbar .ind{display:flex;align-items:center;gap:6px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;font-size:10px;}
+#topbar .ind b{color:var(--text);font-size:12px;letter-spacing:.5px;}
+#topbar .ind.creds b{color:var(--green);}#topbar .ind.rank b{color:var(--amber);}
+.tracepill{display:flex;align-items:center;gap:8px;border:1px solid var(--edge);border-radius:2px;padding:2px 8px;background:rgba(0,0,0,.3);}
+.tracepill .lbl{font-size:9px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;}
+.tracepill.hidden2{opacity:.3;}
+.tminibar{width:96px;height:6px;background:#03080d;border:1px solid var(--edge);border-radius:2px;overflow:hidden;}
+.tminibar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#37ffa8,#ffb638 55%,#ff4d5e);}
+.tracepill.active{border-color:var(--red);animation:tp 1s steps(1) infinite;}
+@keyframes tp{50%{box-shadow:0 0 12px rgba(255,77,94,.5);}}
+.tgl{border:1px solid var(--edge);background:rgba(0,0,0,.3);color:var(--dim);border-radius:2px;padding:2px 7px;cursor:pointer;font-family:var(--mono);font-size:10px;letter-spacing:1px;}
+.tgl.on{color:var(--cyan);border-color:var(--edge-hot);}
+#clock{color:var(--text);}
+
+/* feed ticker */
+#feed{position:absolute;top:30px;left:0;right:0;height:20px;z-index:6900;overflow:hidden;
+  background:rgba(3,8,13,.7);border-bottom:1px solid var(--edge);display:flex;align-items:center;}
+#feed .tk{white-space:nowrap;font-size:10px;letter-spacing:1px;color:var(--dim);padding-left:100%;animation:tick 34s linear infinite;}
+#feed .tk b{color:var(--cyan);}#feed .tk .r{color:var(--red);}#feed .tk .a{color:var(--amber);}
+@keyframes tick{0%{transform:translateX(0);}100%{transform:translateX(-100%);}}
+
+/* windows */
+.window{position:absolute;background:linear-gradient(180deg,rgba(20,44,60,.10),rgba(4,10,16,.16)),var(--win);
+  border:1px solid var(--edge);border-radius:4px;box-shadow:0 18px 50px rgba(0,0,0,.6),inset 0 0 0 1px rgba(56,225,255,.03);
+  display:flex;flex-direction:column;min-width:280px;min-height:160px;overflow:hidden;}
+.window.focus{border-color:var(--edge-hot);box-shadow:0 22px 60px rgba(0,0,0,.7),0 0 0 1px rgba(56,225,255,.12);}
+.titlebar{height:30px;flex:none;display:flex;align-items:center;gap:8px;padding:0 8px 0 11px;cursor:move;
+  background:linear-gradient(180deg,#0e2130,#0a1622);border-bottom:1px solid var(--edge);}
+.titlebar .tt{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--cyan);text-shadow:0 0 8px rgba(56,225,255,.4);flex:1;}
+.titlebar .dots{display:flex;gap:6px;}
+.titlebar .dots i{width:11px;height:11px;border-radius:50%;border:1px solid rgba(0,0,0,.4);cursor:pointer;}
+.titlebar .dots i.min{background:#3a5566;}.titlebar .dots i.cls{background:#c0402f;}
+.winbody{flex:1;overflow:auto;position:relative;}
+
+/* terminal */
+#winTerminal{left:32px;top:74px;width:680px;height:432px;}
+#term{height:100%;display:flex;flex-direction:column;background:#03070c;}
+#termOut{flex:1;overflow-y:auto;padding:10px 12px;font-size:11.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;text-shadow:0 0 6px rgba(56,225,255,.12);}
+#termOut .u{color:#eafcff;}#termOut .ok{color:var(--green);}#termOut .warn{color:var(--amber);}
+#termOut .err{color:var(--red);}#termOut .c{color:var(--cyan);}#termOut .dim{color:var(--dim);}#termOut .m{color:var(--magenta);}
+#termOut .bar{color:var(--cyan);}#termOut .phos{color:var(--phos);}
+.terminline{display:flex;align-items:center;padding:4px 12px 12px;border-top:1px solid rgba(18,48,67,.6);background:#04080e;}
+#prompt{color:var(--green);white-space:pre;margin-right:6px;}
+#cmd{flex:1;background:transparent;border:0;outline:0;color:#eafcff;font-family:var(--mono);font-size:11.5px;caret-color:var(--cyan);}
+#cmd::placeholder{color:var(--dim);}
+.curs{display:inline-block;width:8px;height:15px;background:var(--green);margin-left:1px;vertical-align:-2px;animation:blink 1s steps(1) infinite;}
+@keyframes blink{50%{opacity:0;}}
+
+/* inbox */
+#winInbox{left:730px;top:74px;width:372px;height:318px;}
+.mlist{padding:8px;display:flex;flex-direction:column;gap:7px;}
+.mail{border:1px solid var(--edge);border-radius:3px;padding:9px 11px;background:rgba(0,0,0,.22);cursor:pointer;position:relative;}
+.mail:hover{border-color:var(--cyan-dim);background:rgba(56,225,255,.05);}
+.mail.sel{border-color:var(--cyan);}.mail.done{opacity:.5;}.mail.locked{opacity:.35;}
+.mail.unread{border-left:3px solid var(--amber);}
+.mail .fr{font-size:10px;color:var(--cyan);letter-spacing:1px;}
+.mail .su{font-size:12px;color:#eafcff;margin:2px 0;}
+.mail .pay{font-size:10px;color:var(--green);}
+.mail .bdg{position:absolute;top:8px;right:10px;font-size:9px;letter-spacing:1px;text-transform:uppercase;}
+.mail .bdg.done{color:var(--green);}.mail .bdg.act{color:var(--amber);}.mail .bdg.lock{color:var(--dim);}.mail .bdg.msg{color:var(--magenta);}
+.mdetail{padding:12px;border-top:1px solid var(--edge);font-size:12px;line-height:1.6;display:none;}
+.mdetail.show{display:block;}
+.mdetail .k{color:var(--dim);}.mdetail .v{color:var(--green);}.mdetail .vc{color:var(--cyan);}
+.mdetail .body{color:var(--text);border-left:2px solid var(--edge-hot);padding-left:10px;margin:8px 0;white-space:pre-wrap;}
+.mbtn{margin-top:8px;background:#061019;border:1px solid var(--edge-hot);color:var(--cyan);border-radius:2px;
+  padding:7px 14px;cursor:pointer;font-family:var(--mono);font-size:12px;letter-spacing:2px;text-transform:uppercase;}
+.mbtn:hover{box-shadow:0 0 12px rgba(56,225,255,.2);color:#eafcff;}
+.mbtn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* software */
+#winShop{left:730px;top:404px;width:372px;height:290px;}
+.shoprow{border:1px solid var(--edge);border-radius:3px;padding:7px 10px;margin:7px 8px;background:rgba(0,0,0,.2);display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.shoprow .n{font-size:12px;color:#eafcff;}.shoprow .d{font-size:10px;color:var(--dim);}.shoprow .lv{font-size:10px;color:var(--cyan);}
+.shoprow button{background:#061019;border:1px solid var(--edge);color:var(--green);border-radius:2px;padding:5px 10px;cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:1px;white-space:nowrap;}
+.shoprow button:hover:not(:disabled){border-color:var(--cyan);color:#eafcff;}
+.shoprow button:disabled{opacity:.4;cursor:not-allowed;}
+.shophd{padding:8px 10px 2px;color:var(--dim);font-size:10px;letter-spacing:1.5px;}
+
+/* map */
+#winMap{left:32px;top:518px;width:680px;height:140px;}
+#mapc{width:100%;height:100%;display:block;background:#03070c;}
+
+/* dock */
+#dock{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:7000;display:flex;gap:8px;padding:7px 10px;
+  background:linear-gradient(180deg,rgba(14,33,48,.9),rgba(6,13,22,.92));border:1px solid var(--edge);border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.6);}
+.dockapp{width:46px;height:46px;border:1px solid var(--edge);border-radius:6px;background:rgba(0,0,0,.3);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--dim);position:relative;}
+.dockapp:hover{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 12px rgba(56,225,255,.2);}
+.dockapp.open{border-color:var(--edge-hot);color:var(--cyan);}
+.dockapp .ic{font-size:18px;line-height:1;}
+.dockapp .nm{font-size:8px;letter-spacing:.5px;text-transform:uppercase;}
+.dockapp.open::after{content:"";position:absolute;bottom:-5px;width:4px;height:4px;border-radius:50%;background:var(--cyan);box-shadow:0 0 6px var(--cyan);}
+.dockapp .badge{position:absolute;top:-4px;right:-4px;min-width:15px;height:15px;border-radius:8px;background:var(--amber);color:#04080e;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;box-shadow:0 0 8px rgba(255,182,56,.6);}
+
+/* toast */
+#toast{position:absolute;top:56px;right:16px;z-index:8000;display:flex;flex-direction:column;gap:8px;align-items:flex-end;}
+.toastmsg{background:linear-gradient(180deg,#0e2436,#081420);border:1px solid var(--edge-hot);border-radius:4px;padding:9px 13px;max-width:320px;
+  box-shadow:0 10px 30px rgba(0,0,0,.6),0 0 16px rgba(56,225,255,.12);animation:toastin .4s ease-out;}
+.toastmsg .tf{font-size:10px;color:var(--magenta);letter-spacing:1px;}
+.toastmsg .ts{font-size:12px;color:#eafcff;margin-top:2px;}
+@keyframes toastin{0%{transform:translateX(30px);opacity:0;}100%{transform:translateX(0);opacity:1;}}
+
+/* boot / login */
+#boot{position:absolute;inset:0;z-index:9000;background:#03070c;color:var(--green);font-size:13px;padding:36px;white-space:pre-wrap;line-height:1.55;overflow:hidden;text-shadow:0 0 8px rgba(55,255,168,.3);}
+#login{position:absolute;inset:0;z-index:8900;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;
+  background:radial-gradient(circle at 50% 40%,rgba(6,14,22,.96),rgba(3,6,10,.99));text-align:center;}
+#login .lg{font-size:46px;letter-spacing:9px;font-weight:700;color:#eafcff;text-shadow:0 0 30px rgba(56,225,255,.7);}
+#login .lg b{color:var(--cyan);}
+#login .tagline{color:var(--phos);letter-spacing:4px;font-size:12px;text-transform:uppercase;margin-top:-6px;}
+#login .sub{color:var(--dim);letter-spacing:3px;font-size:12px;text-transform:uppercase;max-width:560px;line-height:1.9;}
+#login input{background:#040a10;border:1px solid var(--edge);color:var(--green);font-family:var(--mono);font-size:18px;padding:10px 16px;border-radius:2px;text-align:center;letter-spacing:3px;outline:none;width:300px;}
+#login input:focus{border-color:var(--cyan);box-shadow:0 0 12px rgba(56,225,255,.25);}
+#login button{padding:12px 36px;font-family:var(--mono);font-size:15px;letter-spacing:4px;text-transform:uppercase;cursor:pointer;background:linear-gradient(180deg,#0c2230,#061019);border:1px solid var(--edge-hot);color:var(--cyan);border-radius:3px;text-shadow:0 0 12px rgba(56,225,255,.6);}
+#login button:hover{box-shadow:0 0 26px rgba(56,225,255,.3);}
+#login .wipe{color:var(--red);cursor:pointer;text-decoration:underline;font-size:10px;}
+#login .rules{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;max-width:640px;text-align:left;margin:2px 0;}
+#login .rules div{font-size:11px;color:var(--text);line-height:1.5;}
+#login .rules b{color:var(--amber);}#login .rules code{color:var(--cyan);}
+.scrollbar::-webkit-scrollbar{width:9px;}.scrollbar::-webkit-scrollbar-thumb{background:#12303f;border-radius:4px;}
+/* messenger */
+#winMessenger{left:430px;top:118px;width:452px;height:404px;}
+.imwrap{display:flex;height:100%;}
+.imside{width:132px;border-right:1px solid var(--edge);overflow-y:auto;}
+.imc{padding:9px 10px;cursor:pointer;border-bottom:1px solid rgba(18,48,67,.5);position:relative;}
+.imc:hover{background:rgba(56,225,255,.05);}.imc.on{background:rgba(56,225,255,.08);}
+.imc .nm{font-size:12px;color:#eafcff;letter-spacing:1px;}.imc .tg{font-size:9px;color:var(--dim);}
+.imc .ub{position:absolute;top:9px;right:8px;min-width:15px;height:15px;border-radius:8px;background:var(--amber);color:#04080e;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;}
+.imchat{flex:1;display:flex;flex-direction:column;min-width:0;}
+.imlog{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:7px;}
+.b{max-width:82%;padding:6px 10px;border-radius:9px;font-size:12px;line-height:1.45;white-space:pre-wrap;word-break:break-word;}
+.b.them{align-self:flex-start;background:#0e2233;border:1px solid var(--edge);border-bottom-left-radius:2px;}
+.b.me{align-self:flex-end;background:#0c3444;border:1px solid var(--edge-hot);color:#eafcff;border-bottom-right-radius:2px;}
+.b .who{font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:2px;}
+.typing{align-self:flex-start;display:flex;gap:3px;padding:8px 10px;}
+.typing i{width:5px;height:5px;border-radius:50%;background:var(--dim);animation:ty 1s infinite;}
+.typing i:nth-child(2){animation-delay:.15s;}.typing i:nth-child(3){animation-delay:.3s;}
+@keyframes ty{0%,60%,100%{opacity:.25;transform:translateY(0);}30%{opacity:1;transform:translateY(-3px);}}
+.imreplies{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;border-top:1px solid var(--edge);}
+.imreplies button{background:#061019;border:1px solid var(--edge-hot);color:var(--cyan);border-radius:12px;padding:5px 12px;cursor:pointer;font-family:var(--mono);font-size:11px;}
+.imreplies button:hover{color:#eafcff;box-shadow:0 0 8px rgba(56,225,255,.2);}
+.imempty{margin:auto;color:var(--dim);font-size:11px;text-align:center;padding:24px;}
+/* forums */
+#winForum{left:470px;top:150px;width:470px;height:426px;}
+.fwrap{padding:8px;}
+.fthread{border:1px solid var(--edge);border-radius:3px;margin-bottom:7px;background:rgba(0,0,0,.2);overflow:hidden;}
+.fthread .fh{padding:8px 11px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.fthread .fh:hover{background:rgba(56,225,255,.05);}
+.fthread .ti{font-size:12px;color:#eafcff;}.fthread .meta{font-size:9px;color:var(--dim);white-space:nowrap;}
+.fthread.new .ti::before{content:"● ";color:var(--amber);}
+.fposts{display:none;border-top:1px solid var(--edge);padding:4px 11px 9px;}
+.fthread.open .fposts{display:block;}
+.fpost{padding:6px 0;border-bottom:1px solid rgba(18,48,67,.4);font-size:11px;line-height:1.5;}
+.fpost:last-child{border-bottom:0;}
+.fpost .by{color:var(--cyan);}.fpost .by.you{color:var(--phos);}
+.fpost.panic{color:var(--amber);}
+.fpost.dark{color:var(--red);}
+.fpost.calm{color:var(--phos);}
+.fpost .myrank{color:var(--amber);font-size:9px;letter-spacing:1px;}
+.repbar{border:1px solid var(--edge-hot);border-radius:3px;padding:8px 11px;margin-bottom:9px;
+  background:linear-gradient(180deg,rgba(56,225,255,.07),rgba(4,10,16,.3));}
+.repline{display:flex;justify-content:space-between;align-items:baseline;}
+.repline .rrank{font-size:14px;letter-spacing:2px;color:var(--amber);text-transform:uppercase;text-shadow:0 0 10px rgba(255,182,56,.45);}
+.repline .rrep{font-size:11px;color:var(--cyan);}
+.rtrack{height:5px;background:#03070c;border:1px solid var(--edge);border-radius:2px;overflow:hidden;margin:6px 0 5px;}
+.rtrack>i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan-dim),var(--amber));box-shadow:0 0 8px rgba(255,182,56,.5);}
+.rnext{font-size:9.5px;color:var(--dim);letter-spacing:.5px;}
+.rnext b{color:var(--text);}
+.fpost.hostile{background:rgba(255,77,94,.07);border-left:2px solid var(--red);padding-left:7px;}
+.fpost.hostile .by{color:var(--red);}
+.bootbtn{margin-left:6px;background:#1a0509;border:1px solid var(--red);color:#ffdfe2;border-radius:2px;padding:1px 7px;cursor:pointer;font-family:var(--mono);font-size:9px;letter-spacing:1px;}
+.bootbtn:hover{box-shadow:0 0 10px rgba(255,77,94,.4);}
+.freply{display:flex;gap:6px;margin-top:8px;}
+.freply input{flex:1;background:#040a10;border:1px solid var(--edge);color:var(--green);font-family:var(--mono);font-size:11px;padding:5px 7px;border-radius:2px;outline:none;}
+.freply button{background:#061019;border:1px solid var(--edge);color:var(--cyan);border-radius:2px;padding:5px 11px;cursor:pointer;font-family:var(--mono);font-size:11px;}
+/* monitor */
+.monhd{padding:9px 11px;font-size:11px;letter-spacing:1px;color:var(--cyan);border-bottom:1px solid var(--edge);}
+.monsub{padding:5px 11px;font-size:10px;color:var(--phos);border-bottom:1px solid rgba(18,48,67,.5);}
+.monrow{display:flex;align-items:center;gap:8px;padding:6px 11px;border-bottom:1px solid rgba(18,48,67,.4);}
+.monrow .mip{flex:1;font-size:12px;color:var(--text);}
+.monrow .mst{font-size:10px;color:var(--dim);width:74px;}
+.monrow.hot{background:rgba(255,77,94,.10);}
+.monrow.hot .mip{color:#ffdfe2;}
+.monrow.hot .mst{color:var(--red);animation:blink 1s steps(1) infinite;}
+.monrow button{background:#061019;border:1px solid var(--edge);color:var(--amber);border-radius:2px;padding:3px 9px;cursor:pointer;font-family:var(--mono);font-size:10px;}
+.monrow button:hover{border-color:var(--red);color:var(--red);}
+#monCanvas{width:100%;height:212px;display:block;background:#03070c;border-bottom:1px solid var(--edge);cursor:pointer;}
+.montools{display:flex;align-items:center;gap:7px;padding:9px 11px;flex-wrap:wrap;}
+.montools .msel{flex:1;font-size:11px;color:var(--phos);min-width:110px;}
+.montools button{background:#061019;border:1px solid var(--edge);color:var(--amber);border-radius:2px;padding:5px 11px;cursor:pointer;font-family:var(--mono);font-size:10px;letter-spacing:1px;}
+.montools button:hover{border-color:var(--cyan);color:#eafcff;}
+.montools button.danger{border-color:var(--red);color:#ffdfe2;}
+.monfoot{padding:9px 11px;}
+.monfoot button{width:100%;background:#1a0509;border:1px solid var(--red);color:#ffdfe2;border-radius:2px;padding:7px;cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:1px;}
+/* tutorial */
+#coach{position:absolute;inset:0;z-index:8500;pointer-events:none;}
+#coachRing{position:absolute;border:2px solid var(--cyan);border-radius:6px;box-shadow:0 0 0 9999px rgba(2,6,10,.72),0 0 22px rgba(56,225,255,.4);transition:all .3s ease;}
+#coachTip{position:absolute;max-width:300px;background:linear-gradient(180deg,#0e2436,#081420);border:1px solid var(--edge-hot);border-radius:5px;padding:13px 15px;box-shadow:0 14px 44px rgba(0,0,0,.7);font-size:12px;line-height:1.6;pointer-events:auto;}
+#coachTip .step{font-size:9px;letter-spacing:2px;color:var(--amber);text-transform:uppercase;margin-bottom:5px;}
+#coachTip b{color:var(--cyan);}#coachTip code{color:var(--amber);}
+#coachTip .cbtns{display:flex;justify-content:space-between;margin-top:11px;}
+#coachTip button{background:#061019;border:1px solid var(--edge-hot);color:var(--cyan);border-radius:3px;padding:6px 15px;cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;}
+#coachTip .skip{border-color:var(--edge);color:var(--dim);}
+#tutTask{position:absolute;left:16px;bottom:80px;z-index:6800;width:258px;background:linear-gradient(180deg,#0e2436,#081420);border:1px solid var(--edge-hot);border-radius:5px;padding:11px 13px;box-shadow:0 12px 30px rgba(0,0,0,.6);}
+#tutTask .th{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--amber);margin-bottom:8px;display:flex;justify-content:space-between;}
+#tutTask .th .sk{color:var(--dim);cursor:pointer;text-decoration:underline;font-size:9px;letter-spacing:0;}
+#tutTask .tstep{font-size:11px;color:var(--dim);padding:2px 0;line-height:1.4;}
+#tutTask .tstep.cur{color:#eafcff;}
+#tutTask .tstep.done{color:var(--green);opacity:.65;}
+#tutTask .tstep .bx{display:inline-block;width:15px;}
+#progModal{position:absolute;inset:0;z-index:8700;display:flex;align-items:center;justify-content:center;background:rgba(2,6,10,.72);}
+.progcard{width:400px;max-width:88%;background:linear-gradient(180deg,#0e2436,#081420);border:1px solid var(--edge-hot);
+  border-radius:6px;padding:18px 20px;box-shadow:0 18px 60px rgba(0,0,0,.8),0 0 26px rgba(56,225,255,.12);}
+.progcard .ptag{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--amber);}
+.progcard .pname{font-size:19px;letter-spacing:1px;color:#eafcff;margin:3px 0 9px;}
+.progcard .part{font-size:9.5px;line-height:1.25;color:var(--phos);background:#03070c;border:1px solid var(--edge);
+  border-radius:3px;padding:8px;margin:0 0 10px;overflow-x:auto;white-space:pre;}
+.progcard .pwhat{font-size:11.5px;line-height:1.65;color:var(--text);}
+.progcard .phow{margin-top:10px;padding:7px 9px;background:#03070c;border-left:2px solid var(--cyan);
+  font-size:11px;color:var(--cyan);border-radius:2px;}
+.progcard button{margin-top:14px;width:100%;background:#061019;border:1px solid var(--edge-hot);color:var(--cyan);
+  border-radius:3px;padding:9px;cursor:pointer;font-family:var(--mono);font-size:12px;letter-spacing:2px;text-transform:uppercase;}
+.progcard button:hover{box-shadow:0 0 16px rgba(56,225,255,.25);color:#eafcff;}
+.codecard{border-color:var(--amber);box-shadow:0 18px 60px rgba(0,0,0,.85),0 0 34px rgba(255,182,56,.25);}
+.codecard .ptag{color:var(--amber);}
+.codecard .clabel{margin-top:12px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);}
+.codebox{margin-top:5px;padding:12px;background:#03070c;border:1px dashed var(--amber);border-radius:3px;
+  font-size:16px;letter-spacing:2px;color:var(--amber);text-align:center;cursor:pointer;
+  user-select:text;-webkit-user-select:text;text-shadow:0 0 12px rgba(255,182,56,.5);}
+.codebox:hover{background:#0a0d05;}
+.cnote{margin-top:11px;font-size:11px;line-height:1.6;color:var(--text);border-left:2px solid var(--amber);padding-left:10px;}
+.cnote b{color:var(--amber);text-transform:uppercase;}
+#tutTask .tuttip{margin-top:8px;padding-top:7px;border-top:1px solid var(--edge);font-size:9px;color:var(--dim);line-height:1.4;}
+</style>
+</head>
+<body class="crt">
+<div id="screen">
+  <div id="content">
+
+    <div id="desktop" hidden>
+      <div class="deskmark"><div class="m">U///OS</div><div class="s">UPLINK TERMINAL</div></div>
+
+      <div id="topbar">
+        <span class="logo">UNITS<b>///</b>OS</span>
+        <div class="ind">AGENT <b id="tbAgent">—</b></div>
+        <div class="ind rank">RANK <b id="tbRank">Newbie</b></div>
+        <div class="ind creds">CR <b id="tbCreds">0c</b></div>
+        <div class="spacer"></div>
+        <div class="tracepill hidden2" id="tracePill"><span class="lbl">Trace</span><div class="tminibar"><i id="tbTrace"></i></div><span id="tbTracePct" style="color:var(--red);font-size:11px;">—</span></div>
+        <div class="ind">HEAT <b id="tbHeat">0</b></div>
+        <div class="ind">CONN <b id="tbConn">offline</b></div>
+        <button class="tgl on" id="sndTgl">♪</button>
+        <button class="tgl on" id="crtTgl">CRT</button>
+        <span id="clock">--:--:--</span>
+      </div>
+
+      <div id="feed"><div class="tk" id="tkText">initialising feed…</div></div>
+
+      <div class="window" id="winTerminal" data-app="Terminal">
+        <div class="titlebar"><span class="tt">Terminal</span><div class="dots"><i class="min"></i><i class="cls"></i></div></div>
+        <div class="winbody"><div id="term">
+          <div id="termOut" class="scrollbar"></div>
+          <div class="terminline"><span id="prompt">agent@units:~$</span><input id="cmd" autocomplete="off" spellcheck="false" placeholder="type a command — try 'help'"></div>
+        </div></div>
+      </div>
+
+      <div class="window" id="winInbox" data-app="Inbox">
+        <div class="titlebar"><span class="tt">Inbox // Contracts</span><div class="dots"><i class="min"></i><i class="cls"></i></div></div>
+        <div class="winbody scrollbar"><div class="mlist" id="mlist"></div><div class="mdetail" id="mdetail"></div></div>
+      </div>
+
+      <div class="window" id="winShop" data-app="Software">
+        <div class="titlebar"><span class="tt">Software // Store</span><div class="dots"><i class="min"></i><i class="cls"></i></div></div>
+        <div class="winbody scrollbar" id="shopBody"></div>
+      </div>
+
+      <div class="window" id="winMap" data-app="Connections">
+        <div class="titlebar"><span class="tt">Connections // Route</span><div class="dots"><i class="min"></i><i class="cls"></i></div></div>
+        <div class="winbody"><canvas id="mapc"></canvas></div>
+      </div>
+
+      <div class="window" id="winSettings" data-app="Settings" hidden style="left:280px;top:150px;width:380px;height:330px;">
+        <div class="titlebar"><span class="tt">Settings</span><div class="dots"><i class="min"></i><i class="cls"></i></div></div>
+        <div class="winbody scrollbar" id="setBody" style="padding:14px;"></div>
+      </div>
+
+      <div class="window" id="winMessenger" data-app="Messenger" hidden>
+        <div class="titlebar"><span class="tt">Messenger</span><div class="dots"><i class="min"></i><i class="cls"></i></div></div>
+        <div class="winbody"><div class="imwrap"><div class="imside" id="imSide"></div><div class="imchat" id="imChat"></div></div></div>
+      </div>
+      <div class="window" id="winMonitor" data-app="Monitor" hidden style="left:300px;top:180px;width:400px;height:340px;">
+        <div class="titlebar"><span class="tt">MonitorMe // botnet</span><div class="dots"><i class="min"></i><i class="cls"></i></div></div>
+        <div class="winbody scrollbar" id="monBody"></div>
+      </div>
+      <div class="window" id="winForum" data-app="Forums" hidden>
+        <div class="titlebar"><span class="tt">The Wire // Forums</span><div class="dots"><i class="min"></i><i class="cls"></i></div></div>
+        <div class="winbody scrollbar"><div class="fwrap" id="fwrap"></div></div>
+      </div>
+
+      <div id="toast"></div>
+      <div id="dock"></div>
+      <div id="tutTask" hidden></div>
+      <div id="coach" hidden><div id="coachRing"></div><div id="coachTip"></div></div>
+      <div id="progModal" hidden></div>
+    </div>
+
+    <div id="login" hidden>
+      <div class="lg">UNITS<b>///</b>OS</div>
+      <div class="tagline">Elite Cybernetic Operatives</div>
+      <div class="sub">Will you take the opportunity?</div>
+      <input id="handle" maxlength="14" placeholder="agent handle" spellcheck="false">
+      <button id="loginBtn">▶ CONNECT TO UPLINK</button>
+      <button id="continueBtn" hidden>▷ RESUME SESSION</button>
+      <div id="wipeRow" hidden><span class="wipe" id="wipeLink">wipe saved agent</span></div>
+    </div>
+
+    <div id="boot"></div>
+    <div id="power"></div>
+    <div id="crtfx"><div class="scan"></div><div class="roll"></div><div class="glow"></div><div class="flick"></div></div>
+  </div>
+</div>
+
+<script>
+/* ================= UNITS///OS — CRT hacker sim. All fiction, no networking. ================= */
+const $=id=>document.getElementById(id);
+const R=(a,b)=>a+Math.random()*(b-a),RI=(a,b)=>Math.floor(R(a,b+1)),pad=(n,l=2)=>String(n).padStart(l,'0');
+const clamp=(v,a,b)=>v<a?a:v>b?b:v, pick=a=>a[RI(0,a.length-1)];
+const randIP=()=>`${RI(11,223)}.${RI(0,254)}.${RI(0,254)}.${RI(1,254)}`;
+
+/* ---------- ranks ---------- */
+const RANKS=[[0,'Newbie'],[3,'Registered'],[6,'Novice'],[10,'Confident'],[15,'Intermediate'],[22,'Skilled'],[30,'Professional'],[42,'Elite'],[999,'★ LEGEND']];
+const rankName=r=>{let n='Newbie';for(const[t,x]of RANKS)if(r>=t)n=x;return n;};
+
+/* ---------- software / hardware ---------- */
+const SOFT={
+  cpu      :{n:'Processor',       d:'faster everything',      base:900, max:4, start:1, hw:true},
+  fwbypass :{n:'Firewall Bypass', d:'speeds up firewall',     base:700, max:3, start:1},
+  proxy    :{n:'Proxy Disruptor', d:'speeds up proxy',        base:800, max:3, start:0},
+  decrypter:{n:'File Decrypter',  d:'decrypts locked files',  base:750, max:3, start:0},
+  logdel   :{n:'Log Cleaner',     d:'faster log wipe',        base:500, max:3, start:1},
+  tracker  :{n:'Trace Tracker',   d:'shows exact trace + hop', base:900, max:1, start:0},
+  memory   :{n:'Memory Banks',    d:'run more tools at once',   base:1200,max:3,start:1,hw:true},
+  spoofer  :{n:'Log Spoofer',     d:'less heat from sloppy exits',base:850,max:1,start:0},
+};
+
+/* ---------- relays ---------- */
+const RELAYS=[
+ {ip:'88.12.4.19',  n:'InterNIC Public Access'},
+ {ip:'102.55.9.240',n:'Rialto University'},
+ {ip:'19.203.77.6', n:'Central Medical Database'},
+ {ip:'204.9.140.55',n:'Protovision Test Server'},
+ {ip:'71.88.201.3', n:'OuterHost Relay'},
+ {ip:'160.44.2.88', n:'Kowloon Data Exchange'},
+ {ip:'33.7.19.240', n:'Meridian Freeport Node'},
+];
+
+/* ---------- files ---------- */
+function file(name,tags,content,opts){return {name,enc:tags.includes('enc'),obj:tags.includes('obj'),
+  got:false,deleted:false,modified:false,content:content||'',reward:(opts&&opts.reward)||null};}
+
+/* ---------- targets ---------- */
+const TARGETS={
+ t_practice:{ip:'127.44.0.9',name:'Uplink Test Server',org:'UNITS Agency',locks:['password'],traceRate:1.0,
+  files:[file('readme.txt',[], 'Practice box. Nothing here can hurt you.\nTry: ls, download a file, deletelogs, disconnect.'),
+         file('sample.dat',['obj'],'[ training payload ]')]},
+ t_finch:{ip:'196.4.55.120',name:'Finch & Roe Billing',org:'Finch & Roe LLP',locks:['password'],traceRate:2.0,
+  files:[file('clients.db',[],'2,140 client records.'),
+         file('ledger_q3.xls',['obj'],'[ skimmed-account ledger — the smoking gun ]'),
+         file('memo.txt',[],'Re: keep ledger_q3 away from the auditors. burn it after Q4.\np.s. moved the overflow to the old cache box at 9.44.213.7 — nobody remembers it exists. -M')]},
+ t_helix:{ip:'77.230.9.14',name:'Helix Bio Records',org:'Helix Biotech',locks:['password','firewall'],traceRate:2.4,
+  files:[file('trials.db',['obj'],'Phase II trial subject records. 11 adverse events flagged.'),
+         file('patent.doc',['enc'],'[ ENCRYPTED — sequence patent ]'),
+         file('board.txt',[],'Bury the bad trial before the IPO. Nobody reads footnotes. -Board')]},
+ t_metro:{ip:'88.100.7.42',name:'Metro PD Records',org:'Metropolitan Police',locks:['password','firewall'],traceRate:2.6,
+  files:[file('warrant.db',[],'Active warrants.'),
+         file('record_4471.dat',['obj'],'CRIMINAL RECORD #4471 — status: CONVICTED. 3 priors.'),
+         file('note.txt',[],'the kid was set up. fix it or nobody will. -a friend')]},
+ t_argus:{ip:'45.19.88.201',name:'Argus Security Node',org:'Argus Corp',locks:['password','firewall'],traceRate:2.9,
+  files:[file('watchlist.db',['enc'],'[ ENCRYPTED — surveillance watchlist ]'),
+         file('slush.xls',['obj','enc'],'[ ENCRYPTED — off-book payments to 3 senators ]'),
+         file('contracts.doc',[],'Government surveillance contracts, unredacted.\ncourier drops burned tools at the dead-drop server 170.3.88.19 — password + firewall, help yourself.')]},
+ t_meridian:{ip:'50.7.244.10',name:'Meridian Savings',org:'Meridian Savings Bank',locks:['password','firewall','proxy'],traceRate:3.1,
+  account:480000,
+  files:[file('accounts.db',[],'Retail account index.'),
+         file('holding_887.act',['obj'],'HOLDING ACCOUNT #887 — balance available for transfer.'),
+         file('board.txt',[],'the holding account is where we park the laundered funds. -CFO')]},
+ t_relaywatch:{ip:'160.44.2.88',name:'Kowloon Data Exchange',org:'public relay',locks:['password'],traceRate:2.7,
+  answer:'6.0.0.1',
+  files:[file('access.log',['obj'],
+`--- inbound trace log (last 24h) ---
+14:02 conn from 102.55.9.240  [relay]
+14:02 conn from 71.88.201.3   [relay]
+14:03 deep-probe origin 6.0.0.1  *** flagged: military range ***
+14:07 conn from 88.12.4.19    [relay]
+14:19 watchdog ping 6.0.0.1
+--- someone on 6.0.0.1 has been tracing YOU ---`)]},
+ t_norad:{ip:'6.0.0.1',name:'SHIELD Core',org:'NORAD Grid',locks:['password','firewall','proxy'],traceRate:4.4,
+  files:[file('roster.db',['enc'],'[ ENCRYPTED — personnel roster ]'),
+         file('watchers.log',[],'Surveillance targets. Your handle is on line 3.'),
+         file('killswitch.bin',['obj','enc'],'[ ENCRYPTED — grid master control. the only reason you came. ]')]},
+ t_kestrel:{ip:'62.9.14.88',name:'Kestrel Dental Group',org:'Kestrel Dental',locks:['password'],traceRate:2.1,
+  files:[file('collections.db',['obj'],'4,910 unpaid balances. Median amount owed: 412c.'),
+         file('memo.txt',[],'Sold the balance list to Halloway Recovery Group. They file in small claims automatically.\nHalloway is a subsidiary of Argus Corp. Everything in this city is a subsidiary of Argus Corp.')]},
+ t_dropbox:{ip:'91.5.77.30',name:'Anonymous Dead-Drop',org:'???',locks:['password','firewall'],traceRate:2.5,
+  files:[file('heavencrackr.pkg',['obj','enc'],'[ ENCRYPTED — HeavenCrackR. Polymorphic fork of HavenCracker. ]',{reward:{tool:'heaven',key:'crackers'}}),
+         file('readme.txt',[],'if you are reading this i am not coming back for it.\nit is faster than anything sable shipped. it has no firewall module. that was the trade.\n— A.')]},
+ t_brackwater:{ip:'118.40.6.21',name:'Brackwater Chemical',org:'Brackwater Chem',locks:['password','firewall'],traceRate:2.9,
+  files:[file('safety_audit.enc',['obj','enc'],'[ ENCRYPTED — six years of failed discharge readings ]'),
+         file('incident_log.db',['obj'],'Incident attribution log. Every entry names the same dead shift supervisor.'),
+         file('board.txt',[],'Attribute the discharges to Vance. He is deceased and cannot contest it. Legal agrees.')]},
+ t_ostrand:{ip:'25.190.3.77',name:'Ostrand Freight',org:'Ostrand Freight',locks:['password','firewall'],traceRate:6.4,
+  files:[file('customs.db',['obj'],'Customs filings. Half of these containers do not exist.'),
+         file('ids.txt',[],'ACTIVE COUNTER-INTRUSION ENABLED. Trace priority: maximum. We do not negotiate with runners.')]},
+ t_courier:{ip:'33.7.19.240',name:'Meridian Freeport Courier',org:'freeport ring',locks:['password','firewall'],traceRate:3.0,
+  files:[file('manifest.enc',['obj','enc'],'[ ENCRYPTED — sealed courier manifest. Sable said not to open it. ]'),
+         file('route.txt',[],'courier ring: freeport → agency drop. handler signature: S.')]},
+ t_agencyrelay:{ip:'10.0.44.2',name:'UNITS Agency Relay',org:'UNITS Agency',locks:['password','firewall','proxy'],traceRate:3.4,
+  files:[file('sable_file.enc',['obj','enc'],'[ ENCRYPTED — PERSONNEL: SABLE. status COMPLIANT. leverage: family, relocated 2041. handler trades runner telemetry in exchange for their continued safety. review pending. ]'),
+         file('roster.enc',['enc'],'[ ENCRYPTED — active runner roster. your handle is line 9. ]'),
+         file('policy.txt',[],'Runners are a collection method. Attrition is acceptable. Do not let them read this host.')]},
+ t_nmia:{ip:'88.99.99.99',name:'New Milos Intelligence',org:'NMIA',locks:['password','firewall','proxy'],traceRate:5.2,
+  files:[file('blackwing.pkg',['obj','enc'],'[ ENCRYPTED — Mythos Blackwing. Skeletonkey 0-day, ring0 loader. ]',{reward:{tool:'blackwing',key:'crackers'}}),
+         file('valheim.txt',[],'PROJECT VALHEIM — amorphous identifier. Botnet substrate: civilian handsets, city-wide. Status: OPERATIONAL. Deniability: total. The wire thinks it is a myth. Keep it that way.'),
+         file('watchlist_A.txt',[],'PERSON OF INTEREST: handle "Anatomical". Last known contact 19.88.240.11. Do not approach; observe only.')]},
+ /* hidden systems — discovered by reading logs, not given in contracts */
+ t_cache:{ip:'9.44.213.7',name:'Orphaned Data Cache',org:'???',locks:['password'],traceRate:1.6,hidden:true,
+  files:[file('stash.dat',['obj'],'An abandoned credit stash. Finders keepers.',{reward:{creds:1800}}),
+         file('junk.txt',[],'old backup fragments. nothing useful.')]},
+ t_deaddrop:{ip:'170.3.88.19',name:'Dead-Drop Server',org:'???',locks:['password','firewall'],traceRate:2.2,hidden:true,
+  files:[file('decrypter.pkg',['obj'],'A working File Decrypter build. Free to whoever grabs it first.',{reward:{tool:'decrypter'}}),
+         file('tracker.pkg',['obj'],'A Trace Tracker module, still boxed.',{reward:{tool:'tracker'}})]},
+ t_wallet:{ip:'44.9.120.6',name:'Abandoned Wallet Host',org:'???',locks:['password'],traceRate:1.8,hidden:true,
+  files:[file('wallet.key',['obj'],'A crypto wallet someone forgot to empty. Their loss.',{reward:{creds:2500}})]},
+ t_vault:{ip:'201.6.44.90',name:'Numbered Vault',org:'???',locks:['password','firewall'],traceRate:2.6,hidden:true,
+  files:[file('bearer.bnd',['obj','enc'],'[ ENCRYPTED — bearer bonds, cash-equivalent ]',{reward:{creds:3500}}),
+         file('note.txt',[],'if you can read this you already won. spend it well.')]},
+};
+
+/* ---------- contracts + story ---------- */
+const MISSIONS=[
+ {id:'m0',from:'SABLE',subj:'orientation — your first run',rankReq:0,target:'t_practice',
+  obj:{type:'download',file:'sample.dat'},pay:250,rating:1,
+  body:`New blood. Good.\nI'm Sable — I hand you work, you don't ask who I answer to.\n\nYour deck is empty. Nobody hands you tools here — you pull them.\n\n  1. Get the package manager:  <b>getbrew stable</b>\n  2. Then pull a cracker:  <b>brew install havencracker</b>\n\nHavenCracker 1.0. I wrote it years ago and gave it away; half this city breaks locks with my code. Run <b>brew list</b> if you want to see what else is on the free shelf.\n\nThen the box at 127.44.0.9. One password. Run <b>hc</b> on it, pull sample.dat, wipe your logs, disconnect. That box can't trace you — learn the rhythm here, because nothing after it is this kind.`},
+ {id:'m1',from:'R. Vale',subj:'copy a ledger, quietly',rankReq:1,target:'t_finch',
+  obj:{type:'download',file:'ledger_q3.xls'},pay:600,rating:1,
+  body:`My partners are skimming client accounts and blaming a junior. Their billing box (196.4.55.120) has one password lock. Pull ledger_q3.xls — the proof. Touch nothing else. Leave it clean.`},
+ {id:'m1b',from:'R. Vale',subj:'the collection list',rankReq:1,target:'t_kestrel',
+  obj:{type:'download',file:'collections.db'},pay:750,rating:1,
+  body:`Different client, same city.\n\nKestrel Dental sold their unpaid-balance list to a collections outfit that puts people in court over four hundred credits. I want the list — every name on it — before they start filing.\n\nOne password lock on their billing host. You've done this exact job once already; do it faster this time.\n\nAnd runner: read the memo while you're in there. You'll want to know who bought it.`},
+ {id:'m2',from:'Anonymous',subj:'bury a bad trial',rankReq:2,target:'t_helix',
+  obj:{type:'delete',file:'trials.db'},pay:1100,rating:2,
+  body:`Helix sat on a drug trial that killed people, and they're about to IPO on it.\nRecords box 77.230.9.14 — password AND firewall. Delete trials.db. Make it look like it was never written.\nSome of us still think that matters.`},
+ {id:'mb',from:'cr4sh',subj:'somebody needs to shut kr0nos up',rankReq:2,boot:true,
+  obj:{type:'boot',handle:'kr0nos'},pay:900,rating:2,
+  body:`You've seen kr0nos in the threads. He's not a rival, he's a parasite — he's been threatening to post people's gateway logs, and two runners I know have gone dark over it.\n\nHere's the thing nobody tells rookies: <b>you cannot boot a handle.</b> A forum shows you a name, not an origin. You need his real IP first, and there are exactly two ways to get one:\n\n1. <b>Social engineering</b> — 'bait kr0nos'. You post something he can't resist clicking. When he bites, his origin leaks. Free. He's arrogant, he'll bite.\n2. <b>Software</b> — a Bloodhound Resolver correlates a handle across boards. Costs real credits, works on people too careful to click.\n\nOnce you have the IP: 'boot <ip>' with a booter loaded. Drop him. The wire will remember it.`},
+ {id:'m3',from:'a friend',subj:'fix a frame job',rankReq:3,target:'t_metro',
+  obj:{type:'modify',file:'record_4471.dat'},pay:1500,rating:2,
+  body:`A nineteen-year-old is doing eight years for something he didn't do. Metro PD records (88.100.7.42), password + firewall.\nrecord_4471.dat says CONVICTED. Use 'modify' to rewrite it to CLEARED. One keystroke changes a life. Don't overthink it.`},
+ {id:'m3b',from:'cr4sh',subj:'the anatomical fork',rankReq:4,target:'t_dropbox',
+  obj:{type:'download',file:'heavencrackr.pkg'},pay:1600,rating:2,
+  body:`Story for you. Years back somebody called <b>Anatomical</b> took Sable's HavenCracker source and forked it into something else — polymorphic, rewrites itself every pass, tears through a password lock. Called it <b>HeavenCrackR</b>. Then they went quiet and the build went private.\n\nA copy sits on a dead-drop at 91.5.77.30, encrypted, password + firewall. Nobody's claimed it because nobody's bothered.\n\nPull it and it's yours. You'll need a Decrypter. Consider it the best money you'll ever not spend.`},
+ {id:'m4',from:'J. Okafor',subj:'decrypt the slush fund',rankReq:4,target:'t_argus',
+  obj:{type:'download',file:'slush.xls'},pay:2000,rating:2,
+  body:`Argus bribes senators to keep their spy contracts. slush.xls (45.19.88.201) is encrypted — you'll need a Decrypter. Password + firewall on the box.\nBring me that file and I'll put three careers in the ground.`},
+ {id:'m4b',from:'Anonymous',subj:'take the audit, bury the incident',rankReq:5,target:'t_brackwater',
+  obj:{type:'multi',parts:[{type:'download',file:'safety_audit.enc'},{type:'delete',file:'incident_log.db'}]},
+  pay:2200,rating:2,
+  body:`Brackwater Chem has been venting into the river north of the freeport for six years. Two things need to happen on the same visit, and the order matters:\n\n  1. <b>Steal</b> safety_audit.enc — that's the proof. It's encrypted.\n  2. <b>Destroy</b> incident_log.db — that's the file they'd use to pin it on a shift supervisor who has been dead for two years.\n\nPassword and firewall. Both objectives, one run. Don't get greedy and don't get caught halfway.`},
+ {id:'m2b',from:'cr4sh',subj:'V01D has been selling your runs',rankReq:6,boot:true,
+  obj:{type:'boot',handle:'V01D'},pay:2000,rating:3,
+  body:`I told you kr0nos was a parasite. V01D is worse, because V01D is <em>good</em>.\n\nHe's been logging every run you make and selling the telemetry. That's why the traces have been getting faster.\n\nAnd he's not kr0nos — you will not bait him. He's been on this wire too long to click a link, and he sits behind an <b>amorphous botnet</b>. Baiting won't touch him.\n\nYou'll have to decode him: <b>resolve V01D</b> with a real decoder — Parity at absolute minimum, and expect it to collapse. Then hit the IP with something bigger than a LOIC. He's not going down to a starter flood.`},
+ {id:'m5',from:'SABLE',subj:'drain the holding account',rankReq:7,target:'t_meridian',
+  obj:{type:'transfer',amount:120000},pay:1500,rating:3,
+  body:`Meridian Savings launders through a holding account — #887 on 50.7.244.10. Password, firewall, AND a proxy.\nOnce you're in, 'transfer' at least 120,000c out. Whatever you pull, you keep on top of the fee. But money moves loud — their trace is fast and long routes are your only friend.\nDon't be greedy. Greedy gets traced.`},
+ {id:'m5d',from:'ghosthz',subj:'the hot host — expect to lose IPs',rankReq:8,target:'t_ostrand',
+  obj:{type:'download',file:'customs.db'},pay:2600,rating:3,
+  body:`Fair warning, this one bites.\n\nOstrand Freight runs active counter-intrusion. Their reverse-trace is the fastest thing outside a government host, and it <em>will</em> chew through your botnet while you're still working.\n\nThis is what monitors are for. Keep <b>MonitorMe</b> open. When a node lights up TRACED, <b>burn &lt;ip&gt;</b> — you lose that IP but the trace loses the thread and you buy yourself another thirty seconds. You may burn three or four before you're out.\n\nBring more IPs than you think you need. Anyone who tells you they cleared Ostrand without burning is lying.`},
+ {id:'m5b',from:'SABLE',subj:'a courier, a case, no questions',rankReq:9,target:'t_courier',
+  obj:{type:'download',file:'manifest.enc'},pay:2400,rating:3,
+  body:`Straight ask, and I'd rather you didn't think too hard about it.\n\nA courier host on the Meridian freeport ring is holding an encrypted manifest. Pull manifest.enc and send it to me. Don't open it.\n\nI know how that sounds. Do it anyway.`},
+ {id:'m5c',from:'0RACLE',subj:'read what sable told you not to',rankReq:8,target:'t_agencyrelay',
+  obj:{type:'download',file:'sable_file.enc'},pay:3000,rating:4,
+  body:`You pulled a manifest and handed it over unopened. Obedient.\n\nHere's what you didn't see: your name was in it. So was Sable's — flagged COMPLIANT, with a review date.\n\nThe agency's own relay keeps personnel files. Pull sable_file.enc and decrypt it. You will not like what Sable has been trading to keep you working, but you deserve to know who you're taking orders from.`},
+ {id:'m6a',from:'cr4sh',subj:'someone is selling runner telemetry',rankReq:9,mesh:'m6a',
+  obj:{type:'trace'},pay:2600,rating:3,
+  body:`Three people I know got traced in a week. That's not luck — someone is selling our telemetry, and the buyer's drop point is <b>77.14.203.6</b>.\n\nThat address is a lie. It's an <b>amorphous mesh</b> — a cloud of relay IPs with the real machine buried inside it. You can't scan it and you can't connect to it. You have to <b>decode</b> it: peel the mesh node by node until you reach the mother IP underneath.\n\nYou'll need a decoder. 1NetLynx won't touch a mesh — get <b>parity</b> off the free shelf at minimum, and expect it to collapse on you. Better decoders peel more nodes per pass.\n\nWhen you reach the bottom, send me the mother IP.`},
+ {id:'m6b',from:'0RACLE',subj:'the archivist',rankReq:11,mesh:'m6b',
+  obj:{type:'trace'},pay:3400,rating:4,
+  body:`Whoever bought V01D's telemetry didn't keep it. They archived it — indexed, cross-referenced, sold on.\n\nThe archivist sits at <b>204.88.6.19</b>, and this is not the soft mesh you peeled last time. It's a <b>R00tKernel chain</b>: twenty-two nodes, peer-to-peer, no encryption to break — you simply have to walk every single hop from the outside in. There is no shortcut and no way around it.\n\nParity won't touch a R00tKernel. Parity Prime can walk it sequentially. Partisan Occulus can bruteforce it four hops at a time and will save you your sanity.\n\nGet me the mother IP. Then I'll show you who's been reading your mail.`},
+ {id:'m6',from:'0RACLE',subj:'who is watching you',rankReq:12,target:'t_relaywatch',
+  obj:{type:'trace',answer:'6.0.0.1'},pay:2200,rating:3,
+  body:`You still think Sable is on your side. Cute.\nSomeone has been tracing every run you make. Connect to the Kowloon exchange (160.44.2.88), read access.log, and find the IP that's been deep-probing your origin. When you have it, 'submit <ip>'.\nThen you'll understand what the last job really is.`},
+ {id:'m7',from:'0RACLE',subj:'THE NORAD JOB',rankReq:10,target:'t_norad',finale:true,
+  obj:{type:'download',file:'killswitch.bin'},pay:12000,rating:8,
+  body:`6.0.0.1. SHIELD Core. The grid that's been watching all of us — Sable included.\nFull stack: password, firewall, proxy, and the fastest trace you will ever outrun. Decrypt and pull killswitch.bin, wipe every log, and vanish.\nWhen it's done, the terminal will ask you what to do with it. Choose carefully. There's no undo.`},
+ {id:'m8',from:'0RACLE',subj:'the skeleton key',rankReq:14,target:'t_nmia',postEnding:true,
+  obj:{type:'download',file:'blackwing.pkg'},pay:15000,rating:6,
+  body:`You're past the grid now. There's one thing left worth taking.\n\nNew Milos Intelligence keeps its own arsenal at 88.99.99.99 — the hardest host in the city. Inside is <b>Mythos Blackwing</b>: their bruteforcer, running an unpatched Skeletonkey 0-day. Ring0. Near-zero acquisition. It doesn't even leave logs, because it loads under the layer that writes them.\n\nEverything you own, all at once. Bring a real botnet.`},
+ {id:'m9',from:'Anatomical',subj:'virtual echolocation',rankReq:16,mesh:'m9',postEnding:true,
+  obj:{type:'trace'},reward:{tool:'ppop',key:'decoders'},pay:20000,rating:8,
+  body:`So you're the one who took Blackwing out of an intelligence host. Good. Then you're the only person left I can hand this to.\n\nYes — that Anatomical. I forked Sable's cracker a long time ago and then I stopped answering, because I'd started building something that made people want to find me.\n\n<b>Partisan Parity Occulus Prime.</b> PPOP. It doesn't peel a mesh node by node like everything else — it emits a shaped pulse and listens to what comes back. <b>VirtualEcholocation.</b> One pass, and the entire botnet renders at once: every node, every route, the mother IP, all of it. Amorphous, sequential, R00tKernel — it doesn't care.\n\nThe only build is on my testbed at <b>19.88.240.11</b>, and I hid it the way you'd expect: behind <b>thirty amorphous nodes</b>. Occulus will take you eight passes. Anything less will take all night.\n\nPeel it, send me the mother IP, and the renderer is yours. Consider it a fork of a fork — Sable gave me something free once, and I've been waiting a long time to pass it on.`},
+ /* narrative interludes (read-only, no objective) */
+ {id:'n1',from:'0RACLE',subj:'you don\'t know who you work for',note:true,unlockAfter:'m2',
+  body:`I've been reading your logs. Don't bother tracing this — it won't resolve.\nEvery file you steal, someone above Sable is cataloguing. You think you're a freelancer. You're a collection method.\nKeep working. I'll be in touch. Get your rank up — you'll need the tools.`},
+ {id:'n2',from:'SABLE',subj:'ignore the noise',note:true,unlockAfter:'m4',
+  body:`If a contact calling itself 0RACLE has messaged you: delete it and move on. It's a burned agent trying to spook rookies into walking away from good money.\nYou're doing well. Bigger contracts opening up. Stay focused, stay paid.`},
+ {id:'n3',from:'0RACLE',subj:'last warning before the core',note:true,unlockAfter:'m6',
+  body:`Now you've seen 6.0.0.1 in the logs. Now you know.\nThe NORAD job isn't a theft. It's the only way to pull your own name out of their grid before they close the file on you.\nStack every tool. Take the longest route you can. And when you're standing in the core — remember you always had a choice.`},
+];
+
+/* ================= NEW MILOS ARSENAL ================= */
+const ART={
+ brew:[
+"    ( (",
+"     ) )        b r e w   v0.4",
+"   .______.     new milos package manager",
+"   |      |]    'brew install <pkg>'",
+"   \\      /     free software, no questions",
+"    `----'"],
+ hc:[
+" ╦ ╦╔═╗╦  ╦╔═╗╔╗╔  ╔═╗╦═╗╔═╗╔═╗╦╔═╔═╗╦═╗",
+" ╠═╣╠═╣╚╗╔╝║╣ ║║║  ║  ╠╦╝╠═╣║  ╠╩╗║╣ ╠╦╝",
+" ╩ ╩╩ ╩ ╚╝ ╚═╝╝╚╝  ╚═╝╩╚═╩ ╩╚═╝╩ ╩╚═╝╩╚═",
+"   v1.0 · free build by sable · new milos"],
+ hcr:[
+" ▄▄▄▄ HAVENCRACKER ▄▄▄▄ R E D U X ▄▄▄▄",
+" ▓▒░ engine ....... retooled       ░▒▓",
+" ▓▒░ modules ...... passwd+firewall░▒▓",
+" ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀"],
+ heaven:[
+"     /\\                 H E A V E N",
+"    /  \\    ┌──────┐    c r a c k R",
+"   / /\\ \\   │ POLY │    anatomical fork",
+"  /_/  \\_\\  └──────┘    rewriting self…"],
+ blackwing:[
+"    ▄█▀▀▀█▄    M Y T H O S   B L A C K W I N G",
+"   ██  ▄  ██   skeletonkey 0-day · ring0 kernel",
+"    ▀█▄▄▄█▀    nmia black project · leaves no logs"],
+ sqlaudit:[
+" ┌─[ SQLaudit ]──────────────────────┐",
+" │  ▤ ▤ ▤   remote file manager      │",
+" │  mount · walk · shred             │",
+" └───────────────────────────────────┘"],
+ loic:[
+"       .-\"\"\"-.",
+"      /       \\     LOW ORBIT ION CANNON",
+"     |   (o)   |    ▁▂▃▄▅▆▇█ charging",
+"      \\  ___  /     imma chargin mah lazer",
+"       '-----'      · loud · easily traced ·"],
+ loicr:[
+"   <=====>    L O I C   R E D U X",
+"  <=======>   targeting ....... clean",
+"   <=====>    botnet .......... engaged"],
+ eloheim:[
+"   ✦   ✦   ✦    E L O H E I M   B O O T E R",
+"     ╲  │  ╱    polymorphic pulse · multi-vector",
+"   ──  ◉  ──    botnet synchronised",
+"     ╱  │  ╲    they will not find the source"],
+ valheim:[
+" ▛▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▜",
+" ▌  P R O J E C T   V A L H E I M  ▐",
+" ▌  amorphous identifier · nmia    ▐",
+" ▌  botnet: every phone in the city▐",
+" ▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▟"],
+};
+function artLine(lines,cls){if(!lines)return;pr(`<span class="${cls||'phos'}">${lines.join('\n')}</span>`);}
+
+const CRACKERS={
+ hc       :{n:'HavenCracker 1.0',  cmd:'hc',       tier:1,mult:1.8, fw:false,price:null,brewPkg:'havencracker',
+   d:'the New Milos workhorse',      lore:'Written and given away free by Sable. Half the city runs it. Install it with brew.'},
+ hcr      :{n:'HavenCracker Redux',cmd:'hcr',      tier:2,mult:3.1, fw:true, price:2600,
+   d:'cracks password AND firewall in one pass', lore:'Private Redux build — retooled engine, bundled firewall module.'},
+ heaven   :{n:'HeavenCrackR',      cmd:'heaven',   tier:3,mult:6.5, fw:false,price:6800,
+   d:'polymorphic · brutally fast · no firewall', lore:'Anatomical\'s private fork of HavenCracker. Rewrites itself every pass.'},
+ blackwing:{n:'Mythos Blackwing',  cmd:'blackwing',tier:4,mult:45,  fw:true, price:null,noLogs:true,myth:true,
+   d:'ring0 · Skeletonkey 0-day · no logs kept', lore:'NMIA black project. Not for sale — you take it from 88.99.99.99.'},
+};
+const BOOTERS={
+ loic   :{n:'Low Orbit Ion Cannon',cmd:'loic',   power:1, stealth:0.30,price:500,  needBot:false,
+   d:'basic flood · easily detected', lore:'Ancient, loud, still drops anyone who isn\'t paying attention.'},
+ loicr  :{n:'LOIC Redux',          cmd:'loicr',  power:2, stealth:0.58,price:1900, needBot:true,
+   d:'cleaner targeting · botnet-capable', lore:'First booter that can ride a botnet.'},
+ eloheim:{n:'Eloheim Booter',      cmd:'eloheim',power:4, stealth:0.82,price:7200, needBot:true,poly:true,
+   d:'polymorphic multi-pulse botnet flood', lore:'Pulses across your whole botnet at once. Expensive. Worth it.'},
+ valheim:{n:'Project Valheim',     cmd:'valheim',power:99,stealth:0.98,price:null,needBot:false,myth:true,
+   d:'amorphous identifier · city-scale', lore:'NMIA. Most of the wire thinks it\'s a myth. Most of the wire is wrong.'},
+};
+/* ---- decoders: how YOU chew through someone else's botnet ---- */
+const DECODERS={
+ netlynx:{n:'1NetLynx',              tier:1,price:null,brewPkg:'1netlynx',seq:true, amorph:false,  rootk:false,
+   d:'sequential decode, 5 → 1', lore:'Beginner decoder. Handles small Fullz chains. No amorphous.'},
+ parity :{n:'Parity via 1NetLynx',   tier:2,price:null,brewPkg:'parity',  seq:true, amorph:'weak', rootk:false,
+   d:'barely decodes amorphous', lore:'Community extension of 1NetLynx. It works. Slowly. Sometimes.'},
+ prime  :{n:'Parity Prime',          tier:3,price:4200,seq:true, amorph:true,  rootk:'seq',
+   d:'single-core amorphous · tracks sequential R00tKernel', lore:'Middle of the pack, and the first decoder that respects you.'},
+ occulus:{n:'Partisan Occulus',      tier:4,price:11000,seq:true,amorph:'multi',rootk:true,
+   d:'multicore · basetracks IP groups · bruteforces R00tKernel', lore:'Premium. Traces multiple sources at once from one amorphous base.'},
+ ppop   :{n:'PPOP',                  tier:5,price:null,quest:true,seq:true,amorph:'multi',rootk:true,sonic:true,
+   d:'VirtualEcholocation — sonicmaps an entire botnet in one pass', lore:'Partisan Parity Occulus Prime. Almost nobody has held one.'},
+};
+/* ---- brew: the package manager for everything free ---- */
+const PKGS={
+ havencracker:{n:'HavenCracker 1.0',key:'crackers',id:'hc',      d:'sable\'s free bruteforcer'},
+ '1netlynx'  :{n:'1NetLynx',        key:'decoders',id:'netlynx', d:'sequential decoder'},
+ parity      :{n:'Parity via 1NetLynx',key:'decoders',id:'parity',d:'weak amorphous decoder'},
+ monitorme   :{n:'MonitorMe GUI',   key:'monitors',id:'monitorme',d:'text botnet monitor'},
+ sqlaudit    :{n:'SQLaudit File Manager',key:'tools',id:'sqlaudit',d:'mount remote filesystems · wipe logs'},
+};
+const BOTNETS={
+ fullz :{n:'Fullz Botlist',    min:1, max:5, per:480,d:'cheap dummy IPs · stalls medium-speed traces'},
+ amorph:{n:'Amorphous Botnet', min:10,max:20,per:620,d:'encrypted mesh · relatively untraceable'},
+ rootk :{n:'R00tKernel Botnet',min:21,max:60,per:760,d:'p2p chain · must be traced hop by hop'},
+};
+const MONITORS={
+ monitorme:{n:'MonitorMe GUI',price:0,   d:'text ping list · burn traced IPs'},
+ obsidian :{n:'ObsidianGUI',  price:9500,d:'packet-flow view · reroute instead of burning'},
+ kernel   :{n:'KernelGuide',  price:13000,d:'node chain view · best for R00tKernel'},
+};
+
+/* ---------- ownership helpers ---------- */
+const owned=(k,id)=>(S[k]||[]).includes(id);
+function bestCracker(){let b=null;for(const id in CRACKERS)if(owned('crackers',id)&&(!b||CRACKERS[id].tier>CRACKERS[b].tier))b=id;return b;}
+function bestBooter(){let b=null;for(const id in BOOTERS)if(owned('booters',id)&&(!b||BOOTERS[id].power>BOOTERS[b].power))b=id;return b;}
+function botIPs(){return (S.botnet&&S.botnet.ips)||[];}
+function syncRoute(){G.route=botIPs().slice();if(typeof drawMap==='function')drawMap();}
+
+/* ---------- forum reputation ---------- */
+const FRANKS=[[0,'lurker'],[40,'known'],[120,'respected'],[280,'feared'],[600,'★ wire legend']];
+function forumRank(){let n='lurker';for(const[t,x]of FRANKS)if((S.rep||0)>=t)n=x;return n;}
+const TROLLS=[
+ {h:'sk1d_r34per',def:1,bite:0.85,net:'none',lines:["@%h% still running Brew in %y%? museum piece.","lmao @%h% got a job from sable? charity case."]},
+ {h:'n1hil',      def:2,bite:0.7, net:'fullz',lines:["@%h% pays retail for crackers like a tourist","@%h% couldn't boot a dial-up modem"]},
+ {h:'kr0nos',     def:3,bite:0.9, net:'fullz',venom:true,lines:[
+   "@%h% posts like someone who's never been traced. give it a week.",
+   "i've got gateway logs with @%h% all over them. want me to post them here? say please.",
+   "half this board is @%h% talking to themselves. you're a tourist with a free cracker.",
+   "@%h% every runner you've met is laughing at you in a channel you'll never find."]},
+ {h:'V01D',       def:4,bite:0.35,net:'amorph',lines:["@%h% is riding my coattails and the whole wire knows it","cute run @%h%. i was doing that in my sleep."]},
+ {h:'gr1mwald',   def:6,bite:0.15,net:'rootk',lines:["@%h% talks big for someone hiding behind a Fullz list","@%h% you're one trace away from a cell in new milos"]},
+];
+function trollIp(h){S.trollIps=S.trollIps||{};if(!S.trollIps[h]){S.trollIps[h]=randIP();persist();}return S.trollIps[h];}
+function trollByIp(ip){return TROLLS.find(t=>(S.trollIps||{})[t.h]===ip);}
+function trollPost(){if(!S||$('desktop').hidden)return;
+  const live=TROLLS.filter(t=>!(S.booted||[]).includes(t.h));if(!live.length)return;
+  const t=pick(live),th=pick(forumThreads());
+  const line=pick(t.lines).replace(/%h%/g,S.handle).replace(/%y%/g,'2049');
+  (AMBIENTADD[th.id]=AMBIENTADD[th.id]||[]).push({by:t.h,text:line,hostile:true});
+  th._new=true;forumNew++;worldBadges();notify('THE WIRE','@'+t.h+' tagged you');
+  if(!$('winForum').hidden)renderForum();}
+setInterval(()=>{if(S&&!$('desktop').hidden&&!G.conn&&Math.random()<0.35)trollPost();},52000);
+
+/* ---------- FREEPLAY GIGS (posted on the wire between contracts) ---------- */
+const GIGCORPS=[['Vantt Logistics','shipping manifests'],['Kestrel Dental Group','patient billing'],['Mireau Foods','supplier contracts'],
+ ['Halloway Realty','tenant records'],['Ostrand Freight','customs filings'],['Pell & Vance','case files'],
+ ['NM Transit Authority','fare data'],['Corvid Media','unaired footage'],['Brackwater Chem','safety audits'],['Lin-Hao Imports','ledgers']];
+const GIGPOSTERS=['w1re','n1ght','p1ng','ghosthz','m0th','v0xel','d3adhand'];
+let GIGS=[];
+function genGig(){const [corp,what]=pick(GIGCORPS),id='g'+RI(1000,9999);
+  const tier=RI(1,3),locks=tier===1?['password']:tier===2?['password','firewall']:['password','firewall','proxy'];
+  const del=Math.random()<0.4;
+  const fname=del?pick(['audit.log','incident.db','memo_final.doc']):pick(['records.db','contracts.xls','dump.tar']);
+  const tid='gt_'+id;
+  TARGETS[tid]={ip:randIP(),name:corp,org:corp,locks,traceRate:1.8+tier*0.55,gig:true,
+    files:[file(fname,['obj'],`[ ${what} ]`),file('readme.txt',[],`${corp} internal host.`)]};
+  return {id,gig:true,from:pick(GIGPOSTERS),subj:`${del?'wipe':'pull'} ${what} — ${corp}`,target:tid,
+    obj:{type:del?'delete':'download',file:fname},pay:340+tier*280+RI(0,160),rating:1,rankReq:0,
+    body:`${del?'need something gone':'need a copy'}: ${corp}, ${what}. ${locks.length} lock${locks.length>1?'s':''}. paying on delivery, no questions.`};}
+function refreshGigs(){const stale=GIGS.filter(g=>S.completed.includes(g.id));
+  stale.forEach(g=>{if(g.target&&TARGETS[g.target]&&TARGETS[g.target].gig)delete TARGETS[g.target];}); // don't leak hosts
+  GIGS=GIGS.filter(g=>!S.completed.includes(g.id));
+  while(GIGS.length<3)GIGS.push(genGig());}
+function gigThread(){refreshGigs();
+  return {id:'jobs',title:'▸ paid work — open gigs (freeplay)',by:'the wire',jobs:true,
+    posts:GIGS.map(g=>({by:g.from,text:`[${g.id}] ${g.subj} · ${TARGETS[g.target].ip} · ${TARGETS[g.target].locks.join('+')} · pays ${g.pay}c   →  take it:  gig ${g.id}`}))};}
+function cmdGig(a){const id=(a[0]||'').toLowerCase();
+  if(!id||id==='list'){refreshGigs();pr('<span class="c">open gigs on the wire</span>');
+    GIGS.forEach(g=>pr(`  <span class="ok">${g.id}</span>  ${g.subj} <span class="dim">· ${TARGETS[g.target].ip} · pays ${g.pay}c</span>`));
+    pr('<span class="dim">take one with <span class="c">gig &lt;id&gt;</span>. these repeat forever — grind them between contracts.</span>');return;}
+  const g=GIGS.find(x=>x.id.toLowerCase()===id);
+  if(!g){pr('no open gig with that id. <span class="c">gig list</span>','err');return;}
+  if(S.active){pr('finish or drop your current job first.','warn');return;}
+  S.active=g.id;S.activeGig=g.id;g._done=false;persist();
+  pr(`accepted gig: <span class="c">${g.subj}</span> — target <span class="warn">${TARGETS[g.target].ip}</span>`,'ok');
+  pr(`objective: <span class="warn">${objText(g)}</span>. begin with <span class="c">scan ${TARGETS[g.target].ip}</span>.`);}
+
+/* ---------- SQLaudit File Manager: the real way to wipe your trail ---------- */
+function logDate(){const d=new Date();return pad(d.getMonth()+1)+'-'+pad(d.getDate())+'-'+String(d.getFullYear()).slice(2);}
+function logPath(){return '~/logs/'+logDate()+'/logs';}
+function fsDirs(){const d=logDate(),p={};
+  p['~']=['logs/','www/','etc/','tmp/'];
+  p['~/logs']=[d+'/'];
+  p['~/logs/'+d]=['logs/','audit/'];
+  p['~/logs/'+d+'/logs']=G.logFiles||[];
+  p['~/logs/'+d+'/audit']=['checksum.idx'];
+  p['~/www']=['index.html','assets/'];
+  p['~/etc']=['passwd.shadow','hosts'];
+  p['~/tmp']=[];
+  return p;}
+function cmdSqlaudit(a){
+  if(!owned('tools','sqlaudit')){pr('SQLaudit File Manager is not installed.','err');
+    pr('<span class="dim">pull it from the free shelf: <span class="c">brew install sqlaudit</span></span>');return;}
+  const sub=(a[0]||'').toLowerCase();
+  if(sub==='disconnect'||sub==='exit'){if(!G.fm){pr('SQLaudit is not attached.','dim');return;}
+    G.fm=null;prompt();pr('<span class="ok">✓ SQLaudit detached — audit session closed cleanly.</span>');tutHook('fmdetach');return;}
+  if(!needConn())return;
+  if(G.fm){pr('SQLaudit already attached. <span class="c">cd</span> / <span class="c">ls</span> / <span class="c">rm</span>','warn');return;}
+  if(!G.access){pr('you need file access on the host first.','err');return;}
+  runOp('SQLaudit → mounting remote filesystem',2.0,()=>{
+    G.fm={cwd:'~'};prompt();artLine(ART.sqlaudit);
+    pr('<span class="ok">◈ SQLaudit attached.</span> remote filesystem mounted read/write.');
+    pr(`<span class="dim">their access logs live under <span class="c">${logPath()}</span> — navigate with <span class="c">cd</span>, list with <span class="c">ls</span>, wipe with <span class="c">rm *</span>.</span>`);
+    tutHook('fmattach');explain('sqlaudit');});}
+function normPath(cur,arg){
+  if(!arg||arg==='.')return cur;
+  if(arg==='~')return '~';
+  if(arg.startsWith('~'))return arg.replace(/\/+$/,'');
+  let parts=cur.split('/');
+  arg.split('/').forEach(seg=>{if(!seg||seg==='.')return;
+    if(seg==='..'){if(parts.length>1)parts.pop();}else parts.push(seg);});
+  return parts.join('/').replace(/\/+$/,'');}
+function cmdCd(a){if(!G.fm){pr('no filesystem mounted. attach <span class="c">sqlaudit</span> first.','err');return;}
+  const dirs=fsDirs(),target=normPath(G.fm.cwd,(a[0]||'~').replace(/\/+$/,''));
+  if(!(target in dirs)){pr(`cd: no such directory: ${escapeHtml(a[0]||'')}`,'err');return;}
+  G.fm.cwd=target;prompt();pr(`<span class="dim">${target}</span>`);
+  if(target===logPath())tutHook('fmcd');}
+function fmLs(){const dirs=fsDirs(),cur=G.fm.cwd,items=dirs[cur]||[];
+  pr(`<span class="c">${cur}</span>`);
+  if(!items.length){pr('  <span class="dim">(empty)</span>');return;}
+  items.forEach(x=>pr(`  ${x.endsWith('/')?`<span class="c">${x}</span>`:`<span class="ok">${x}</span>`}`));
+  if(cur===logPath())tutHook('fmls');}
+function cmdRm(a){if(!G.fm){pr('rm: no filesystem mounted. attach <span class="c">sqlaudit</span>.','err');return;}
+  const cur=G.fm.cwd,arg=(a[0]||'').replace('-rf','').trim()||a[1]||'';
+  if(cur!==logPath()){pr('rm: permission denied — SQLaudit only has write access to the audit tree.','err');
+    pr(`<span class="dim">the logs you want are in <span class="c">${logPath()}</span></span>`);return;}
+  const files=G.logFiles||[];
+  if(!files.length){pr('nothing left to delete here.','dim');return;}
+  const all=arg==='*'||arg==='-rf'||arg==='';
+  if(!all&&!files.includes(arg)){pr(`rm: no such file: ${escapeHtml(arg)}`,'err');return;}
+  const doomed=all?files.slice():[arg];
+  runOp(`SQLaudit → shredding ${doomed.length} file(s)`,1.2+doomed.length*0.35,()=>{
+    doomed.forEach(f=>{G.logFiles=G.logFiles.filter(x=>x!==f);pr(`  <span class="warn">✗ ${f} shredded</span>`);});
+    if(!G.logFiles.length){G.logsDeleted=true;
+      pr('<span class="ok">✓ access log directory empty — you were never on this host.</span>');
+      pr('<span class="dim">now detach cleanly: <span class="c">sqlaudit disconnect</span></span>');
+      tutHook('fmrm');blip(900,0.16,'sine',0.06,1300);}
+    else pr(`<span class="dim">${G.logFiles.length} log file(s) remain.</span>`);});}
+
+/* ---------- MFMMO early-access reward codes ---------- */
+const CODES={
+ burn :{code:'FF3-GZH-42CRONI',  label:'ENDING · THE ARSONIST',      verb:'burn'},
+ seize:{code:'AZH-AZN-33BRAGA',  label:'ENDING · THE NEW WATCHER',   verb:'seize'},
+ walk :{code:'GHO-FIL-33PRADI',  label:'ENDING · THE GHOST',         verb:'walk'},
+ skeletonkey:{code:'BLACKWING-GHZ-120-993-44ZZ',label:'SKELETONKEY · Mythos Blackwing recovered'},
+ ppop :{code:'RADAR-HGG-129-933-22HH',          label:'RADAR · VirtualEcholocation acquired'},
+};
+function grantCode(key){const C=CODES[key];if(!C)return;
+  S.codes=S.codes||[];if(!S.codes.includes(key))S.codes.push(key);persist();
+  const ending=C.verb?`<div class="cnote">One code per completion. You chose to <b>${C.verb}</b>.<br>Make a new user and choose the other to unlock the next 2 codes.</div>`:'';
+  // terminal copy (stays in scrollback)
+  pr('');
+  pr('<span class="m">╔══════════════════════════════════════════════╗</span>');
+  pr(`<span class="m">║</span> <span class="phos">◈ MFMMO EARLY-ACCESS TOKEN UNLOCKED</span>`);
+  pr(`<span class="m">║</span> <span class="dim">${C.label}</span>`);
+  pr(`<span class="m">║</span> <span class="ok" style="font-size:14px;user-select:text;">${C.code}</span>`);
+  pr('<span class="m">╚══════════════════════════════════════════════╝</span>');
+  pr('<span class="dim">redeem at <span class="c">mfmmo.com</span> · type <span class="c">codes</span> to see your tokens again</span>');
+  // unmissable modal
+  const m=$('progModal');m.hidden=false;
+  m.innerHTML=`<div class="progcard codecard">
+    <div class="ptag">◈ secret unlock</div>
+    <div class="pname">MFMMO Early-Access Token</div>
+    <div class="pwhat">You've finished the run. This is a <b>secret early-release token</b> for
+      <b>MFMMO Story Mode</b>, launching <b>late October</b> — plus a <b>secret badge</b> redeemable at
+      <span style="color:var(--cyan)">mfmmo.com</span>.</div>
+    <div class="clabel">${C.label}</div>
+    <div class="codebox" id="codeBox">${C.code}</div>
+    ${ending}
+    <button id="codeOk">got it</button></div>`;
+  $('codeOk').onclick=()=>{m.hidden=true;showProg();blip(700,0.05);};
+  const box=$('codeBox');if(box)box.onclick=()=>{try{const r=document.createRange();r.selectNodeContents(box);
+    const s=getSelection();s.removeAllRanges();s.addRange(r);document.execCommand('copy');
+    box.dataset.copied='1';box.textContent=C.code+'   ✓ copied';setTimeout(()=>box.textContent=C.code,1400);}catch(e){}};
+  chord([523,659,784,1047]);}
+function cmdCodes(){const list=(S.codes||[]);
+  if(!list.length){pr('no tokens yet. finish a run — the ending you choose decides which code you get.','dim');return;}
+  pr('<span class="phos">◈ your MFMMO early-access tokens</span>');
+  list.forEach(k=>{const C=CODES[k];pr(`  <span class="dim">${C.label.padEnd(44)}</span><span class="ok" style="user-select:text;">${C.code}</span>`);});
+  pr('<span class="dim">redeem at <span class="c">mfmmo.com</span> · one ending code per playthrough</span>');}
+
+/* ---------- program explainer overlay ---------- */
+const PROGINFO={
+ brew:{n:'brew',tag:'package manager',what:'Fetches and installs free software onto your deck. Nobody in New Milos pays for tools that were given away.',how:'brew list · brew install &lt;pkg&gt;'},
+ hc:{n:'HavenCracker 1.0',tag:'password cracker',what:'Bruteforces a host\'s password lock. Sable wrote it and gave it away — it is the baseline every runner learns on. Faster crackers exist; none are free.',how:'hc  (or just: crack)'},
+ sqlaudit:{n:'SQLaudit File Manager',tag:'remote filesystem',what:'Mounts the target\'s filesystem so you can walk it like your own. This is how you delete your access logs — there is no magic one-shot command for covering your tracks.',how:'sqlaudit → cd &lt;dir&gt; → ls → rm * → sqlaudit disconnect'},
+ netlynx:{n:'1NetLynx',tag:'decoder',what:'Peels a target\'s botnet back toward its real origin. Sequential chains only — an amorphous mesh will defeat it.',how:'resolve &lt;handle&gt; · decode &lt;ip&gt;'},
+ loic:{n:'Low Orbit Ion Cannon',tag:'booter',what:'Floods a resolved IP until the person behind it drops off the wire. Loud and easy to fingerprint — but it drops anyone who is not watching their pipe.',how:'boot &lt;ip&gt;'},
+ monitorme:{n:'MonitorMe GUI',tag:'botnet monitor',what:'Pings the IPs in your botnet and tells you which one a reverse-trace has reached. Burn that IP and the trace loses the thread.',how:'monitor · burn &lt;ip&gt;'},
+ parity:{n:'Parity via 1NetLynx',tag:'decoder',what:'Adds shaky amorphous-mesh support to 1NetLynx. It peels one node per pass and collapses about 4 times in 10 — but it is free, and it is the only free thing that touches a mesh.',how:'decode &lt;ip&gt;'},
+ prime:{n:'Parity Prime',tag:'decoder',what:'A real amorphous decoder. Two nodes per pass, no collapses, and it walks sequential R00tKernel chains without complaining.',how:'decode &lt;ip&gt; · resolve &lt;handle&gt;'},
+ occulus:{n:'Partisan Occulus',tag:'decoder',what:'Multicore. Basetracks four mesh nodes per pass and bruteforces R00tKernel chains. This is the decoder people save up for.',how:'decode &lt;ip&gt;'},
+ hcr:{n:'HavenCracker Redux',tag:'cracker',what:'The private Redux build. Retooled engine, and it strips the firewall in the same pass as the password — one command instead of two.',how:'hcr'},
+ heaven:{n:'HeavenCrackR',tag:'cracker',what:'Anatomical\'s polymorphic fork. It rewrites itself every pass, which makes it brutally fast — but it dropped the firewall module to get there.',how:'heaven'},
+ loicr:{n:'LOIC Redux',tag:'booter',what:'Cleaner targeting than the original, and the first booter that can ride your botnet — more IPs means more power behind the flood.',how:'boot &lt;ip&gt;'},
+ eloheim:{n:'Eloheim Booter',tag:'booter',what:'Polymorphic multi-pulse flooding across your whole botnet at once. Expensive, quiet, and it drops people who thought they were safe.',how:'boot &lt;ip&gt;'},
+ obsidian:{n:'ObsidianGUI',tag:'botnet monitor',what:'Enterprise monitor. Shows your botnet as a live mesh with packet flow, and instead of burning a traced IP you can loop it back into the mesh to buy time.',how:'monitor → click a node → reroute'},
+ kernel:{n:'KernelGuide',tag:'botnet monitor',what:'Displays a R00tKernel botnet as its true node chain, so you can see exactly how far along the chain a trace has walked.',how:'monitor'},
+};
+let progQueue=[];
+function explain(id){if(!PROGINFO[id])return;S.explained=S.explained||[];
+  if(S.explained.includes(id))return;S.explained.push(id);persist();
+  progQueue.push(id);if(progQueue.length===1)showProg();}
+function showProg(){const id=progQueue[0];if(!id){$('progModal').hidden=true;return;}
+  const P=PROGINFO[id],m=$('progModal');m.hidden=false;
+  m.innerHTML=`<div class="progcard">
+    <div class="ptag">new program · ${P.tag}</div>
+    <div class="pname">${P.n}</div>
+    ${ART[id]?`<pre class="part">${ART[id].join('\n')}</pre>`:''}
+    <div class="pwhat">${P.what}</div>
+    <div class="phow">${P.how}</div>
+    <button id="progOk">got it</button></div>`;
+  $('progOk').onclick=()=>{progQueue.shift();showProg();blip(700,0.05);};}
+
+/* ---------- OFFENSIVE DECODING: peel someone else's mesh ---------- */
+const MESHES={
+ m6a:{ip:'77.14.203.6', type:'amorph',layers:12,label:'telemetry broker'},
+ m6b:{ip:'204.88.6.19', type:'rootk', layers:22,label:'the archivist'},
+ m9 :{ip:'19.88.240.11',type:'amorph',layers:30,label:'occulus prime testbed'},
+};
+const MESHJOB=MESHES.m6a;                       // legacy alias
+function meshKeyByIp(ip){return Object.keys(MESHES).find(k=>MESHES[k].ip===ip);}
+function meshState(key){S.meshes=S.meshes||{};const D=MESHES[key];
+  if(!S.meshes[key])S.meshes[key]={ip:D.ip,type:D.type,total:D.layers,revealed:[],
+    chain:Array.from({length:D.layers},()=>randIP()),mother:randIP(),done:false};
+  return S.meshes[key];}
+function activeMeshKey(){const m=activeMission();return m&&m.mesh?m.mesh:null;}
+function cmdDecode(a){const ip=(a[0]||'').trim();
+  if(!ip){pr('usage: <span class="c">decode &lt;ip&gt;</span> — peel a mesh relay back toward its mother IP.','dim');return;}
+  const key=meshKeyByIp(ip);
+  if(!key){pr('that host isn\'t a mesh relay you have a reason to decode.','err');return;}
+  const did=bestDecoder();
+  if(!did){pr('no decoder installed. <span class="c">brew install 1netlynx</span> to start.','err');return;}
+  const D=DECODERS[did],M=meshState(key);
+  if(M.done){pr(`already decoded. mother IP: <span class="phos">${M.mother}</span> — <span class="c">submit ${M.mother}</span>`,'warn');return;}
+  const cap=canDecode(D,M.type);
+  if(!cap){pr(`<span class="err">✗ ${D.n} cannot decode an amorphous mesh.</span>`);
+    pr('<span class="dim">you need Parity or better. the free shelf has <span class="c">brew install parity</span>.</span>');return;}
+  // how many layers this decoder peels per pass
+  const perPass=D.sonic?999:D.amorph==='multi'?4:D.amorph===true?2:1;
+  const secs=D.sonic?2.2:(3.4/(0.4+D.tier*0.4))*(cap==='slow'?1.9:1);
+  if(D.sonic)pr('<span class="phos">VirtualEcholocation — sonicmapping the entire mesh…</span>');
+  runOp(`${D.n} → basetracking ${ip} (${M.revealed.length}/${M.total} peeled)`,secs,()=>{
+    if(cap==='slow'&&Math.random()<0.4){pr(`<span class="err">✗ pass collapsed — ${D.n} lost coherence. mesh re-keyed a node.</span>`);return;}
+    const before=M.revealed.length;
+    for(let i=0;i<perPass&&M.revealed.length<M.total;i++)M.revealed.push(M.chain[M.revealed.length]);
+    const got=M.revealed.slice(before);
+    got.forEach(x=>pr(`  <span class="ok">◂ ${x}</span> <span class="dim">peeled</span>`));
+    if(M.revealed.length>=M.total){M.done=true;persist();
+      pr(`<span class="phos">✦ mesh fully mapped — mother IP: ${M.mother}</span>`);
+      pr(`<span class="dim">report it: <span class="c">submit ${M.mother}</span></span>`);blip(1000,0.18,'sine',0.06,1500);}
+    else{persist();pr(`<span class="dim">${M.revealed.length}/${M.total} nodes peeled. run <span class="c">decode ${ip}</span> again.</span>`);}
+  });}
+
+/* ---------- brew: package manager ---------- */
+function hasBrew(){return !!S.flags.brew;}
+function cmdGetbrew(a){
+  if(hasBrew()){pr('brew is already installed. <span class="c">brew list</span>','warn');return;}
+  const ch=(a[0]||'').toLowerCase();
+  if(ch!=='stable'){pr('usage: <span class="c">getbrew stable</span>  <span class="dim">(channels: stable · nightly[unavailable])</span>','dim');
+    if(ch==='nightly')pr('nightly is broken again. it is always broken. use stable.','warn');return;}
+  pr('<span class="dim">fetching brew installer from the new milos mirror…</span>');
+  runOp('getbrew: installing brew (stable)',3.0,()=>{
+    S.flags.brew=true;persist();pr('');artLine(ART.brew);
+    pr('<span class="ok">◈ brew installed.</span>');
+    pr('<span class="dim">the free shelf is open. try <span class="c">brew list</span>, then <span class="c">brew install havencracker</span>.</span>');
+    explain('brew');tutHook('getbrew');blip(900,0.14,'sine',0.06,1300);});}
+function cmdBrew(a){
+  if(!hasBrew()){pr('brew: command not found.','err');
+    pr('<span class="dim">every deck in New Milos pulls it the same way: <span class="c">getbrew stable</span></span>');return;}
+  const sub=(a[0]||'').toLowerCase();
+  if(sub==='list'||sub==='search'||!sub){artLine(ART.brew);
+    pr('<span class="c">available packages</span> <span class="dim">(free · brew install &lt;pkg&gt;)</span>');
+    Object.keys(PKGS).forEach(p=>{const P=PKGS[p],have=owned(P.key,P.id);
+      pr(`  <span class="${have?'dim':'ok'}">${p.padEnd(16)}</span><span class="dim">${P.d}${have?'  [installed]':''}</span>`);});return;}
+  if(sub!=='install'){pr('usage: <span class="c">brew install &lt;pkg&gt;</span> · <span class="c">brew list</span>','dim');return;}
+  const name=(a[1]||'').toLowerCase(),P=PKGS[name];
+  if(!P){pr(`no package named "${escapeHtml(a[1]||'')}". try <span class="c">brew list</span>.`,'err');return;}
+  if(owned(P.key,P.id)){pr(`${P.n} is already installed.`,'warn');return;}
+  runOp(`brew: fetching ${name}`,2.2,()=>{
+    (S[P.key]=S[P.key]||[]).push(P.id);persist();renderShop();renderMonitor();
+    const art=ART[P.id];if(art){pr('');artLine(art);}
+    pr(`<span class="ok">◈ installed ${P.n}.</span>`);
+    if(P.key==='crackers')pr(`<span class="dim">run it with <span class="c">${CRACKERS[P.id].cmd}</span>, or just <span class="c">crack</span>.</span>`);
+    if(P.key==='decoders')pr('<span class="dim">decoders let you chew through someone else\'s botnet — see <span class="c">resolve</span>.</span>');
+    explain(P.id);tutHook('brewinstall_'+P.id);blip(880,0.12,'sine',0.06,1200);});}
+
+/* ---------- finding people (you can't see IPs on a forum) ---------- */
+const BAITS=[
+ "posted a 'leaked new milos gateway dump' link in the thread",
+ "posted a fake bounty for %t%'s own botnet and left a tracking pixel",
+ "replied claiming you have %t%'s old logs, with a link to 'proof'",
+];
+function cmdBait(a){const raw=(a[0]||'').replace('@','');
+  if(!raw){pr('usage: <span class="c">bait &lt;handle&gt;</span> — social-engineer a forum user into revealing their origin.','dim');return;}
+  const t=TROLLS.find(x=>x.h.toLowerCase()===raw.toLowerCase());
+  if(!t){pr('no such user on the wire.','err');return;}
+  if((S.resolved||{})[t.h]){pr(`you already have ${t.h}'s origin: <span class="phos">${S.resolved[t.h]}</span>`,'warn');return;}
+  if((S.booted||[]).includes(t.h)){pr(`${t.h} is already offline.`,'warn');return;}
+  const line=pick(BAITS).replace(/%t%/g,t.h);
+  pr(`<span class="dim">social engineering:</span> ${line}…`);
+  const th=pick(forumThreads());
+  (AMBIENTADD[th.id]=AMBIENTADD[th.id]||[]).push({by:'you',text:`re: ${t.h} — got something of yours. proof here: [nm-dump.link/${RI(1000,9999)}]`});
+  th._new=true;forumNew++;worldBadges();if(!$('winForum').hidden)renderForum();
+  runOp(`waiting for ${t.h} to take the bait`,4.0,()=>{
+    const scripted=S.active==='mb'&&t.h==='kr0nos';        // the training mark always bites
+    if(scripted||Math.random()<t.bite){
+      const ip=trollIp(t.h);(S.resolved=S.resolved||{})[t.h]=ip;(S.unaware=S.unaware||{})[t.h]=true;persist();
+      (AMBIENTADD[th.id]=AMBIENTADD[th.id]||[]).push({by:t.h,text:`what proof? there's nothing there. you're bluffing.`,hostile:true});
+      pr(`<span class="ok">✦ ${t.h} clicked it.</span>`);
+      pr(`<span class="phos">origin resolved → ${ip}</span>  <span class="dim">(saved to your links)</span>`);
+      pr(`<span class="dim">now hit it: <span class="c">boot ${ip}</span></span>`);
+      renderForum();tutHook('bait');blip(1000,0.14,'sine',0.06,1400);
+    }else{
+      S.rep=Math.max(0,(S.rep||0)-4);
+      (AMBIENTADD[th.id]=AMBIENTADD[th.id]||[]).push({by:t.h,text:`lmao @${S.handle} posting bait links. i've been doing this since before you had a gateway.`,hostile:true});
+      pr(`<span class="err">✗ ${t.h} didn't bite — and called it out publicly. rep −4.</span>`);
+      pr('<span class="dim">try again, or buy a <span class="c">Bloodhound Resolver</span> and do it the expensive way.</span>');
+      renderForum();}
+    persist();syncTop();});}
+function bestDecoder(){let b=null;for(const id in DECODERS)if(owned('decoders',id)&&(!b||DECODERS[id].tier>DECODERS[b].tier))b=id;return b;}
+function canDecode(D,net){ // net: none | fullz | amorph | rootk
+  if(!D)return false;
+  if(net==='none'||net==='fullz')return !!D.seq;
+  if(net==='amorph')return D.amorph==='weak'?'slow':!!D.amorph;
+  if(net==='rootk')return D.rootk===true?true:(D.rootk==='seq'?'slow':false);
+  return false;}
+const NETNAME={none:'no botnet',fullz:'a Fullz chain',amorph:'an Amorphous mesh',rootk:'a R00tKernel chain'};
+function cmdResolve(a){const raw=(a[0]||'').replace('@','');
+  if(!raw){pr('usage: <span class="c">resolve &lt;handle&gt;</span> — decode their botnet to expose the origin.','dim');return;}
+  const t=TROLLS.find(x=>x.h.toLowerCase()===raw.toLowerCase());
+  if(!t){pr('no such user on the wire.','err');return;}
+  if((S.resolved||{})[t.h]){pr(`already resolved: <span class="phos">${S.resolved[t.h]}</span>`,'warn');return;}
+  const did=bestDecoder();
+  if(!did){pr('you have no decoder. <span class="c">brew install 1netlynx</span> (free) to start.','err');return;}
+  const D=DECODERS[did],net=t.net||'none',cap=canDecode(D,net);
+  pr(`<span class="dim">${D.n} → ${t.h} is behind ${NETNAME[net]}.</span>`);
+  if(!cap){pr(`<span class="err">✗ ${D.n} can't decode ${NETNAME[net]}.</span>`);
+    pr('<span class="dim">you need a stronger decoder — or <span class="c">bait</span> them into revealing it themselves.</span>');return;}
+  if(D.sonic)pr('<span class="phos">VirtualEcholocation: sonicmapping the entire mesh in one pass…</span>');
+  const secs=D.sonic?1.6:((4+ (net==='rootk'?6:net==='amorph'?5:2)) / (0.5+D.tier*0.55)) * (cap==='slow'?2.2:1);
+  runOp(`${D.n} → decoding ${t.h}'s ${net==='none'?'route':net}`,secs,()=>{
+    if(cap==='slow'&&Math.random()<0.4){pr(`<span class="err">✗ decode collapsed — ${D.n} lost the mesh key.</span>`);
+      pr('<span class="dim">try again, or upgrade your decoder.</span>');return;}
+    const ip=trollIp(t.h);(S.resolved=S.resolved||{})[t.h]=ip;persist();
+    pr(`<span class="phos">✦ origin resolved → ${ip}</span>`);
+    pr(`<span class="dim">they don't know you have it. <span class="c">boot ${ip}</span> when you're ready.</span>`);
+    renderForum();tutHook('bait');blip(1000,0.14,'sine',0.06,1400);});}
+/* ---------- booting (by IP — you must resolve them first) ---------- */
+function cmdBoot(a,forced){
+  const raw=(a[0]||'').replace('@','');
+  if(!raw){pr('usage: <span class="c">boot &lt;ip&gt;</span> — you need their origin IP first (<span class="c">bait</span> or <span class="c">resolve</span>).','dim');return;}
+  let t=trollByIp(raw);
+  if(!t){const named=TROLLS.find(x=>x.h.toLowerCase()===raw.toLowerCase());
+    if(named){pr(`you can't boot a <em>handle</em> — forums don't hand out IPs.`,'err');
+      pr(`<span class="dim">get ${named.h}'s origin first: <span class="c">bait ${named.h}</span> (free, social engineering) or <span class="c">resolve ${named.h}</span> (Bloodhound).</span>`);return;}
+    pr('that IP isn\'t attached to anyone you\'ve resolved.','err');return;}
+  if(!(S.resolved||{})[t.h]){pr('you haven\'t resolved that origin yet.','err');return;}
+  if((S.booted||[]).includes(t.h)){pr(`${t.h} is already offline. let them stew.`,'warn');return;}
+  const bid=forced||bestBooter();
+  if(!bid){pr('you don\'t own a booter. buy one in <span class="c">shop</span>.','err');return;}
+  if(forced&&!owned('booters',forced)){pr(`you don't own ${BOOTERS[forced].n}.`,'err');return;}
+  const B=BOOTERS[bid];
+  if(B.needBot&&!botIPs().length){pr(`${B.n} rides a botnet — you don't have one. <span class="c">buybot</span> first.`,'err');return;}
+  artLine(ART[bid]);G.active2=true;
+  runOp(`${B.n} → flooding ${t.h}`,3.4,()=>{
+    const botBonus=Math.min(3,botIPs().length/8);
+    const unaware=(S.unaware||{})[t.h]?3:0;   // baited = caught unaware; even LOIC drops anyone off-guard
+    if(unaware)pr('<span class="dim">he clicked your link an hour ago — he isn\'t watching his pipe.</span>');
+    const win=(B.power+botBonus+unaware)>=t.def;
+    if(win){(S.booted=S.booted||[]).push(t.h);const gain=t.def*14+12;const before=forumRank();S.rep=(S.rep||0)+gain;
+      if(forumRank()!==before){setTimeout(()=>{pr('');
+        pr('<span class="m">╔══════════════════════════════════════╗</span>');
+        pr(`<span class="m">║</span>  <span class="phos">▲ THE WIRE RECOGNISES YOU</span>`);
+        pr(`<span class="m">║</span>  <span class="dim">${before}</span> → <span class="ok" style="font-size:14px;">${forumRank()}</span>`);
+        pr('<span class="m">╚══════════════════════════════════════╝</span>');
+        chord([523,659,784]);},700);}
+      pr(`<span class="ok">✦ ${t.h} DROPPED — pipe flooded, they're off the wire.</span>`);
+      pr(`<span class="phos">forum rep +${gain} → ${S.rep} (${forumRank()})</span>`);
+      bootThreadPost(t,true);blip(1200,0.3,'sawtooth',0.05,300);tutHook('boot');
+      const am=activeMission();
+      if(am&&am.obj.type==='boot'&&am.obj.handle===t.h){am._done=true;completeMission(am);}}
+    else{S.rep=Math.max(0,(S.rep||0)-10);
+      pr(`<span class="err">✗ ${t.h} soaked it — they're sitting behind a real botnet. rep −10.</span>`);
+      pr('<span class="dim">bring a stronger booter, more botnet IPs, or catch them off-guard by baiting them first.</span>');
+      if((S.unaware||{})[t.h]){delete S.unaware[t.h];pr('<span class="dim">…and now he knows you\'re coming.</span>');}
+      bootThreadPost(t,false);noise(0.4,0.05,300);}
+    if(Math.random()>B.stealth){S.heat=clamp(S.heat+12,0,100);
+      pr('<span class="warn">⚠ your flood got fingerprinted — heat +12.</span>');}
+    persist();syncTop();renderForum();worldBadges();});
+}
+function bootThreadPost(t,win){const th=forumThreads().find(x=>x.id==='wire')||pick(forumThreads());
+  const posts=win?[{by:'cr4sh',text:`${t.h} just went dark mid-post 💀 that was ${S.handle}.`},
+                   {by:'p1ng',text:`respect. ${t.h} had that coming.`}]
+                : [{by:t.h,text:`@${S.handle} tried to boot me. cute. my botnet ate it.`}];
+  (AMBIENTADD[th.id]=AMBIENTADD[th.id]||[]).push(...posts);th._new=true;forumNew++;}
+
+/* ---------- botnets ---------- */
+function cmdBotnet(){const b=S.botnet;
+  if(!S.flags.botnetUnlocked){pr('you don\'t run a botnet. right now you don\'t need one — the jobs you\'re taking barely look up.','dim');return;}
+  if(!b||!b.ips.length){pr('no botnet. buy one: <span class="c">buybot fullz 5</span> / <span class="c">buybot amorph 14</span> / <span class="c">buybot rootk 30</span>','warn');
+    pr('<span class="dim">a botnet is your route home — it is what the reverse-trace has to chew through.</span>');return;}
+  const B=BOTNETS[b.type];pr(`<span class="c">${B.n}</span> — <span class="ok">${b.ips.length}</span> live IPs`);
+  pr('<span class="dim">'+b.ips.slice(0,12).join('  ')+(b.ips.length>12?`  …+${b.ips.length-12} more`:'')+'</span>');
+  pr(`trace divisor <span class="ok">${traceDiv().toFixed(2)}×</span> · monitor: ${owned('monitors','monitorme')?'<span class="ok">MonitorMe</span>':'<span class="err">none — you are blind</span>'}`);}
+function cmdBuybot(a){
+  if(!S.flags.botnetUnlocked){pr('nobody on the wire will sell you IPs yet — you haven\'t needed them.','warn');
+    pr('<span class="dim">run a couple of real contracts first. someone will tell you when it\'s time.</span>');return;}
+  const type=a[0],n=parseInt(a[1]);const B=BOTNETS[type];
+  if(!B){pr('types: <span class="c">fullz</span> (1–5) · <span class="c">amorph</span> (10–20) · <span class="c">rootk</span> (21–60)','err');return;}
+  if(!n||n<B.min||n>B.max){pr(`${B.n} supports ${B.min}–${B.max} IPs. e.g. <span class="c">buybot ${type} ${B.min}</span>`,'err');return;}
+  if(botIPs().length){pr('you already run a botnet. <span class="c">burn all</span> before buying another.','warn');return;}
+  const cost=n*B.per;if(S.creds<cost){pr(`that's ${cost}c and you have ${S.creds}c.`,'err');return;}
+  S.creds-=cost;S.botnet={type,ips:Array.from({length:n},()=>randIP())};persist();syncTop();syncRoute();
+  pr(`<span class="ok">◈ ${B.n} acquired — ${n} IPs routed.</span> (−${cost}c)`);
+  if(!owned('monitors','monitorme'))pr('<span class="warn">you have no monitor — you won\'t see which IP is being traced. MonitorMe is free in the shop.</span>');
+  renderShop();renderMonitor();}
+function traceDiv(){const n=botIPs().length;return 1+Math.pow(n,0.75)*0.45;}
+function cmdBurn(a){const w=(a[0]||'');
+  if(!botIPs().length){pr('no botnet to burn.','err');return;}
+  if(w==='all'){const n=botIPs().length;S.botnet=null;syncRoute();
+    if(G.conn){G.trace=0;G.tracedNode=-1;pr(`<span class="ok">✦ all ${n} IPs burned — the trace lost you completely.</span>`);}
+    pr('<span class="warn">botnet destroyed. buy a new one before your next run.</span>');
+    persist();syncTop();renderMonitor();return;}
+  const i=botIPs().indexOf(w);if(i<0){pr('that IP is not in your botnet. see <span class="c">botnet</span>.','err');return;}
+  S.botnet.ips.splice(i,1);syncRoute();G.trace=Math.max(0,G.trace-35);
+  pr(`<span class="ok">✦ ${w} burned — the trace lost the thread.</span> <span class="dim">botnet now ${botIPs().length} IPs.</span>`);
+  blip(300,0.2,'sawtooth',0.05,120);persist();renderMonitor();}
+function cmdReroute(a){if(!owned('monitors','obsidian')){pr('rerouting needs <span class="c">ObsidianGUI</span>.','err');return;}
+  const ip=a[0];if(botIPs().indexOf(ip)<0){pr('not one of your IPs.','err');return;}
+  S.rerouted=(S.rerouted||0)+1;G.trace=Math.max(0,G.trace-22);
+  pr(`<span class="ok">↻ ${ip} looped back into the mesh — the trace is chasing its own tail.</span>`);
+  if(S.rerouted>3)pr('<span class="warn">they\'re close to lifting your mesh key. rerouting won\'t hold much longer.</span>');
+  renderMonitor();}
+
+/* ---------- monitor window (text for MonitorMe · GUI for Obsidian/KernelGuide) ---------- */
+let monSel=null,monPos=null,monKey='',monCv=null,monCtx=null;
+function hasGui(){return owned('monitors','obsidian')||owned('monitors','kernel');}
+function monLayout(w,h){const ips=botIPs(),key=ips.join(',')+'|'+w+'|'+h;
+  if(monKey===key&&monPos)return monPos;monKey=key;
+  const chain=owned('monitors','kernel')&&S.botnet&&S.botnet.type==='rootk';
+  monPos=ips.map((ip,i)=>{
+    if(chain){const cols=Math.max(4,Math.ceil(Math.sqrt(ips.length*1.7)));
+      const r=Math.floor(i/cols),c=(r%2? cols-1-(i%cols) : i%cols),rows=Math.ceil(ips.length/cols);
+      return {ip,x:22+c*((w-44)/Math.max(1,cols-1)),y:26+r*((h-52)/Math.max(1,rows-1||1))};}
+    const a=i*2.39996,rad=10+Math.sqrt(i+1)*(Math.min(w,h)*0.115);
+    return {ip,x:w/2+Math.cos(a)*rad,y:h/2+Math.sin(a)*rad*0.62};});
+  return monPos;}
+function renderMonitor(){const b=$('monBody');if(!b)return;monCv=null;monCtx=null;
+  const ips=botIPs(),anyMon=owned('monitors','monitorme')||hasGui();
+  if(!anyMon){b.innerHTML='<div class="imempty">no monitor installed.<br><span style="color:var(--amber)">MonitorMe GUI is free</span> in Software.</div>';return;}
+  if(!ips.length){b.innerHTML='<div class="imempty">no botnet.<br>buy one with <span style="color:var(--cyan)">buybot</span>.</div>';return;}
+  const B=BOTNETS[S.botnet.type];
+  if(!hasGui()){ // MonitorMe: text only, no packet flow
+    let h=`<div class="monhd">${B.n} · ${ips.length} IPs · <span style="color:var(--dim)">MonitorMe (text)</span></div>`;
+    ips.forEach(ip=>{const isHot=ip===G.tracedIp;
+      h+=`<div class="monrow ${isHot?'hot':''}"><span class="mip">${ip}</span><span class="mst">${isHot?'◉ TRACED':'· quiet'}</span><button data-ip="${ip}">burn</button></div>`;});
+    h+=`<div class="monfoot"><button id="burnAll">burn all (destroys botnet)</button></div>`;
+    b.innerHTML=h;b.querySelectorAll('.monrow button').forEach(x=>x.onclick=()=>cmdBurn([x.dataset.ip]));
+    $('burnAll').onclick=()=>cmdBurn(['all']);return;}
+  // GUI mode
+  const chain=owned('monitors','kernel')&&S.botnet.type==='rootk';
+  b.innerHTML=`<div class="monhd">${B.n} · ${ips.length} IPs · <span style="color:var(--phos)">${chain?'KernelGuide — node chain':'ObsidianGUI — live mesh'}</span></div>
+    <canvas id="monCanvas"></canvas>
+    <div class="montools" id="monTools"></div>`;
+  monCv=$('monCanvas');monCtx=monCv.getContext('2d');monKey='';
+  monCv.onclick=e=>{const r=monCv.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;
+    const pos=monLayout(monCv.clientWidth,monCv.clientHeight);let best=null,bd=1e9;
+    pos.forEach(p=>{const d=Math.hypot(px-p.x,py-p.y);if(d<bd){bd=d;best=p;}});
+    if(best&&bd<16){monSel=best.ip;blip(700,0.05);monTools();}};
+  monTools();}
+function monTools(){const t=$('monTools');if(!t)return;
+  const canReroute=owned('monitors','obsidian');
+  t.innerHTML=monSel
+    ? `<span class="msel">${monSel}${monSel===G.tracedIp?' <span style="color:var(--red)">◉ TRACED</span>':''}</span>
+       <button id="mBurn">burn</button>${canReroute?'<button id="mReroute">reroute ↻</button>':''}<button id="mAll" class="danger">burn all</button>`
+    : `<span class="msel" style="color:var(--dim)">click a node to select it</span><button id="mAll" class="danger">burn all</button>`;
+  if($('mBurn'))$('mBurn').onclick=()=>{cmdBurn([monSel]);monSel=null;};
+  if($('mReroute'))$('mReroute').onclick=()=>{cmdReroute([monSel]);};
+  $('mAll').onclick=()=>{cmdBurn(['all']);monSel=null;};}
+function drawMonitor(){if(!monCtx||!monCv)return;
+  const dpr=window.devicePixelRatio||1,w=monCv.clientWidth,h=monCv.clientHeight;if(!w||!h)return;
+  if(monCv.width!==w*dpr||monCv.height!==h*dpr){monCv.width=w*dpr;monCv.height=h*dpr;monCtx.setTransform(dpr,0,0,dpr,0,0);}
+  const g=monCtx,pos=monLayout(w,h),now=performance.now()/1000;
+  g.clearRect(0,0,w,h);
+  const chain=owned('monitors','kernel')&&S.botnet&&S.botnet.type==='rootk';
+  // links
+  g.lineWidth=1;
+  for(let i=0;i<pos.length;i++){
+    const links=chain? (i<pos.length-1?[i+1]:[]) : [ (i+1)%pos.length, (i+3)%pos.length ];
+    links.forEach(j=>{if(j===i)return;const a=pos[i],b2=pos[j];
+      g.strokeStyle='rgba(56,225,255,0.16)';g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b2.x,b2.y);g.stroke();
+      // live packet flow (this is what you paid for)
+      const t=((now*0.55)+(i*0.17))%1,px=a.x+(b2.x-a.x)*t,py=a.y+(b2.y-a.y)*t;
+      g.fillStyle='rgba(56,225,255,0.75)';g.beginPath();g.arc(px,py,1.5,0,7);g.fill();});}
+  // nodes
+  pos.forEach(p=>{const hot=p.ip===G.tracedIp,sel=p.ip===monSel;
+    if(hot){const pulse=0.5+0.5*Math.sin(now*7);
+      g.fillStyle=`rgba(255,77,94,${0.18+pulse*0.22})`;g.beginPath();g.arc(p.x,p.y,10+pulse*7,0,7);g.fill();}
+    g.fillStyle=hot?'#ff4d5e':'#38e1ff';g.beginPath();g.arc(p.x,p.y,sel?5.5:4,0,7);g.fill();
+    if(sel){g.strokeStyle='#8affc8';g.lineWidth=1.5;g.beginPath();g.arc(p.x,p.y,9,0,7);g.stroke();}});
+  if(G.conn){g.fillStyle=G.tracedIp?'#ff4d5e':'#37ffa8';g.font='9px monospace';g.textAlign='left';
+    g.fillText(G.tracedIp?('TRACE ON '+G.tracedIp):'mesh quiet',8,12);}}
+setInterval(()=>{if(!$('winMonitor').hidden)drawMonitor();},70);
+
+/* ================= save / prefs ================= */
+const KEY='units_os_save', PKEY='units_os_prefs';
+let S=null, P={crt:true,snd:true,music:true,vol:0.8,scan:0.6,autohint:false};
+function defaultSave(h){const soft={};for(const k in SOFT)soft[k]=SOFT[k].start;
+  return {handle:h,creds:200,rating:0,soft,completed:[],active:null,seen:['m0'],read:[],flags:{},heat:0,discovered:[],im:{},imUnread:{},
+    crackers:[],booters:[],monitors:[],decoders:[],tools:[],explained:[],mesh:null,botnet:null,rep:0,booted:[],rerouted:0,resolved:{},unaware:{},trollIps:{},activeGig:null};}
+function loadSave(){try{return JSON.parse(localStorage.getItem(KEY));}catch(e){return null;}}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function loadPrefs(){try{const p=JSON.parse(localStorage.getItem(PKEY));if(p)P=p;}catch(e){}}
+function savePrefs(){try{localStorage.setItem(PKEY,JSON.stringify(P));}catch(e){}}
+
+/* ================= runtime ================= */
+const G={conn:null,cleared:new Set(),access:false,trace:0,tracedNode:-1,active2:false,logsDeleted:false,
+  ops:[],route:[],hist:[],histIdx:0,stolen:0,submitted:null,awaitChoice:false};
+
+/* ================= audio ================= */
+let AC=null,hum=null,humG=null,noiseBuf=null,masterGain=null,music=null;
+function ai(){if(AC)return;try{AC=new(window.AudioContext||window.webkitAudioContext)();
+  masterGain=AC.createGain();masterGain.gain.value=P.vol!=null?P.vol:0.8;masterGain.connect(AC.destination);
+  noiseBuf=AC.createBuffer(1,AC.sampleRate*2,AC.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}catch(e){}}
+function dest(){return masterGain||(AC&&AC.destination);}
+function snd(){return P.snd&&AC;}
+function blip(f,d=0.06,t='square',g=0.05,slide){if(!snd())return;const o=AC.createOscillator(),ga=AC.createGain();
+  o.type=t;o.frequency.setValueAtTime(f,AC.currentTime);if(slide)o.frequency.exponentialRampToValueAtTime(slide,AC.currentTime+d);
+  ga.gain.setValueAtTime(g,AC.currentTime);ga.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+d);o.connect(ga);ga.connect(dest());o.start();o.stop(AC.currentTime+d);}
+function noise(dur,g=0.05,f=1200){if(!snd())return;const s=AC.createBufferSource();s.buffer=noiseBuf;const flt=AC.createBiquadFilter();
+  flt.type='bandpass';flt.frequency.value=f;const ga=AC.createGain();ga.gain.setValueAtTime(g,AC.currentTime);
+  ga.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+dur);s.connect(flt);flt.connect(ga);ga.connect(dest());s.start();s.stop(AC.currentTime+dur);}
+function dialup(){ if(!snd())return; // stylised modem handshake
+  const seq=[[400,.14],[900,.1],[1300,.12],[600,.16]];let t=0;seq.forEach(([f,d])=>{setTimeout(()=>blip(f,d,'sine',0.05),t*1000);t+=d;});
+  setTimeout(()=>noise(1.0,0.045,1000),t*1000);setTimeout(()=>noise(0.6,0.04,2200),(t+0.5)*1000);}
+function humStart(){if(!snd()||hum)return;hum=AC.createOscillator();humG=AC.createGain();hum.type='sine';hum.frequency.value=60;
+  humG.gain.value=0;hum.connect(humG);humG.connect(dest());hum.start();humG.gain.linearRampToValueAtTime(0.012,AC.currentTime+0.6);}
+function musicStart(){if(!snd()||music||!P.music)return;const pad=AC.createGain();pad.gain.value=0;pad.connect(dest());
+  const scale=[220,261.63,329.63,392,440,523.25];const drones=[];
+  [110,164.81].forEach(f=>{const o=AC.createOscillator();o.type='sawtooth';o.frequency.value=f;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=480;
+    const g=AC.createGain();g.gain.value=0.02;o.connect(lp);lp.connect(g);g.connect(pad);o.start();drones.push(o);});
+  pad.gain.linearRampToValueAtTime(1,AC.currentTime+3);
+  const iv=setInterval(()=>{if(!P.music||!snd())return;if(Math.random()<0.5){const f=pick(scale)*(Math.random()<0.3?2:1);
+    const o=AC.createOscillator();o.type='triangle';o.frequency.value=f;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1100;
+    const g=AC.createGain();g.gain.value=0;o.connect(lp);lp.connect(g);g.connect(pad);o.start();
+    g.gain.linearRampToValueAtTime(0.05,AC.currentTime+0.5);g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+2.6);o.stop(AC.currentTime+2.8);}},2800);
+  music={drones,iv,pad};}
+function musicStop(){if(!music)return;try{music.drones.forEach(o=>o.stop());clearInterval(music.iv);if(music.pad)music.pad.gain.linearRampToValueAtTime(0,AC.currentTime+0.5);}catch(e){}music=null;}
+function humStop(){if(!hum)return;try{humG.gain.linearRampToValueAtTime(0,AC.currentTime+0.3);hum.stop(AC.currentTime+0.35);}catch(e){}hum=null;}
+function keyclick(){if(!snd())return;blip(R(1500,2100),0.012,'square',0.012);}
+let lastAlarm=0;
+function alarm(){const n=performance.now();if(n-lastAlarm<420)return;lastAlarm=n;blip(880,0.09,'square',0.05,660);}
+
+/* ================= terminal ================= */
+const out=$('termOut');
+function pr(txt,cls){const d=document.createElement('div');if(cls)d.className=cls;d.innerHTML=txt;out.appendChild(d);out.scrollTop=out.scrollHeight;return d;}
+function typeLine(txt,cls,cb){ // typewriter for dramatic lines
+  const d=pr('',cls);let i=0;const iv=setInterval(()=>{d.innerHTML=txt.slice(0,i)+'<span class="curs"></span>';i++;out.scrollTop=out.scrollHeight;
+    if(i>txt.length){clearInterval(iv);d.innerHTML=txt;cb&&cb();}},14);return d;}
+function prompt(){$('prompt').textContent=G.fm?`sqlaudit:${G.fm.cwd}#`:(G.conn?`agent@${G.conn.ip}#`:`${S?S.handle:'agent'}@units:~$`);}
+function escapeHtml(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+/* ================= boot ================= */
+const BOOT=[
+ 'UNITS///OS  v4.9.2   (cathode terminal)',
+ '',
+ 'POST ......................... ok',
+ 'phosphor warm-up ............. ok',
+ 'gateway modem ................ 2400 baud · carrier locked',
+ 'mounting /dev/deck0 .......... ok',
+ 'loading intrusion suite ...... ok',
+ 'scrubbing session fingerprints ... ok',
+ 'establishing uplink .......... SECURE',
+ '',
+ '> no logs. no name. no trace.',
+ '> welcome back to the wire.',
+];
+function runBoot(cb){const el=$('boot');let i=0,t='';
+  const iv=setInterval(()=>{t+=BOOT[i]+'\n';el.textContent=t;i++;if(i%2===0)blip(R(400,900),0.02,'square',0.02);
+    if(i>=BOOT.length){clearInterval(iv);setTimeout(()=>{el.hidden=true;cb();},500);}},95);}
+
+/* ================= windows ================= */
+let zTop=100;
+function focusWin(w){zTop++;w.style.zIndex=zTop;document.querySelectorAll('.window').forEach(x=>x.classList.remove('focus'));w.classList.add('focus');}
+function openWin(app,on){const w=document.querySelector(`.window[data-app="${app}"]`);if(!w)return;
+  if(on===undefined)on=w.hidden;w.hidden=!on;if(on){focusWin(w);if(app==='Terminal')$('cmd').focus();}
+  document.querySelectorAll('.dockapp').forEach(d=>{if(d.dataset.app===app)d.classList.toggle('open',!w.hidden);});
+  if(app==='Connections')resizeMap();if(app==='Settings'&&on)renderSettings();
+  if(app==='Messenger'&&on){renderIM();if(imOpen){S.imUnread[imOpen]=0;persist();worldBadges();renderIM();}}
+  if(app==='Forums'&&on){forumNew=0;worldBadges();renderForum();}
+  if(app==='Monitor'&&on)renderMonitor();
+  if(app==='Inbox'&&on)tutHook('mail');}
+document.querySelectorAll('.window').forEach(w=>{const tb=w.querySelector('.titlebar');
+  w.addEventListener('pointerdown',()=>focusWin(w));
+  tb.addEventListener('pointerdown',e=>{if(e.target.closest('.dots'))return;e.preventDefault();
+    const r=w.getBoundingClientRect(),ox=e.clientX-r.left,oy=e.clientY-r.top;
+    const mv=ev=>{w.style.left=clamp(ev.clientX-ox,-40,window.innerWidth-60)+'px';w.style.top=clamp(ev.clientY-oy,40,window.innerHeight-40)+'px';};
+    const up=()=>{window.removeEventListener('pointermove',mv);window.removeEventListener('pointerup',up);};
+    window.addEventListener('pointermove',mv);window.addEventListener('pointerup',up);});
+  tb.querySelector('.cls').addEventListener('click',()=>openWin(w.dataset.app,false));
+  tb.querySelector('.min').addEventListener('click',()=>openWin(w.dataset.app,false));});
+const DOCK=[['Terminal','▚'],['Inbox','✉'],['Messenger','✆'],['Forums','▤'],['Software','⚙'],['Monitor','◎'],['Connections','◍'],['Settings','✱'],['Help','?']];
+function buildDock(){const d=$('dock');d.innerHTML='';DOCK.forEach(([app,ic])=>{const b=document.createElement('div');
+  b.className='dockapp';b.dataset.app=app;b.innerHTML=`<span class="ic">${ic}</span><span class="nm">${app}</span>`;
+  b.onclick=()=>{ai();if(app==='Help'){openWin('Terminal',true);cmdHelp();}else openWin(app);if(app==='Inbox')markInboxRead();};d.appendChild(b);});}
+function unreadCount(){return MISSIONS.filter(m=>availOrNote(m)&&!S.read.includes(m.id)).length;}
+function availOrNote(m){if(m.note)return noteUnlocked(m);return missionAvail(m)||S.active===m.id;}
+function updateBadge(){setDockBadge('Inbox',unreadCount());if(typeof worldBadges==='function')worldBadges();}
+function markInboxRead(){/* marked on open of each mail */}
+
+/* ================= command parser ================= */
+function submitCmd(raw){const line=raw.trim();prompt();
+  pr(`<span class="dim">${$('prompt').textContent}</span> <span class="u">${escapeHtml(line)}</span>`);
+  if(!line)return;G.hist.push(line);G.histIdx=G.hist.length;
+  if(G.awaitChoice){return finaleChoice(line.toLowerCase());}
+  const parts=line.split(/\s+/),cmd=parts[0].toLowerCase(),args=parts.slice(1);
+  if(cmd==='abort'){abortOp();return;}
+  (COMMANDS[cmd]||cmdUnknown)(args,line);
+  if(!['hint','next','what','help','clear'].includes(cmd)&&!G.ops.length)maybeHint();}
+function cmdUnknown(a,line){const w=line.split(/\s+/)[0].toLowerCase();
+  const near=Object.keys(COMMANDS).filter(c=>c.startsWith(w.slice(0,3))&&w.length>2).slice(0,4);
+  pr(`I don't know the command <span class="err">${escapeHtml(w)}</span>.`,'err');
+  if(near.length)pr(`did you mean: ${near.map(c=>`<span class="c">${c}</span>`).join(' · ')}?`);
+  pr('<span class="dim">type <span class="c">help</span> for every command, or <span class="c">hint</span> to be told exactly what to do next.</span>');
+  blip(200,0.08,'square',0.04);}
+/* ---------- coach mode: auto-hint after every command ---------- */
+let hintT=null;
+function maybeHint(){if(!P.autohint||!S||$('desktop').hidden||G.awaitChoice)return;
+  clearTimeout(hintT);hintT=setTimeout(()=>{if(G.ops.length)return;cmdHint();},220);}
+function offerAutoHint(){const m=$('progModal');m.hidden=false;
+  m.innerHTML=`<div class="progcard">
+    <div class="ptag">one last thing</div>
+    <div class="pname">Want a guide?</div>
+    <div class="pwhat">You've got the basics. If you'd like, UNITS///OS can tell you the exact command to run next, after every single command you type.<br><br>Recommended if this is your first time. You can turn it on or off any time in <b>Settings</b>, or type <span style="color:var(--cyan)">hint</span> whenever you're stuck.</div>
+    <div style="display:flex;gap:9px;margin-top:14px;">
+      <button id="ahYes" style="flex:1;margin:0;">yes, guide me</button>
+      <button id="ahNo" style="flex:1;margin:0;border-color:var(--edge);color:var(--dim);">no, I'll explore</button></div></div>`;
+  $('ahYes').onclick=()=>{P.autohint=true;savePrefs();m.hidden=true;renderSettings();
+    pr('<span class="ok">◈ guide mode ON.</span> <span class="dim">I\'ll suggest your next command as you go. Turn it off in Settings.</span>');cmdHint();blip(900,0.1,'sine',0.05,1200);};
+  $('ahNo').onclick=()=>{P.autohint=false;savePrefs();m.hidden=true;
+    pr('<span class="dim">no problem — type <span class="c">hint</span> any time you\'re not sure what to do.</span>');};}
+/* ---------- HINT: always tells a new player the next concrete step ---------- */
+function cmdHint(){const m=activeMission();
+  const say=(t,c)=>pr('<span class="phos">▸ next:</span> '+t,c);
+  if(!hasBrew())return say('your deck has no tools yet. install the package manager: <span class="c">getbrew stable</span>');
+  if(!bestCracker())return say('you need something that can break a password: <span class="c">brew install havencracker</span>');
+  if(!m)return say('you have no job. open your <span class="c">mail</span> (Inbox) and accept a contract — or take a freeplay gig with <span class="c">gig list</span>.');
+  if(m.boot){const ip=(S.resolved||{})[m.obj.handle];
+    if(!ip)return say(`you need @${m.obj.handle}'s real IP. forums don't show IPs — trick it out of him: <span class="c">bait ${m.obj.handle}</span>`);
+    if(!bestBooter())return say('you have his IP but nothing to hit it with. buy a booter in <span class="c">shop</span> (Software).');
+    return say(`drop him: <span class="c">boot ${ip}</span>`);}
+  if(m.mesh){const D=MESHES[m.mesh],M=meshState(m.mesh);
+    if(!bestDecoder())return say('you need a decoder: <span class="c">brew install 1netlynx</span>, then <span class="c">brew install parity</span> for meshes.');
+    if(!M.done)return say(`peel their mesh: <span class="c">decode ${D.ip}</span> — repeat until it reaches the mother IP (${M.revealed.length}/${M.total} peeled)`);
+    return say(`report it: <span class="c">submit ${M.mother}</span>`);}
+  const t=TARGETS[m.target];if(!t)return say('check your <span class="c">mail</span> for the briefing.');
+  if(!G.conn){
+    if(S.flags.botnetUnlocked&&!botIPs().length)return say(`you're running with no botnet — they'd trace you instantly. buy one: <span class="c">buybot fullz 5</span>. then <span class="c">connect ${t.ip}</span>`);
+    return say(`get in: <span class="c">scan ${t.ip}</span> to see its defences, then <span class="c">connect ${t.ip}</span>`);}
+  if(!G.access){const left=t.locks.filter(l=>!G.cleared.has(l));
+    if(left.includes('password'))return say('break the password: <span class="c">crack</span>');
+    if(left.includes('firewall'))return say('take down the firewall: <span class="c">bypass firewall</span>');
+    if(left.includes('proxy'))return say('take down the proxy: <span class="c">bypass proxy</span>');}
+  if(!m._done){const o=m.obj;
+    if(o.type==='download'){const f=findFile(o.file);
+      if(f&&f.enc)return say(`${o.file} is encrypted. <span class="c">decrypt ${o.file}</span> first (needs a File Decrypter from the shop).`);
+      return say(`take it: <span class="c">ls</span> to look around, then <span class="c">download ${o.file}</span>`);}
+    if(o.type==='delete')return say(`destroy it: <span class="c">delete ${o.file}</span>`);
+    if(o.type==='modify')return say(`rewrite it: <span class="c">modify ${o.file}</span>`);
+    if(o.type==='transfer')return say(`move the money: <span class="c">transfer ${o.amount}</span>`);
+    if(o.type==='multi'){for(const p of o.parts){const f=findFile(p.file);
+      const doneP=p.type==='download'?(f&&f.got):p.type==='delete'?(!f||f.deleted):(f&&f.modified);
+      if(!doneP){if(f&&f.enc)return say(`${p.file} is encrypted — <span class="c">decrypt ${p.file}</span> first`);
+        return say(`${p.type==='download'?'take':p.type==='delete'?'destroy':'rewrite'} it: <span class="c">${p.type} ${p.file}</span>`);}}}}
+  if(!G.logsDeleted){
+    if(!owned('tools','sqlaudit'))return say('before you leave, you must wipe their logs. get the file manager: <span class="c">brew install sqlaudit</span>');
+    if(!G.fm)return say('mount their filesystem: <span class="c">sqlaudit</span>');
+    if(G.fm.cwd!==logPath())return say(`go to their log folder: <span class="c">cd ${logPath()}</span>`);
+    return say('shred them: <span class="c">ls</span> to see them, then <span class="c">rm *</span>');}
+  if(G.fm)return say('detach cleanly: <span class="c">sqlaudit disconnect</span>');
+  return say('you\'re done here — get out: <span class="c">disconnect</span>');}
+
+const COMMANDS={
+  help:()=>cmdHelp(),hint:()=>cmdHint(),next:()=>cmdHint(),what:()=>cmdHint(),codes:()=>cmdCodes(),clear:()=>{out.innerHTML='';},
+  whoami:()=>pr(`<span class="c">${S.handle}</span> · ${rankName(S.rating)} · ${S.creds}c · <span class="dim">no logs, no name</span>`),
+  status:()=>cmdStatus(),
+  mail:()=>{openWin('Inbox',true);pr('opening inbox…','dim');},inbox:()=>COMMANDS.mail(),missions:()=>COMMANDS.mail(),
+  shop:()=>{openWin('Software',true);pr('opening software store…','dim');},software:()=>COMMANDS.shop(),
+  links:()=>cmdLinks(),accept:a=>cmdAccept(a),buy:a=>cmdBuy(a),route:a=>cmdRoute(a),
+  scan:a=>cmdScan(a),probe:a=>cmdScan(a),connect:a=>cmdConnect(a),
+  crack:a=>cmdCrack(a),bypass:a=>cmdBypass(a),
+  hc:a=>cmdCrack(a,'hc'),hcr:a=>cmdCrack(a,'hcr'),
+  heaven:a=>cmdCrack(a,'heaven'),blackwing:a=>cmdCrack(a,'blackwing'),
+  boot:a=>cmdBoot(a),bait:a=>cmdBait(a),resolve:a=>cmdResolve(a),
+  loic:a=>cmdBoot(a,'loic'),loicr:a=>cmdBoot(a,'loicr'),
+  eloheim:a=>cmdBoot(a,'eloheim'),valheim:a=>cmdBoot(a,'valheim'),
+  brew:a=>cmdBrew(a),getbrew:a=>cmdGetbrew(a),gig:a=>cmdGig(a),gigs:()=>cmdGig([]),decode:a=>cmdDecode(a),
+  botnet:()=>cmdBotnet(),buybot:a=>cmdBuybot(a),burn:a=>cmdBurn(a),reroute:a=>cmdReroute(a),
+  monitor:()=>{openWin('Monitor',true);pr('opening monitor…','dim');},
+  rep:()=>pr(`<span class="c">forum rep</span> ${S.rep||0} — <span class="phos">${forumRank()}</span>   <span class="dim">boot the mouthy ones to climb.</span>`),
+  ls:()=>cmdLs(),dir:()=>cmdLs(),cat:a=>cmdCat(a),read:a=>cmdCat(a),
+  sqlaudit:a=>cmdSqlaudit(a),cd:a=>cmdCd(a),
+  decrypt:a=>cmdDecrypt(a),download:a=>cmdDownload(a),copy:a=>cmdDownload(a),
+  delete:a=>cmdDelete(a),rm:a=>(G.fm?cmdRm(a):cmdDelete(a)),modify:a=>cmdModify(a),edit:a=>cmdModify(a),
+  transfer:a=>cmdTransfer(a),submit:a=>cmdSubmit(a),
+  deletelogs:()=>cmdDeleteLogs(),cleanlogs:()=>cmdDeleteLogs(),
+  disconnect:()=>cmdDisconnect(),exit:()=>cmdDisconnect(),
+  laylow:()=>cmdLaylow(),settings:()=>{openWin('Settings',true);pr('opening settings…','dim');},
+};
+function cmdLaylow(){if(G.conn){pr('can\'t lie low mid-connection.','err');return;}
+  if(S.heat<=0){pr('you\'re already a ghost — no heat on you.','dim');return;}
+  const cost=Math.min(S.creds,200+S.heat*4);
+  runOp('laying low — new gateway, burner hardware, cold wallet',3.0,()=>{S.creds-=cost;const drop=Math.min(S.heat,RI(30,50));S.heat-=drop;persist();syncTop();updateHeat();
+    pr(`<span class="ok">✓ laid low. heat −${drop}. (−${cost}c in bribes & burner gear.)</span>`);});}
+function cmdHelp(){pr('<span class="c">── command reference ──</span>');
+  pr('<span class="phos">▸ new here? type <span class="c">hint</span> at any time and I\'ll tell you the exact next command.</span>');
+  pr('<span class="dim">  (or turn on "Guide me" in Settings to get that after every command.)</span>');
+  const g=(t,rows)=>{pr(`<span class="phos">${t}</span>`);rows.forEach(([c,d])=>pr(`  <span class="ok">${c.padEnd(22)}</span><span class="dim">${d}</span>`));};
+  g('recon & routing',[['links','known systems'],['scan &lt;ip&gt;','probe security'],['route add &lt;ip&gt;','bounce relay · route / route clear']]);
+  g('the break-in',[['connect &lt;ip&gt;','connect — starts the trace'],['crack','run your best cracker'],
+    ['brew / hc / hcr / heaven','run a specific cracker by name'],['bypass firewall|proxy','defeat that lock']]);
+  if(S.flags.botnetUnlocked)g('staying alive',[['botnet','your route home'],['buybot &lt;type&gt; &lt;n&gt;','fullz 1-5 · amorph 10-20 · rootk 21-60'],
+    ['monitor','see which IP they\'re tracing'],['burn &lt;ip&gt;','cut a traced IP loose'],['burn all','destroy botnet, vanish']]);
+  if(S.flags.booterUnlocked)g('the wire',[['rep','your standing on the wire']]);
+  g('the payload',[['ls / cat &lt;f&gt;','list / read files'],['decrypt &lt;f&gt;','decrypt a file'],['download &lt;f&gt;','copy a file'],['delete &lt;f&gt;','delete a file'],['modify &lt;f&gt;','alter a record'],['transfer &lt;amt&gt;','move funds to you'],['submit &lt;ip&gt;','answer an investigation']]);
+  g('the exit',[['deletelogs','wipe your trail — do it BEFORE leaving (or heat rises)'],['disconnect','drop the line'],['abort','cancel running tool(s)']]);
+  g('software',[['brew list','free packages on the wire'],['brew install &lt;pkg&gt;','install one (havencracker, 1netlynx…)'],['shop / buy &lt;id&gt;','paid gear & hardware']]);
+  if(S.flags.tutDone)g('freeplay',[['gig list','open gigs posted on the Forums'],['gig &lt;id&gt;','take one — repeatable, grind between contracts']]);
+  if(S.flags.booterUnlocked)g('people',[['bait &lt;handle&gt;','social-engineer their origin out of them'],['resolve &lt;handle&gt;','decode their botnet to expose them'],['boot &lt;ip&gt;','flood a resolved origin']]);
+  g('life admin',[['mail','contracts & messages'],['laylow','burn heat when trails follow you'],['settings','crt, sound, music'],['status','who you are']]);
+  pr('<span class="dim">Memory Banks let you run tools in parallel — crack + decrypt at once beats a fast trace.</span>');
+  pr('<span class="dim">read files with cat — some mention hidden servers worth looting.</span>');}
+function cmdStatus(){pr(`<span class="c">agent</span> ${S.handle}   <span class="c">rank</span> ${rankName(S.rating)} (${S.rating})   <span class="c">balance</span> <span class="ok">${S.creds}c</span>`);
+  pr(`<span class="c">rig</span> CPU v${S.soft.cpu} · ${memSlots()} memory bank(s)   <span class="c">botnet</span> ${botIPs().length?BOTNETS[S.botnet.type].n+' ('+botIPs().length+' IPs)':'<span class="err">none</span>'}`);
+  pr(`<span class="c">cracker</span> ${bestCracker()?CRACKERS[bestCracker()].n:'<span class="err">none — get Brew</span>'}   <span class="c">booter</span> ${bestBooter()?BOOTERS[bestBooter()].n:'none'}   <span class="c">forum rep</span> ${S.rep||0} (${forumRank()})`);
+  pr(`<span class="c">heat</span> ${Math.floor(S.heat||0)}%   <span class="c">discovered</span> ${S.discovered.length?S.discovered.join(', '):'none — read some logs'}`);
+  pr(`<span class="c">tools</span> <span class="dim">${Object.keys(SOFT).filter(k=>S.soft[k]>0).map(k=>SOFT[k].n+(SOFT[k].max>1?' v'+S.soft[k]:'')).join(', ')}</span>`);
+  const m=activeMission();pr(`<span class="c">active job</span> ${m?m.subj+' → '+TARGETS[m.target].ip:'(none — read your mail)'}`);
+  if(G.conn)pr(`<span class="warn">▶ connected to ${G.conn.ip} — trace ${Math.floor(G.trace)}%</span>`);}
+function cmdLinks(){pr('<span class="c">known systems</span>');const m=activeMission();
+  if(m&&TARGETS[m.target])pr(`  <span class="warn">${TARGETS[m.target].ip.padEnd(16)}</span><span class="dim">${TARGETS[m.target].name} — TARGET</span>`);
+  S.discovered.forEach(ip=>{const t=targetByIp(ip);if(t)pr(`  <span class="phos">${ip.padEnd(16)}</span><span class="dim">${t.name} — discovered · loot</span>`);});
+  RELAYS.forEach(r=>pr(`  <span class="ok">${r.ip.padEnd(16)}</span><span class="dim">${r.n} — relay</span>`));}
+
+/* ---------- missions ---------- */
+function activeMission(){if(!S.active)return null;return MISSIONS.find(m=>m.id===S.active)||GIGS.find(g=>g.id===S.active)||null;}
+const JOBSEQ=MISSIONS.filter(m=>!m.note).map(m=>m.id);
+function missionAvail(m){if(m.note||S.completed.includes(m.id))return false;
+  if(m.postEnding&&!S.flags.ending)return false;          // endgame work only after the finale
+  const i=JOBSEQ.indexOf(m.id);
+  if(i>0&&!S.completed.includes(JOBSEQ[i-1]))return false; // must finish the previous contract
+  return S.rating>=m.rankReq;}
+function noteUnlocked(m){return m.note&&S.completed.includes(m.unlockAfter);}
+function cmdAccept(a){const id=a[0];const m=MISSIONS.find(x=>x.id===id&&!x.note);
+  if(!m){pr('unknown job id. open <span class="c">mail</span>.','err');return;}
+  if(S.completed.includes(m.id)){pr('already done.','warn');return;}
+  if(S.rating<m.rankReq){pr('your rank is too low for that contract.','err');return;}
+  S.active=m.id;m._done=false;persist();
+  if(m.mesh){const D=MESHES[m.mesh];
+    pr(`accepted: <span class="c">${m.subj}</span> — mesh relay <span class="warn">${D.ip}</span> (${D.layers} nodes, ${D.type})`,'ok');
+    pr('objective: <span class="warn">peel the mesh to its mother IP</span>.');
+    pr(`<span class="dim">you can't connect to a mesh — decode it: <span class="c">decode ${D.ip}</span></span>`);}
+  else if(m.boot){pr(`accepted: <span class="c">${m.subj}</span> — mark: <span class="warn">@${m.obj.handle}</span>`,'ok');
+    pr(`objective: <span class="warn">${objText(m)}</span>.`);
+    pr('<span class="dim">a forum shows you a name, never an origin. get his IP first: <span class="c">bait '+m.obj.handle+'</span></span>');
+    if(!S.flags.wireTutDone)setTimeout(()=>startTutSeq(TUT_WIRE,'The Wire · First Boot'),500);}
+  else{pr(`accepted: <span class="c">${m.subj}</span> — target <span class="warn">${TARGETS[m.target].ip}</span>`,'ok');
+    pr(`objective: <span class="warn">${objText(m)}</span>. begin with <span class="c">scan ${TARGETS[m.target].ip}</span>.`);}
+  renderInbox();blip(720,0.08);tutHook('accept');}
+function objText(m){const o=m.obj;const one=p=>p.type==='download'?'steal '+p.file:p.type==='delete'?'destroy '+p.file:p.type==='modify'?'alter '+p.file:p.type;
+  return o.type==='multi'?o.parts.map(one).join(' + '):o.type==='transfer'?'transfer '+o.amount+'c':o.type==='trace'?'find the origin IP':o.type==='boot'?'boot '+o.handle+' off the wire':one(o);}
+
+/* ---------- route ---------- */
+function maxHops(){return botIPs().length;}
+function cmdRoute(a){syncRoute();
+  if(a[0]==='add'||a[0]==='clear'){pr('routes come from your <span class="c">botnet</span> now — relay chains were retired in New Milos.','warn');
+    pr('<span class="dim">buy IPs with <span class="c">buybot fullz 5</span> · drop them with <span class="c">burn all</span>.</span>');return;}
+  if(!botIPs().length){pr('route: <span class="err">DIRECT — no botnet.</span> they will land on your gateway in one hop.','err');
+    pr('<span class="dim">buy a botnet: <span class="c">buybot fullz 5</span> / <span class="c">buybot amorph 14</span> / <span class="c">buybot rootk 30</span></span>');return;}
+  const ips=botIPs();pr(`route: <span class="ok">${ips.length}</span> hops via ${BOTNETS[S.botnet.type].n}`);
+  pr('<span class="dim">'+ips.slice(0,10).join(' → ')+(ips.length>10?` → …+${ips.length-10}`:'')+' → [target]</span>');}
+
+/* ---------- scan / connect ---------- */
+function targetByIp(ip){return Object.values(TARGETS).find(t=>t.ip===ip);}
+function cmdScan(a){const ip=a[0];if(!ip){pr('usage: scan &lt;ip&gt;','dim');return;}
+  const t=targetByIp(ip);if(!t){const r=RELAYS.find(x=>x.ip===ip);
+    if(r){pr(`${ip} — ${r.n}: public relay, open. bounce with <span class="c">route add ${ip}</span>.`,'dim');return;}pr('host unreachable.','err');return;}
+  runOp('probing '+ip,1.2,()=>{pr(`<span class="c">scan ${ip}</span> — ${t.name} <span class="dim">(${t.org})</span>`);
+    pr('  security: '+(t.locks.length?t.locks.map(l=>`<span class="warn">${l}</span>`).join(' · '):'<span class="ok">none</span>'));
+    if(t.account)pr(`  <span class="amber">financial host — holding balance detected.</span>`);
+    pr(`  trace speed: <span class="err">${t.traceRate.toFixed(1)}</span> — the longer your route, the slower they follow it home.`);
+    pr(`  <span class="c">connect ${ip}</span> when ready.`);tutHook('scan');});}
+function cmdConnect(a){const ip=a[0];if(!ip){pr('usage: connect &lt;ip&gt;','dim');return;}
+  if(G.conn){pr('already connected. disconnect first.','warn');return;}
+  const t=targetByIp(ip);if(!t){pr('cannot connect: unknown host.','err');return;}
+  const hops=G.route.length;dialup();
+  runOp(`handshaking through ${hops} relay(s)`,1.0+hops*0.3,()=>{
+    G.conn=t;G.cleared=new Set();G.access=t.locks.length===0;G.trace=0;G.tracedNode=hops;G.active2=false;
+    G.logsDeleted=false;G.stolen=0;G.submitted=null;G.fm=null;
+    G.logFiles=['access.log','auth.log','session.log','conn_'+RI(1000,9999)+'.log'];
+    pr(`<span class="ok">▶ connected — ${t.ip} (${t.name})</span>`);
+    pr(`<span class="err">⚠ intrusion detected by host. reverse-trace initialising…</span>`);
+    pr(`route home: ${hops?'target → '+[...G.route].reverse().join(' → ')+' → YOU':'<span class="err">DIRECT — they land on you the moment the bar fills!</span>'}`);
+    if(G.access)pr('no security. <span class="c">ls</span> to list files.');
+    else pr('locks: '+t.locks.map(l=>`<span class="warn">${l}</span>`).join(' · ')+' — <span class="c">crack</span> / <span class="c">bypass firewall|proxy</span>.');
+    $('tbConn').textContent=t.ip;$('tracePill').classList.remove('hidden2');$('tracePill').classList.add('active');
+    prompt();drawMap();humStart();tutHook('connect');});}
+
+/* ---------- locks ---------- */
+function cpuFactor(){return 1/(1+(S.soft.cpu-1)*0.4);}
+function needConn(){if(!G.conn){pr('not connected. <span class="c">connect &lt;ip&gt;</span> first.','err');return false;}return true;}
+function accessCheck(){if(G.conn.locks.every(l=>G.cleared.has(l))){G.access=true;typeLine('◈ ACCESS GRANTED',' ');
+    pr('<span class="c">ls</span> to see what they were hiding.');blip(880,0.15,'sine',0.06,1250);}
+  else pr('remaining: '+G.conn.locks.filter(l=>!G.cleared.has(l)).map(l=>`<span class="warn">${l}</span>`).join(' · '));}
+/* ---- named crackers (Brew → HavenCracker → Redux → HeavenCrackR → Blackwing) ---- */
+function cmdCrack(a,forced){if(!needConn())return;
+  const id=forced||bestCracker();
+  if(!id){pr('no cracker installed. open <span class="c">shop</span> and download <span class="ok">Brew</span> — it\'s free.','err');return;}
+  if(forced&&!owned('crackers',forced)){pr(`you don't own ${CRACKERS[forced].n}.`,'err');return;}
+  const C=CRACKERS[id];
+  if(!G.conn.locks.includes('password')){pr('no password lock on this host.','dim');return;}
+  if(G.cleared.has('password')){pr('password already down.','warn');return;}
+  artLine(ART[id]);
+  const alsoFw=C.fw&&G.conn.locks.includes('firewall')&&!G.cleared.has('firewall');
+  G.active2=true;
+  const secs=((7/C.mult)+(alsoFw?6/C.mult:0))*cpuFactor();
+  runOp(`${C.n} → ${alsoFw?'password + firewall':'password'}`,secs,()=>{
+    G.cleared.add('password');pr('<span class="ok">✓ password defeated.</span>');
+    if(alsoFw){G.cleared.add('firewall');pr('<span class="ok">✓ firewall stripped in the same pass.</span> <span class="dim">(Redux bundles it)</span>');}
+    if(C.noLogs){G.logsDeleted=true;pr('<span class="phos">✓ ring0 entry — nothing was ever written to their logs.</span>');}
+    accessCheck();tutHook('crack');},true);}
+function cmdBreak(lock,tool,label){if(!needConn())return;
+  if(!G.conn.locks.includes(lock)){pr(`no ${lock} lock here.`,'dim');return;}
+  if(G.cleared.has(lock)){pr(`${lock} already down.`,'warn');return;}
+  const lvl=S.soft[tool];if(lvl<1){pr(`you don't own a ${label}. buy one in <span class="c">shop</span>.`,'err');return;}
+  G.active2=true; // touching the box speeds their trace
+  const base={password:7,firewall:6,proxy:6.5}[lock];const secs=(base/(0.6+lvl*0.5))*cpuFactor();
+  runOp(`${label} → ${lock}`,secs,()=>{G.cleared.add(lock);pr(`<span class="ok">✓ ${lock} defeated.</span>`);accessCheck();},true);}
+function cmdBypass(a){const w=(a[0]||'').toLowerCase();if(w==='firewall')return cmdBreak('firewall','fwbypass','Firewall Bypass');
+  if(w==='proxy')return cmdBreak('proxy','proxy','Proxy Disruptor');pr('usage: bypass firewall | bypass proxy','dim');}
+
+/* ---------- files ---------- */
+function needAccess(){if(!needConn())return false;if(!G.access){pr('access denied — the locks are still up.','err');return false;}return true;}
+function findFile(n){return G.conn&&G.conn.files.find(f=>f.name===n&&!f.deleted);}
+function cmdLs(){if(G.fm)return fmLs();
+  if(!needAccess())return;pr(`<span class="c">${G.conn.ip}:/</span>`);
+  G.conn.files.filter(f=>!f.deleted).forEach(f=>{const t=[];if(f.enc)t.push('<span class="err">enc</span>');if(f.obj)t.push('<span class="warn">◈</span>');if(f.got)t.push('<span class="ok">copied</span>');if(f.modified)t.push('<span class="ok">edited</span>');
+    pr(`  ${f.name.padEnd(20)} <span class="dim">${t.join(' ')}</span>`);});
+  if(G.conn.account)pr(`  <span class="amber">[holding balance: ${G.conn.account.toLocaleString()}c — 'transfer &lt;amount&gt;']</span>`);tutHook('ls');}
+function cmdCat(a){if(!needAccess())return;const f=findFile(a[0]);if(!f){pr('no such file.','err');return;}
+  if(f.enc){pr('encrypted — <span class="c">decrypt '+f.name+'</span> first.','warn');return;}
+  pr(`<span class="dim">── ${f.name} ──</span>`);pr(escapeHtml(f.content));G.active2=true;discoverFrom(f.content);}
+function discoverFrom(text){Object.values(TARGETS).forEach(t=>{if(t.hidden&&text.includes(t.ip)&&!S.discovered.includes(t.ip)){
+  S.discovered.push(t.ip);persist();pr(`<span class="phos">✦ new system discovered: ${t.ip} — added to your links. scan it later.</span>`);notify('DISCOVERY',t.ip+' uncovered');worldMsg('discover',t.ip);}});}
+function cmdDecrypt(a){if(!needAccess())return;const f=findFile(a[0]);if(!f){pr('no such file.','err');return;}
+  if(!f.enc){pr('not encrypted.','dim');return;}const lvl=S.soft.decrypter;if(lvl<1){pr('no File Decrypter. buy one in <span class="c">shop</span>.','err');return;}
+  G.active2=true;runOp('decrypting '+f.name,(5/(0.5+lvl*0.5))*cpuFactor(),()=>{f.enc=false;pr(`<span class="ok">✓ ${f.name} decrypted.</span>`);},true);}
+function cmdDownload(a){if(!needAccess())return;const f=findFile(a[0]);if(!f){pr('no such file.','err');return;}
+  if(f.enc){pr('encrypted — decrypt before copying.','warn');return;}G.active2=true;
+  runOp('copying '+f.name,1.4*cpuFactor(),()=>{f.got=true;pr(`<span class="ok">↓ ${f.name} copied to your deck.</span>`);tutHook('download');
+    if(f.reward){if(f.reward.creds){S.creds+=f.reward.creds;pr(`<span class="ok">$ +${f.reward.creds}c recovered from the stash.</span>`);}
+      if(f.reward.tool){const tk=f.reward.tool,key=f.reward.key;
+        if(key){const defs=key==='crackers'?CRACKERS:key==='decoders'?DECODERS:key==='booters'?BOOTERS:MONITORS;
+          if(!owned(key,tk)){(S[key]=S[key]||[]).push(tk);if(ART[tk]){pr('');artLine(ART[tk]);}
+            pr(`<span class="phos">◈ acquired: ${defs[tk].n}.</span>`);}else pr('<span class="dim">(already installed.)</span>');}
+        else if(S.soft[tk]<SOFT[tk].max){S.soft[tk]++;pr(`<span class="ok">◈ free tool installed: ${SOFT[tk].n}${SOFT[tk].max>1?' v'+S.soft[tk]:''}.</span>`);}
+        else pr('<span class="dim">(you already have that tool maxed.)</span>');}
+      f.reward=null;syncTop();renderShop();persist();}
+    checkObjective();},true);}
+function cmdDelete(a){if(!needAccess())return;const f=findFile(a[0]);if(!f){pr('no such file.','err');return;}G.active2=true;
+  runOp('shredding '+f.name,1.6*cpuFactor(),()=>{f.deleted=true;pr(`<span class="warn">✗ ${f.name} destroyed.</span>`);checkObjective();},true);}
+function cmdModify(a){if(!needAccess())return;const f=findFile(a[0]);if(!f){pr('no such file.','err');return;}if(f.enc){pr('encrypted — decrypt first.','warn');return;}G.active2=true;
+  runOp('rewriting '+f.name,2.0*cpuFactor(),()=>{f.modified=true;pr(`<span class="ok">✎ ${f.name} altered. the record now says what you need it to.</span>`);checkObjective();},true);}
+function cmdTransfer(a){if(!needAccess())return;if(!G.conn.account){pr('no financial account on this host.','err');return;}
+  let amt=parseInt(a[0]);if(!amt||amt<=0){pr('usage: transfer &lt;amount&gt;','dim');return;}
+  amt=Math.min(amt,G.conn.account);G.active2=true;
+  runOp(`wiring ${amt.toLocaleString()}c through mixers`,2.4*cpuFactor(),()=>{G.conn.account-=amt;G.stolen+=amt;S.creds+=amt;syncTop();
+    pr(`<span class="ok">$ ${amt.toLocaleString()}c transferred to your account. (total pulled: ${G.stolen.toLocaleString()}c)</span>`);
+    pr('<span class="dim">the more you take, the harder they look. don\'t linger.</span>');checkObjective();},true);}
+function cmdSubmit(a){const m0=activeMission();
+  if(!G.conn&&!(m0&&m0.mesh)){pr('connect and find the answer first.','err');return;}
+  const ip=a[0];if(!ip){pr('usage: submit &lt;ip&gt;','dim');return;}
+  G.submitted=ip;checkObjective();const m=activeMission();
+  if(m&&m.obj.type==='trace'&&m._done){pr(`<span class="ok">✓ origin confirmed: ${ip}.</span>`);
+    if(m.mesh)completeMission(m);}                              // remote job — no disconnect needed
+  else pr(`<span class="warn">${ip} logged — but it doesn't match the origin. keep looking.</span>`);}
+function cmdDeleteLogs(){if(!needConn())return;
+  if(G.logsDeleted){pr('their logs are already gone.','dim');return;}
+  pr('<span class="warn">there is no one-shot for this.</span> logs live on <em>their</em> filesystem — you have to go in and shred them yourself.');
+  pr('<span class="dim">procedure:</span>');
+  pr(`  1. <span class="c">brew install sqlaudit</span> <span class="dim">(once)</span>`);
+  pr(`  2. <span class="c">sqlaudit</span> <span class="dim">— mount their filesystem</span>`);
+  pr(`  3. <span class="c">cd ${logPath()}</span>`);
+  pr(`  4. <span class="c">ls</span> <span class="dim">— see what they logged</span>`);
+  pr(`  5. <span class="c">rm *</span> <span class="dim">— shred it all</span>`);
+  pr(`  6. <span class="c">sqlaudit disconnect</span> <span class="dim">then</span> <span class="c">disconnect</span>`);}
+
+/* ---------- objective ---------- */
+function checkObjective(){const m=activeMission();if(!m||!m.obj||m._done)return;
+  if(!m.mesh&&!m.boot&&G.conn!==TARGETS[m.target])return;   // remote-only jobs need no connection
+  const o=m.obj;let done=false;
+  if(o.type==='download'){const f=findFile(o.file);done=f&&f.got;}
+  else if(o.type==='delete'){const f=G.conn.files.find(x=>x.name===o.file);done=f&&f.deleted;}
+  else if(o.type==='modify'){const f=findFile(o.file);done=f&&f.modified;}
+  else if(o.type==='transfer'){done=G.stolen>=o.amount;}
+  else if(o.type==='trace'){const M=m.mesh?meshState(m.mesh):null;
+    const ans=m.mesh?(M&&M.done&&M.mother):o.answer;done=!!ans&&G.submitted===ans;}
+  else if(o.type==='multi'){done=o.parts.every(p=>{
+    const f=G.conn&&G.conn.files.find(x=>x.name===p.file);
+    return p.type==='download'?(f&&f.got):p.type==='delete'?(f&&f.deleted):p.type==='modify'?(f&&f.modified):false;});}
+  if(done){m._done=true;typeLine('◈ OBJECTIVE COMPLETE',' ',()=>pr('now <span class="c">deletelogs</span>, then <span class="c">disconnect</span> — before the trace gets home.'));blip(980,0.16,'sine',0.06,1300);}}
+
+/* ---------- disconnect / complete ---------- */
+function cmdDisconnect(){if(!G.conn){pr('not connected.','dim');return;}const t=G.conn,m=activeMission();
+  if(G.fm){G.fm=null;S.heat=clamp((S.heat||0)+6,0,100);updateHeat();
+    pr('<span class="warn">⚠ you dropped the line with SQLaudit still mounted — the orphaned audit session is evidence. heat +6.</span>');
+    pr('<span class="dim">next time: <span class="c">sqlaudit disconnect</span> before you disconnect.</span>');}
+  pr(`<span class="dim">closing connection to ${t.ip}…</span>`);const objDone=m&&m._done&&t===TARGETS[m.target];
+  G.conn=null;G.access=false;G.trace=0;G.tracedNode=-1;G.cleared=new Set();
+  $('tbConn').textContent='offline';$('tracePill').classList.add('hidden2');$('tracePill').classList.remove('active');
+  $('tbTrace').style.width='0%';$('tbTracePct').textContent='—';prompt();drawMap();humStop();
+  if(objDone)completeMission(m);else pr('disconnected.','ok');tutHook('disconnect');blip(300,0.1,'sine',0.05,180);}
+function completeMission(m){let pay=m.pay;
+  const remote=!!(m.mesh||m.boot);            // no host was entered — there are no logs to leave
+  const clean=remote||G.logsDeleted;
+  if(!clean){pay=Math.floor(pay*0.55);const gain=S.soft.spoofer?7:15;S.heat=clamp(S.heat+gain,0,100);
+    pr('<span class="warn">you left logs — admins clawed back part of the fee, and your heat is climbing. ('+'+'+gain+' heat) — try <span class="c">laylow</span>.</span>');}
+  else if(!remote){S.heat=clamp(S.heat-5,0,100);}
+  S.creds+=pay;S.rating+=m.rating;if(!S.completed.includes(m.id))S.completed.push(m.id);S.active=null;m._done=false;
+  unlockStory();updateHeat();persist();
+  pr(`<span class="ok">◈ CONTRACT COMPLETE — +${pay}c, +${m.rating} rating.</span>`);
+  pr(`<span class="c">rank:</span> ${rankName(S.rating)}   <span class="c">balance:</span> <span class="ok">${S.creds}c</span>`);
+  if(m.finale){G.awaitChoice=true;setTimeout(()=>{pr('');
+    typeLine('killswitch.bin is on your deck. it can end the grid — or run it.',' warn',()=>{
+    pr('<span class="c">the terminal is waiting.</span> type your choice:');
+    pr('  <span class="ok">burn</span>   — destroy the grid. no one is watched again. no one gets paid, either.');
+    pr('  <span class="ok">seize</span>  — keep the killswitch. the watchers now answer to you.');
+    pr('  <span class="ok">walk</span>   — wipe your name from it and vanish. let the world keep its monster.');});},400);}
+  if(m.reward&&m.reward.tool){const{tool,key}=m.reward;
+    const defs=key==='crackers'?CRACKERS:key==='decoders'?DECODERS:key==='booters'?BOOTERS:MONITORS;
+    if(!owned(key,tool)){(S[key]=S[key]||[]).push(tool);
+      if(ART[tool]){pr('');artLine(ART[tool]);}
+      pr(`<span class="phos">◈ ${defs[tool].n} is yours.</span>`);explain(tool);renderShop();}}
+  if(m.id==='m8')setTimeout(()=>grantCode('skeletonkey'),1200);
+  if(m.id==='m9')setTimeout(()=>grantCode('ppop'),1200);
+  if(m.gig){S.activeGig=null;GIGS=GIGS.filter(x=>x.id!==m.id);refreshGigs();renderForum();}
+  else worldEvent('mission',m.id);
+  if(S.heat>=40&&!heatWarned){heatWarned=true;worldMsg('heat');}
+  syncTop();renderInbox();renderShop();updateBadge();blip(1046,0.4,'sawtooth',0.05);}
+function unlockStory(){MISSIONS.forEach(m=>{if(m.note&&noteUnlocked(m)&&!S.seen.includes(m.id)){S.seen.push(m.id);
+    notify(m.from,m.subj);} if(!m.note&&missionAvail(m)&&!S.seen.includes(m.id)){S.seen.push(m.id);if(m.id!=='m0')notify(m.from,m.subj);}});}
+function finaleChoice(w){if(!['burn','seize','walk'].includes(w)){pr('type <span class="ok">burn</span>, <span class="ok">seize</span>, or <span class="ok">walk</span>.','warn');return;}
+  G.awaitChoice=false;S.flags.ending=w;persist();pr('');
+  const end={
+   burn:['<span class="err">killswitch.bin executed.</span>','The grid convulses and goes dark, node by node, coast to coast. Every watchlist, every file on every one of us — gone. You made nothing on this job. You might be the only person alive who could have, and didn\'t.','<span class="phos">ENDING: THE ARSONIST</span>'],
+   seize:['<span class="warn">killswitch.bin secured. control keys rotated to your gateway.</span>','The grid still watches. It just watches for you now. Sable sends one last message — three words: "so it\'s you." You don\'t reply. You never have to reply to anyone again.','<span class="phos">ENDING: THE NEW WATCHER</span>'],
+   walk:['<span class="c">your handle scrubbed from watchers.log. connection dropped.</span>','You leave the killswitch where it lay and delete every trace of yourself instead. Somewhere a grid keeps humming, keeps watching — just not you, not anymore. You log off for the last time and become a rumour.','<span class="phos">ENDING: THE GHOST</span>'],
+  }[w];
+  typeLine(end[0],' ',()=>{pr('');pr(end[1]);pr('');pr('<span class="m">══════════════════════════════════════</span>');
+    pr(`         UNITS///OS — ${S.handle} — ${rankName(S.rating)}`);pr('         '+end[2]);pr('<span class="m">══════════════════════════════════════</span>');
+    pr('<span class="dim">the wire goes quiet. (buy tools, take jobs, or start over any time.)</span>');
+    setTimeout(()=>grantCode(w),900);});}
+function chord(fs){fs.forEach(f=>blip(f,0.6,'sawtooth',0.04));}
+
+/* ---------- caught ---------- */
+function caught(){pr('');typeLine('██ REVERSE-TRACE COMPLETE — THEY ARE AT YOUR GATEWAY ██',' err');
+  pr('<span class="err">connection killed. gateway flagged.</span>','err');
+  const fine=Math.min(S.creds,Math.floor(250+S.rating*30));S.creds-=fine;S.rating=Math.max(0,S.rating-1);S.heat=clamp(S.heat+25,0,100);updateHeat();
+  pr(`<span class="warn">fine −${fine}c · rating −1 · heat +25. next time: longer route, faster tools, don't dawdle.</span>`);
+  const m=activeMission();if(m)m._done=false;
+  G.conn=null;G.access=false;G.trace=0;G.tracedNode=-1;G.cleared=new Set();
+  $('tbConn').textContent='offline';$('tracePill').classList.add('hidden2');$('tracePill').classList.remove('active');
+  $('tbTrace').style.width='0%';$('tbTracePct').textContent='—';prompt();drawMap();humStop();
+  persist();syncTop();worldMsg('caught');noise(0.9,0.06,300);blip(120,0.8,'sawtooth',0.05,60);}
+
+/* ================= async ops (parallel, gated by Memory Banks) ================= */
+function memSlots(){return S.soft.memory||1;}
+function runOp(label,secs,onDone){
+  if(G.ops.length>=memSlots()){pr(`all ${memSlots()} memory bank(s) busy — <span class="c">abort</span>, wait, or buy Memory Banks in <span class="c">shop</span>.`,'warn');blip(200,0.08,'square',0.04);return false;}
+  const bar=pr(`<span class="dim">${label}</span> <span class="bar" data-b>[          ] 0%</span>`);
+  const span=bar.querySelector('[data-b]');const t0=performance.now();const op={cancel:false};G.ops.push(op);
+  op.iv=setInterval(()=>{if(op.cancel){clearInterval(op.iv);span.innerHTML='<span class="warn">[ aborted ]</span>';G.ops=G.ops.filter(o=>o!==op);return;}
+    const p=clamp((performance.now()-t0)/(secs*1000),0,1),fill=Math.round(p*10);
+    span.textContent=`[${'#'.repeat(fill)}${' '.repeat(10-fill)}] ${Math.floor(p*100)}%`;
+    if(p>=1){clearInterval(op.iv);span.innerHTML='<span class="ok">[##########] done</span>';G.ops=G.ops.filter(o=>o!==op);onDone&&onDone();maybeHint();}},55);
+  return true;}
+function abortOp(){if(G.ops.length){G.ops.forEach(o=>o.cancel=true);pr('aborted running op(s).','warn');}else pr('nothing running.','dim');}
+
+/* ================= trace tick ================= */
+setInterval(()=>{if(!G.conn)return;const hops=G.route.length;
+  const rate=(G.conn.traceRate*(G.active2?1.35:0.8))/traceDiv();
+  G.trace=clamp(G.trace+rate*0.1,0,100);
+  const seg=100/(hops+1);const reached=hops-Math.floor(G.trace/seg);
+  G.tracedIp=reached>0?G.route[reached-1]:null;
+  if(reached<G.tracedNode){G.tracedNode=reached;const label=reached<=0?'YOUR GATEWAY':(G.route[reached-1]||G.conn.ip);
+    if(reached>0){pr(`<span class="err">⚠ reverse-trace burned through to ${label}</span>`);
+      if(owned('monitors','monitorme'))pr(`<span class="dim">MonitorMe: <span class="c">burn ${label}</span> to cut the thread.</span>`);}
+    if(!$('winMonitor').hidden)renderMonitor();}
+  const has=S.soft.tracker>0;$('tbTrace').style.width=G.trace+'%';
+  $('tbTracePct').textContent=has?Math.floor(G.trace)+'%':(G.trace>66?'HIGH':G.trace>33?'MED':'LOW');
+  if(G.trace>60)alarm();
+  if(G.trace>=100)caught();},100);
+
+/* ================= clock + feed ================= */
+setInterval(()=>{const d=new Date();$('clock').textContent=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());},1000);
+const FEED=[
+ '//NEWSWIRE: OmniCorp denies breach as shares slide 4%',
+ '//CHATTER: anyone got a clean bounce through Rialto? mine\'s burned',
+ '//BULLETIN: Uplink raises minimum rating for tier-3 contracts',
+ '//NORAD grid status: <b>NOMINAL</b>',
+ '//CHATTER: heard someone drained a holding account at Meridian. legend.',
+ '//NEWSWIRE: Helix Biotech IPO "delayed pending review"',
+ '//WARNING: <span class="r">trace-back times down 30% this quarter — route deep</span>',
+ '//CHATTER: 0RACLE is real. i\'ve seen the messages. don\'t take the last job',
+ '//MARKET: File Decrypter v3 back in stock',
+ '//NEWSWIRE: Argus Corp senator scandal "fabricated", firm says',
+];
+function cycleFeed(){const t=$('tkText');const lines=[];for(let i=0;i<4;i++)lines.push(pick(FEED));
+  t.innerHTML=lines.join('&nbsp;&nbsp;·&nbsp;&nbsp;');t.style.animation='none';void t.offsetWidth;t.style.animation='tick 34s linear infinite';}
+
+/* ================= top / inbox / shop ================= */
+function syncTop(){$('tbAgent').textContent=S.handle;$('tbRank').textContent=rankName(S.rating);$('tbCreds').textContent=S.creds+'c';updateHeat();}
+function updateHeat(){const e=$('tbHeat');if(!e)return;const h=Math.floor(S.heat||0);e.textContent=h;
+  e.style.color=h>=60?'var(--red)':h>=30?'var(--amber)':'var(--dim)';}
+/* background trace: sloppy jobs come back to haunt you while idle */
+setInterval(()=>{if(!S||G.conn||G.awaitChoice||$('desktop').hidden)return;if((S.heat||0)<25)return;
+  if(Math.random()<S.heat/1500){const fine=Math.min(S.creds,Math.floor(80+S.heat*3));S.creds-=fine;S.heat=clamp(S.heat-10,0,100);
+    persist();syncTop();notify('SYSTEM','an old trail caught up with you');
+    pr(`<span class="err">⚠ a job you left dirty just got traced home — anonymous fine −${fine}c.</span> <span class="dim">keep logs clean or <span class="c">laylow</span>.</span>`,'err');
+    noise(0.5,0.05,220);blip(140,0.4,'sawtooth',0.05,80);}},10000);
+function notify(from,subj){const box=$('toast');const el=document.createElement('div');el.className='toastmsg';
+  el.innerHTML=`<div class="tf">✉ ${from}</div><div class="ts">${subj}</div>`;box.appendChild(el);blip(1100,0.09,'sine',0.05,1500);setTimeout(()=>blip(1400,0.09,'sine',0.05),90);
+  updateBadge();renderInbox();setTimeout(()=>{el.style.transition='opacity .5s';el.style.opacity='0';setTimeout(()=>el.remove(),500);},5200);}
+let selMail=null;
+function renderInbox(){const list=$('mlist');list.innerHTML='';
+  MISSIONS.forEach(m=>{const isNote=m.note,unlocked=isNote?noteUnlocked(m):true;if(isNote&&!unlocked)return;
+    const avail=missionAvail(m),done=S.completed.includes(m.id),active=S.active===m.id;
+    if(!isNote&&!avail&&!done&&!active)return; // never reveal contracts you haven't earned
+    const unread=!S.read.includes(m.id)&&(avail||active||isNote);
+    const el=document.createElement('div');
+    el.className='mail'+(done?' done':'')+(active?' sel':'')+(!avail&&!done&&!active&&!isNote?' locked':'')+(unread?' unread':'');
+    const bdg=isNote?'<span class="bdg msg">✦ message</span>':done?'<span class="bdg done">✓ done</span>':active?'<span class="bdg act">● active</span>':(!avail?`<span class="bdg lock">🔒 rank ${m.rankReq}</span>`:'<span class="bdg act">● open</span>');
+    el.innerHTML=`${bdg}<div class="fr">from: ${m.from}</div><div class="su">${m.subj}</div>${isNote?'':`<div class="pay">+${m.pay}c · +${m.rating} rating</div>`}`;
+    el.onclick=()=>{selMail=m.id;if(!S.read.includes(m.id)){S.read.push(m.id);persist();updateBadge();}
+      showMail(m,avail,done,active,isNote);document.querySelectorAll('.mail').forEach(x=>x.classList.remove('sel','unread'));el.classList.add('sel');blip(700,0.04);};
+    list.appendChild(el);});updateBadge();}
+function showMail(m,avail,done,active,isNote){const d=$('mdetail');d.classList.add('show');const t=TARGETS[m.target];
+  d.innerHTML=`<div class="fr" style="color:${isNote?'var(--magenta)':'var(--cyan)'}">from: ${m.from}</div>
+    <div style="font-size:14px;color:#eafcff;margin:3px 0;">${m.subj}</div>
+    <div class="body">${m.body}</div>`+(isNote?'':
+    `<div><span class="k">target:</span> <span class="vc">${m.boot?'@'+m.obj.handle:m.mesh?MESHES[m.mesh].ip:t.ip}</span> <span class="k">(${m.boot?'forum user — origin unknown':m.mesh?MESHES[m.mesh].type+' mesh — decode it':t.name})</span></div>
+     <div><span class="k">objective:</span> <span class="v">${objText(m)}</span></div>
+     <div><span class="k">security:</span> ${m.boot?'unknown — resolve him first':m.mesh?MESHES[m.mesh].layers+' mesh nodes ('+MESHES[m.mesh].type+')':(t.locks.length?t.locks.join(' · '):'none')}</div>
+     <div><span class="k">reward:</span> <span class="v">+${m.pay}c</span> · +${m.rating} rating</div>
+     <button class="mbtn" id="acceptBtn" ${(!avail||active)?'disabled':''}>${done?'completed':active?'active':avail?'accept contract':'rank too low'}</button>`);
+  const b=$('acceptBtn');if(b&&avail&&!active)b.onclick=()=>{cmdAccept([m.id]);openWin('Terminal',true);};}
+function renderShop(){const b=$('shopBody');b.innerHTML='';
+  const mk=(title,keys)=>{const h=document.createElement('div');h.className='shophd';h.textContent=title;b.appendChild(h);
+    keys.forEach(k=>{const s=SOFT[k],lvl=S.soft[k],maxed=lvl>=s.max,cost=Math.round(s.base*Math.pow(1.7,lvl));
+      const row=document.createElement('div');row.className='shoprow';
+      row.innerHTML=`<div><div class="n">${s.n} <span class="lv">${s.max===1?(lvl?'[installed]':''):'L'+lvl+'/'+s.max}</span></div><div class="d">${s.d}</div></div>
+        <button ${maxed||S.creds<cost?'disabled':''}>${maxed?(s.max===1?'OWNED':'MAX'):cost+'c'}</button>`;
+      const btn=row.querySelector('button');if(!maxed)btn.onclick=()=>doBuy(k);b.appendChild(row);});};
+  const head=document.createElement('div');head.className='shophd';head.style.color='var(--green)';
+  head.textContent='BALANCE '+S.creds+'c   ·   forum rep '+(S.rep||0)+' ('+forumRank()+')';b.appendChild(head);
+  // catalogue of one-shot named gear
+  const cat=(title,defs,key,note)=>{const h=document.createElement('div');h.className='shophd';h.textContent=title;b.appendChild(h);
+    Object.keys(defs).forEach(id=>{const d=defs[id];
+      if(d.myth)return;                                   // Project Valheim is a rumour, not a product
+      const have=owned(key,id);
+      if(d.brewPkg&&!have){                               // free software lives in brew, not the store
+        const row=document.createElement('div');row.className='shoprow';
+        row.innerHTML=`<div><div class="n">${d.n}</div><div class="d">${d.d}</div>
+          <div class="d" style="color:#4a6a7a">${d.lore||''}</div></div>
+          <div class="d" style="color:var(--cyan);white-space:nowrap">brew install ${d.brewPkg}</div>`;
+        b.appendChild(row);return;}
+      const questg=d.quest&&!S.flags[id+'Quest'];
+      const endgame=d.price===null&&!d.brewPkg&&!d.quest;
+      const locked=(endgame&&!S.flags.ending)||questg;
+      const row=document.createElement('div');row.className='shoprow';
+      const price=d.price===null?(locked?'???':'TAKE IT'):(d.price===0?'FREE':d.price+'c');
+      row.innerHTML=`<div><div class="n">${d.n} ${have?'<span class="lv">[installed]</span>':''}</div>
+        <div class="d">${d.d}</div><div class="d" style="color:#4a6a7a">${d.lore||''}</div></div>
+        <button ${have||locked||(d.price>0&&S.creds<d.price)?'disabled':''}>${have?'OWNED':locked?'🔒':price}</button>`;
+      const btn=row.querySelector('button');
+      if(!have&&!locked)btn.onclick=()=>buyNamed(key,id,defs);
+      b.appendChild(row);});
+    if(note){const n=document.createElement('div');n.className='shophd';n.style.color='#4a6a7a';n.textContent=note;b.appendChild(n);}};
+  cat('crackers',CRACKERS,'crackers');
+  cat('decoders — chew through someone else\'s botnet',DECODERS,'decoders');
+  if(S.flags.booterUnlocked)cat('booters — flood the mouthy ones for forum rep',BOOTERS,'booters');
+  if(S.flags.botnetUnlocked){
+    cat('monitors',MONITORS,'monitors');
+    const bh=document.createElement('div');bh.className='shophd';bh.textContent='botnets — your route home';b.appendChild(bh);
+    Object.keys(BOTNETS).forEach(id=>{const B=BOTNETS[id];const row=document.createElement('div');row.className='shoprow';
+      row.innerHTML=`<div><div class="n">${B.n}</div><div class="d">${B.d}</div>
+        <div class="d" style="color:#4a6a7a">${B.min}–${B.max} IPs · ${B.per}c per IP</div></div>
+        <div class="d" style="color:var(--cyan);white-space:nowrap">buybot ${id} &lt;n&gt;</div>`;b.appendChild(row);});
+    const cur=document.createElement('div');cur.className='shophd';cur.style.color='var(--amber)';
+    cur.textContent=botIPs().length?`active: ${BOTNETS[S.botnet.type].n} · ${botIPs().length} IPs`:'active: no botnet — you are running bare';b.appendChild(cur);}
+  mk('hardware',['cpu','memory']);mk('support tools',['fwbypass','proxy','decrypter']);mk('utilities',['logdel','tracker','spoofer']);}
+function buyNamed(key,id,defs){const d=defs[id];
+  if(d.price===null){if(!S.flags.ending){pr('that gear does not exist as far as you\'re concerned.','err');return;}
+    (S[key]=S[key]||[]).push(id);persist();renderShop();syncTop();
+    pr(`<span class="phos">◈ ${d.n} acquired. the agency will notice this eventually.</span>`);artLine(ART[id]);return;}
+  if(S.creds<d.price){pr('insufficient credits.','err');return;}
+  S.creds-=d.price;(S[key]=S[key]||[]).push(id);persist();syncTop();renderShop();renderMonitor();
+  pr(`<span class="ok">◈ installed ${d.n}.</span>${d.price?` (−${d.price}c)`:' <span class="dim">(free)</span>'}`);
+  if(ART[id])artLine(ART[id]);
+  if(key==='crackers')pr(`<span class="dim">run it with <span class="c">${d.cmd}</span> — or just <span class="c">crack</span> to use your best.</span>`);
+  if(key==='booters')pr(`<span class="dim">use it with <span class="c">boot &lt;ip&gt;</span> — you'll need their IP first.</span>`);
+  explain(id);tutHook('brew_'+id);blip(660,0.12,'square',0.06,990);}
+function doBuy(k){const s=SOFT[k],lvl=S.soft[k];if(lvl>=s.max)return;const cost=Math.round(s.base*Math.pow(1.7,lvl));
+  if(S.creds<cost){pr('insufficient credits.','err');return;}S.creds-=cost;S.soft[k]++;persist();syncTop();renderShop();
+  pr(`<span class="ok">installed ${s.n}${s.max>1?' v'+S.soft[k]:''}.</span> (−${cost}c)`);blip(660,0.12,'square',0.06,990);}
+function cmdBuy(a){const k=a[0];
+  if(CRACKERS[k])return buyNamed('crackers',k,CRACKERS);
+  if(BOOTERS[k])return buyNamed('booters',k,BOOTERS);
+  if(MONITORS[k])return buyNamed('monitors',k,MONITORS);
+  if(!SOFT[k]){pr('items: '+Object.keys(CRACKERS).join(', ')+', '+Object.keys(BOOTERS).join(', ')+', '+Object.keys(MONITORS).join(', ')+', '+Object.keys(SOFT).join(', '),'err');return;}
+  doBuy(k);}
+
+/* ================= map ================= */
+const mapc=$('mapc'),mctx=mapc.getContext('2d');let MW,MH;
+function resizeMap(){const dpr=window.devicePixelRatio||1;MW=mapc.clientWidth;MH=mapc.clientHeight;mapc.width=MW*dpr;mapc.height=MH*dpr;mctx.setTransform(dpr,0,0,dpr,0,0);drawMap();}
+function drawMap(){if(!MW)return;mctx.clearRect(0,0,MW,MH);
+  mctx.strokeStyle='rgba(38,120,150,0.08)';for(let i=0;i<=10;i++){const x=MW*i/10;mctx.beginPath();mctx.moveTo(x,0);mctx.lineTo(x,MH);mctx.stroke();}
+  const nodes=[{x:40,y:MH/2,c:'#37ffa8',l:'YOU'}];
+  // condense large botnets so 60 IPs stay legible
+  let disp=G.route;
+  if(disp.length>7)disp=[G.route[0],G.route[1],G.route[2],`⋯+${G.route.length-6}⋯`,G.route[G.route.length-3],G.route[G.route.length-2],G.route[G.route.length-1]];
+  disp.forEach((ip,i)=>nodes.push({x:40+(i+1)*((MW-90)/(disp.length+1)),y:MH/2+(i%2?18:-18),c:'#38e1ff',l:ip}));
+  nodes.push({x:MW-40,y:MH/2,c:G.conn?'#ff4d5e':'#3a5566',l:G.conn?G.conn.ip:'target'});
+  mctx.lineWidth=1.5;for(let i=0;i<nodes.length-1;i++){const a=nodes[i],b=nodes[i+1];
+    mctx.strokeStyle=G.conn?'rgba(56,225,255,0.45)':'rgba(90,120,140,0.28)';mctx.beginPath();mctx.moveTo(a.x,a.y);mctx.lineTo(b.x,b.y);mctx.stroke();
+    if(G.conn){const t=(performance.now()/700+i*0.3)%1,px=b.x+(a.x-b.x)*t,py=b.y+(a.y-b.y)*t;mctx.fillStyle='#38e1ff';mctx.beginPath();mctx.arc(px,py,2.5,0,7);mctx.fill();}}
+  // reverse-trace creep (from target toward you)
+  if(G.conn){const hotFrom=clamp(Math.round((1-G.trace/100)*(nodes.length-1)),0,nodes.length-1);
+    for(let i=nodes.length-1;i>=hotFrom;i--){nodes[i]._hot=true;}}
+  nodes.forEach((n,i)=>{const hot=n._hot;mctx.fillStyle=hot?'#ff4d5e':n.c;mctx.beginPath();mctx.arc(n.x,n.y,4,0,7);mctx.fill();
+    mctx.fillStyle=hot?'rgba(255,77,94,0.2)':'rgba(56,225,255,0.13)';mctx.beginPath();mctx.arc(n.x,n.y,hot?11:8,0,7);mctx.fill();
+    mctx.fillStyle=hot?'#ff8a95':'#7fb0c4';mctx.font='9px monospace';mctx.textAlign='center';mctx.fillText(n.l,n.x,n.y+20);});
+  if(G.conn){mctx.fillStyle=G.trace>66?'#ff4d5e':G.trace>33?'#ffb638':'#37ffa8';mctx.textAlign='right';mctx.font='10px monospace';
+    mctx.fillText('REVERSE-TRACE '+(S.soft.tracker?Math.floor(G.trace)+'%':'ACTIVE'),MW-8,14);}}
+setInterval(()=>{if(!$('winMap').hidden)drawMap();},70);
+window.addEventListener('resize',resizeMap);
+
+/* ================= input ================= */
+const cmdInput=$('cmd');
+cmdInput.addEventListener('keydown',e=>{keyclick();
+  if(e.key==='Enter'){const v=cmdInput.value;cmdInput.value='';ai();submitCmd(v);}
+  else if(e.key==='ArrowUp'){if(G.histIdx>0){G.histIdx--;cmdInput.value=G.hist[G.histIdx]||'';}e.preventDefault();}
+  else if(e.key==='ArrowDown'){if(G.histIdx<G.hist.length){G.histIdx++;cmdInput.value=G.hist[G.histIdx]||'';}e.preventDefault();}});
+$('term').addEventListener('pointerdown',()=>setTimeout(()=>cmdInput.focus(),0));
+
+/* ================= toggles ================= */
+function applyPrefs(){document.body.classList.toggle('crt',P.crt);
+  const c=$('crtTgl');if(c)c.classList.toggle('on',P.crt);
+  const s=$('sndTgl');if(s){s.classList.toggle('on',P.snd);s.textContent=P.snd?'♪':'♪̸';}
+  const sc=document.querySelector('#crtfx .scan');if(sc)sc.style.opacity=P.scan;
+  if(masterGain)masterGain.gain.value=P.vol;}
+$('crtTgl').onclick=()=>{P.crt=!P.crt;savePrefs();applyPrefs();renderSettings();};
+$('sndTgl').onclick=()=>{P.snd=!P.snd;savePrefs();applyPrefs();renderSettings();if(P.snd){ai();humStart();if(P.music)musicStart();}else{humStop();musicStop();}};
+function renderSettings(){const b=$('setBody');if(!b)return;
+  const row=(label,ctrl)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:11px 0;"><span style="color:var(--dim);font-size:11px;letter-spacing:1px;text-transform:uppercase;">${label}</span>${ctrl}</div>`;
+  const tgl=(id,on)=>`<button class="tgl ${on?'on':''}" id="${id}" style="min-width:54px;">${on?'ON':'OFF'}</button>`;
+  b.innerHTML=`<div style="color:var(--cyan);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">display &amp; audio</div>`
+    +row('CRT screen',tgl('setCrt',P.crt))
+    +row('Scanlines',`<input type="range" id="setScan" min="0" max="0.9" step="0.05" value="${P.scan}" style="width:150px;">`)
+    +row('Guide me (tips after every command)',tgl('setHint',P.autohint))
+    +row('Sound FX',tgl('setSnd',P.snd))
+    +row('Ambient music',tgl('setMus',P.music))
+    +row('Master volume',`<input type="range" id="setVol" min="0" max="1" step="0.05" value="${P.vol}" style="width:150px;">`)
+    +`<div style="border-top:1px solid var(--edge);margin-top:12px;padding-top:10px;color:var(--dim);font-size:10px;line-height:1.7;">
+        agent <b style="color:var(--phos)">${S?S.handle:'—'}</b> · ${S?rankName(S.rating):''}<br>
+        <span style="color:var(--red);cursor:pointer;text-decoration:underline;" id="setWipe">wipe agent &amp; restart</span></div>`;
+  const bind=(id,fn)=>{const e=$(id);if(e)e.onclick=fn;};
+  bind('setCrt',()=>{P.crt=!P.crt;savePrefs();applyPrefs();renderSettings();});
+  bind('setSnd',()=>{P.snd=!P.snd;savePrefs();applyPrefs();renderSettings();if(P.snd){ai();humStart();if(P.music)musicStart();}else{humStop();musicStop();}});
+  bind('setMus',()=>{P.music=!P.music;savePrefs();renderSettings();if(P.music){ai();musicStart();}else musicStop();});
+  bind('setHint',()=>{P.autohint=!P.autohint;savePrefs();renderSettings();
+    pr(P.autohint?'<span class="ok">◈ guide mode ON.</span>':'<span class="dim">guide mode off.</span>');if(P.autohint)cmdHint();});
+  const sv=$('setVol');if(sv)sv.oninput=e=>{P.vol=+e.target.value;if(masterGain)masterGain.gain.value=P.vol;savePrefs();};
+  const ss=$('setScan');if(ss)ss.oninput=e=>{P.scan=+e.target.value;applyPrefs();savePrefs();};
+  bind('setWipe',()=>{if(confirm('Wipe this agent and start over?')){localStorage.removeItem(KEY);location.reload();}});}
+
+/* ================= dock badges ================= */
+function setDockBadge(app,n){const b=document.querySelector(`.dockapp[data-app="${app}"]`);if(!b)return;let bd=b.querySelector('.badge');
+  if(n>0){if(!bd){bd=document.createElement('div');bd.className='badge';b.appendChild(bd);}bd.textContent=n;}else if(bd)bd.remove();}
+function worldBadges(){let im=0;for(const k in (S.imUnread||{}))im+=S.imUnread[k];setDockBadge('Messenger',im);setDockBadge('Forums',forumNew);}
+
+/* ================= MESSENGER ================= */
+const CONTACTS={
+  SABLE :{n:'SABLE', tag:'handler'},
+  '0RACLE':{n:'0RACLE',tag:'???'},
+  cr4sh :{n:'cr4sh', tag:'wire regular'},
+  V01D  :{n:'V01D',  tag:'rival'},
+ Anatomical:{n:'Anatomical',tag:'author, HeavenCrackR'},
+};
+let imOpen=null;
+function imChime(){blip(1100,0.08,'sine',0.05,1500);setTimeout(()=>blip(1450,0.08,'sine',0.04),80);}
+function imSend(id,text,replies){ if(!CONTACTS[id])return; if(!S.im[id])S.im[id]=[];
+  if(imOpen===id&&!$('winMessenger').hidden)showTyping(true);
+  const delay=Math.min(2400,700+text.length*7);
+  setTimeout(()=>{ if(imOpen===id)showTyping(false);
+    S.im[id].push({who:'them',text,replies:replies||null});
+    if(!(imOpen===id&&!$('winMessenger').hidden))S.imUnread[id]=(S.imUnread[id]||0)+1;
+    persist();worldBadges();
+    if(imOpen===id&&!$('winMessenger').hidden){renderChat();imChime();}
+    else notify(CONTACTS[id].n,text.split('\n')[0].slice(0,44));
+  },delay);}
+function showTyping(on){const log=$('imChat').querySelector('.imlog');if(!log)return;let t=log.querySelector('.typing');
+  if(on){if(!t){t=document.createElement('div');t.className='typing';t.innerHTML='<i></i><i></i><i></i>';log.appendChild(t);log.scrollTop=log.scrollHeight;}}
+  else if(t)t.remove();}
+function renderIM(){const side=$('imSide');side.innerHTML='';
+  Object.keys(CONTACTS).forEach(id=>{if(!S.im[id]&&id!=='cr4sh'&&id!=='SABLE')return; // only show contacts you've heard from
+    const c=CONTACTS[id],un=S.imUnread[id]||0;const el=document.createElement('div');el.className='imc'+(imOpen===id?' on':'');
+    el.innerHTML=`<div class="nm">${c.n}</div><div class="tg">${c.tag}</div>`+(un?`<div class="ub">${un}</div>`:'');
+    el.onclick=()=>{imOpen=id;S.imUnread[id]=0;persist();worldBadges();renderIM();renderChat();};side.appendChild(el);});
+  if(!imOpen){const first=Object.keys(CONTACTS).find(id=>S.im[id]);if(first)imOpen=first;}
+  renderChat();}
+function renderChat(){const chat=$('imChat');if(!imOpen||!S.im[imOpen]){chat.innerHTML='<div class="imempty">no conversations yet.<br>the wire will find you.</div>';return;}
+  const thread=S.im[imOpen];const last=thread[thread.length-1];
+  let html='<div class="imlog">';thread.forEach(m=>{html+=`<div class="b ${m.who}">${m.who==='them'?`<div class="who">${CONTACTS[imOpen].n}</div>`:''}${escapeHtml(m.text).replace(/\n/g,'<br>')}</div>`;});
+  html+='</div>';
+  if(last&&last.who==='them'&&last.replies){html+='<div class="imreplies">';last.replies.forEach((r,i)=>html+=`<button data-i="${i}">${escapeHtml(r.label)}</button>`);html+='</div>';}
+  chat.innerHTML=html;const log=chat.querySelector('.imlog');log.scrollTop=log.scrollHeight;
+  chat.querySelectorAll('.imreplies button').forEach(b=>b.onclick=()=>{const r=last.replies[+b.dataset.i];last.replies=null;
+    S.im[imOpen].push({who:'me',text:r.label});persist();renderChat();
+    if(r.reply)imSend(imOpen,r.reply);
+    if(r.creds){S.creds+=r.creds;syncTop();pr(`<span class="ok">$ ${CONTACTS[imOpen].n} sent you +${r.creds}c.</span>`);}
+    if(r.discover){S.discovered.push(r.discover);persist();pr(`<span class="phos">✦ ${CONTACTS[imOpen].n} leaked you a server: ${r.discover} — added to links.</span>`);}
+  });}
+
+/* ================= FORUMS ("The Wire") ================= */
+const FORUM=[
+ {id:'welcome',title:'read this first — new agents',by:'sysop',posts:[
+   {by:'sysop',text:'welcome to THE WIRE. no real names, no logs, help each other or don\'t.'},
+   {by:'cr4sh',text:'rule 1: deletelogs before you disconnect. rule 2: see rule 1.'},
+   {by:'m0th',text:'longer bounce routes = slower reverse-trace. buy gateway slots early.'}]},
+ {id:'routes',title:'best bounce relays rn?',by:'p1ng',posts:[
+   {by:'p1ng',text:'rialto uni has been solid for me lately'},
+   {by:'ghosthz',text:'kowloon exchange is fast but noisy, they log hard'},
+   {by:'cr4sh',text:'stack 3+ hops or you\'re just donating your gateway to the feds'}]},
+ {id:'oracle',title:'0RACLE — real or larp??',by:'sk1d',posts:[
+   {by:'sk1d',text:'keep getting cryptic DMs from "0RACLE". anyone else?'},
+   {by:'ghosthz',text:'yeah. says the agencies farm us for data. probably paranoid.'},
+   {by:'V01D',text:'or you\'re all cattle and 0RACLE is the only one saying it. anyway, skill issue.'}]},
+ {id:'valheim',title:'project valheim — anyone actually SEEN it?',by:'m0th',posts:[
+   {by:'m0th',text:'third runner this month says they got dropped by something that hit from a thousand directions at once. no botnet does that.'},
+   {by:'ghosthz',text:'it\'s a myth. every city has one. ours is called valheim. grow up.'},
+   {by:'n1ght',text:'my cousin does contract work for the city. says the phones. ALL of them. that\'s the botnet.'},
+   {by:'ghosthz',text:'@n1ght your cousin also says the moon landing was filmed in kowloon'},
+   {by:'w1re',text:'i\'m not saying it\'s real. i\'m saying i stopped talking about it after a guy who wouldn\'t stop talking about it went quiet.'}]},
+ {id:'tips',title:'loot tips — post what you find',by:'w1re',posts:[
+   {by:'w1re',text:'read every file you can cat. people leave IPs to old cache boxes in their memos.'},
+   {by:'n1ght',text:'confirmed. found an abandoned wallet host at 44.9.120.6 — one password, cleaned it out. ty whoever.'},
+   {by:'ghosthz',text:'lol it\'s still up? go go go'}]},
+];
+const EVENT_THREADS={
+ helix:{id:'t_helix',title:'Helix trial records just… vanished?',by:'wb_leaks',posts:[
+   {by:'wb_leaks',text:'the phase-II adverse-event file is GONE from their box. right before IPO. hmm.'},
+   {by:'cr4sh',text:'someone did the world a favor.'},
+   {by:'V01D',text:'or erased evidence for a paycheck. spare me the hero arc.'}]},
+ bankHit:{id:'t_meridian',title:'someone DRAINED a Meridian holding account 👀',by:'p1ng',posts:[
+   {by:'p1ng',text:'six figures out of acct #887 overnight. surgical.'},
+   {by:'ghosthz',text:'that was a laundering account — they literally can\'t report it lmao'},
+   {by:'V01D',text:'that was MY mark. whoever you are, we have a problem.'}]},
+ vaultLeak:{id:'t_vaultleak',title:'LEAK: numbered vault, bonds inside',by:'d3adhand',posts:[
+   {by:'d3adhand',text:'burning this on my way out. numbered vault at 201.6.44.90 — password + firewall, bearer bonds inside. decrypter needed. first come first served.'},
+   {by:'cr4sh',text:'...you absolute legend'}]},
+ voidDown:{id:'t_void',title:'V01D is offline. actually offline.',by:'p1ng',posts:[
+   {by:'p1ng',text:'he\'s been on this board for six years and he just went dark mid-argument.'},
+   {by:'ghosthz',text:'whoever did that decoded an amorphous botnet to find him. that\'s not a script kiddie.'},
+   {by:'n1ght',text:'i\'m being nicer to everyone from now on just in case.'}]},
+ grid:{id:'t_grid',title:'the grid flickered last night. anyone else?',by:'m0th',posts:[
+   {by:'m0th',text:'every watchlist ping dropped for 4 seconds at 03:00.'},
+   {by:'sk1d',text:'0RACLE was right. something happened at 6.0.0.1.'},
+   {by:'cr4sh',text:'whoever you are up there… good luck.'}]},
+};
+let forumNew=0; const AMBIENTADD={}; const fOpen=new Set();
+const HANDLES=['cr4sh','p1ng','ghosthz','m0th','sk1d','n1ght','v0xel','w1re','d3adhand'];
+/* the wire's mood escalates with the story: calm → uneasy → panic → bedlam */
+function wireTier(){const c=S.completed||[];
+  if(S.flags.ending)return 4;                       // aftermath — the city exhales
+  if(c.includes('m6')||c.includes('m7')||S.flags.grid)return 3;
+  if(c.includes('m6a')||c.includes('m6b')||c.includes('m5c'))return 2;
+  if(c.includes('m2b')||c.includes('m4b')||c.includes('m4'))return 1;
+  return 0;}
+const AMBIENT_T=[
+ [ // 0 — calm
+  'anyone selling a decrypter v3?','feds bounced through protovision today, steer clear','new gateway firmware when??',
+  'who keeps leaking ips lmao','stay frosty out there','got traced on a tier-1, humiliating',
+  'remember to laylow after messy jobs','the wire never sleeps','memory banks changed my life, run tools in parallel',
+  'someone left a wallet host wide open again smh'],
+ [ // 1 — uneasy
+  'traces have been faster this month. anyone else or is it just me',
+  'got caught on a box i have run fifty times. fifty.','anyone had a run go bad in the last two weeks?',
+  'not paranoid but my gateway logs have gaps in them','my burn times used to be enough. they are not enough now.',
+  'is it me or did every corp upgrade counter-intrusion the same week','two regulars stopped posting. probably nothing.'],
+ [ // 2 — panic
+  'SOMEONE IS SELLING OUR TELEMETRY. that is why we are getting traced. it is not luck.',
+  'if they have telemetry they have my ROUTES. my burn times. how i THINK.',
+  'what exactly is in telemetry. is it my ip. IS IT MY IP',
+  'burned three botnets this week and i am still hot','deleting this account. good luck everyone.',
+  'check your logs for GAPS. gaps mean someone pulled.','it is not a leak it is a PRODUCT. someone packaged us.',
+  'how long has this been happening. i have been on here nine years.',
+  'my handle showed up in a dump i was never in. explain that.',
+  'i keep rerouting and the trace keeps knowing','who did we tell. we told SOMEONE. who did we tell'],
+ [ // 3 — bedlam
+  '6.0.0.1','6.0.0.1 is a MILITARY RANGE. why is a military range deep-probing hobbyists',
+  'THEY ARE NOT TRACING US. THEY ALREADY HAVE US. the tracing is the AUDIT.',
+  'went to lay low and my safehouse relay was ALREADY FLAGGED. already.',
+  'stop posting stop posting stop posting','the archive is not a leak it is an INDEX. we are indexed. we are a FILE.',
+  'does anyone elses monitor show pings from an ip that is not in their botnet',
+  'going dark. if this account posts again it is not me.',
+  'i counted. eleven regulars gone this month. eleven.',
+  'VALHEIM IS REAL AND IT IS NOT A BOOTER IT IS A CENSUS',
+  'they do not need to trace you if every phone in the city is already listening',
+  'sable knows. sable has always known.','why is my own handle in my own logs. i did not run that job.',
+  'do not answer 0RACLE. do not ignore 0RACLE. i do not know which.',
+  'nine years. nine years and it was a WAITING ROOM.'],
+ [ // 4 — aftermath: it happened, everyone lived, the work goes on
+  'traces are back to normal speed. i checked twice. twice!','first clean run in a month. i almost cried at my desk.',
+  'whatever happened up there — thank you. that is all. thank you.',
+  'n1ght is back. n1ght is BACK everyone','the megathread is archived. leaving it up so we remember.',
+  'weirdly i miss the panic. is that insane','my monitor is quiet. genuinely quiet. i keep checking it anyway.',
+  'gig board is busy again. people are taking work.','someone posted a wallet host and it was just... a wallet host. no strings.',
+  'we should do a meetup. in person. like criminals used to.',
+  'still laylow after messy jobs. old habits.','new runners showing up asking what 6.0.0.1 was. let them stay new.',
+  'anyone selling a decrypter v3? (yes i am asking this again. it is nice to ask normal questions.)',
+  'archived my own panic posts out of embarrassment. leaving one up as a monument.',
+  'the wire survived. tell your friends. carefully.'],
+];
+const PANIC_THREADS={
+ 2:{id:'t_panic',title:'⚠ MEGATHREAD: someone is selling our telemetry',by:'w1re',posts:[
+   {by:'w1re',text:'consolidating because there are nine threads about this. yes it is real. yes it explains the traces.',tone:'panic'},
+   {by:'p1ng',text:'what is IN a telemetry packet. someone who actually knows. please.',tone:'panic'},
+   {by:'ghosthz',text:'routes. burn timings. tool fingerprints. which locks you break first. it is a behavioural profile.',tone:'panic'},
+   {by:'n1ght',text:'so they do not need my ip. they can just recognise me. anywhere. forever.',tone:'panic'},
+   {by:'m0th',text:'i want everyone to be normal about this',tone:'panic'},
+   {by:'sk1d_r34per',text:'nobody be normal about this',tone:'panic'}]},
+ 4:{id:'t_after',title:'✦ it is over. what now?',by:'w1re',posts:[
+   {by:'w1re',text:'three weeks since the grid went quiet. nobody has been traced by anything they could not explain.'},
+   {by:'ghosthz',text:'i pulled my safehouse relay back online. no flags. first time in a year.'},
+   {by:'n1ght',text:'i am alive by the way. sorry i scared everyone. i went to my sisters and turned everything off.'},
+   {by:'p1ng',text:'@n1ght YOU ABSOLUTE — we thought you were gone gone'},
+   {by:'m0th',text:'we lost some people. not to the grid, just to the fear. they are not coming back and that is allowed.'},
+   {by:'w1re',text:'so: the board stays. the gig list stays. we go back to work, we keep our logs clean, and we remember.'},
+   {by:'ghosthz',text:'whoever did it never posted about it. that is how i know it was a real one.'},
+   {by:'cr4sh',text:'yeah. they never did.'}]},
+ 3:{id:'t_bedlam',title:'⚠⚠ 6.0.0.1 — READ BEFORE YOU CONNECT TO ANYTHING',by:'ghosthz',posts:[
+   {by:'ghosthz',text:'the origin deep-probing this board resolves into a military range. i checked it four times.',tone:'dark'},
+   {by:'m0th',text:'i am looking at my monitor right now and there is a node pinging that i did not buy.',tone:'dark'},
+   {by:'p1ng',text:'mine too. MINE TOO.',tone:'dark'},
+   {by:'w1re',text:'everyone breathe. everyone LAYLOW. do not take contracts this week.',tone:'dark'},
+   {by:'n1ght',text:'i took one yesterday',tone:'dark'},
+   {by:'n1ght',text:'i took one yesterday and it was from an account that has never posted before',tone:'dark'},
+   {by:'ghosthz',text:'@n1ght what was the target',tone:'dark'},
+   {by:'ghosthz',text:'@n1ght',tone:'dark'},
+   {by:'ghosthz',text:'@n1ght answer',tone:'dark'}]},
+};
+function forumThreads(){const base=FORUM.concat(Object.keys(EVENT_THREADS).filter(f=>S.flags[f]).map(f=>EVENT_THREADS[f]));
+  const tier=wireTier(),panic=[];
+  for(let t=4;t>=2;t--)if(tier>=t&&PANIC_THREADS[t])panic.push(PANIC_THREADS[t]);   // newest crisis on top
+  const all=panic.concat(base);
+  return S.flags.tutDone?[gigThread()].concat(all):all;}
+function repBanner(){const rep=S.rep||0,rank=forumRank();
+  let idx=FRANKS.findIndex(([t])=>rep<t);
+  const nextT=idx>=0?FRANKS[idx][0]:null,prevT=idx>0?FRANKS[idx-1][0]:0;
+  const pct=nextT?Math.max(3,Math.min(100,((rep-prevT)/(nextT-prevT))*100)):100;
+  const el=document.createElement('div');el.className='repbar';
+  el.innerHTML=`<div class="repline"><span class="rrank">${rank}</span><span class="rrep">${rep} rep</span></div>
+    <div class="rtrack"><i style="width:${pct}%"></i></div>
+    <div class="rnext">${nextT?`<b>${nextT-rep}</b> rep to <b>${FRANKS[idx][1]}</b> · rep comes from booting people who earn it`
+      :'top of the wire — nobody talks back to you any more'}</div>`;
+  return el;}
+function renderForum(){const w=$('fwrap');if(!w)return;w.innerHTML='';w.appendChild(repBanner());
+  forumThreads().forEach(th=>{const posts=th.posts.concat(AMBIENTADD[th.id]||[]);
+    const el=document.createElement('div');el.className='fthread'+(fOpen.has(th.id)?' open':'')+(th._new?' new':'');
+    el.innerHTML=`<div class="fh"><span class="ti">${th.title}</span><span class="meta">${posts.length} posts · ${th.by}</span></div>
+      <div class="fposts">${posts.map(p=>{const off=(S.booted||[]).includes(p.by);
+        const known=(S.resolved||{})[p.by];
+        return `<div class="fpost ${p.hostile?'hostile':''} ${p.tone||''}"><span class="by ${p.by==='you'?'you':''}">${p.by==='you'?S.handle+' <span class="myrank">['+forumRank()+']</span>':p.by}${off?' <span style="color:var(--dim)">(offline — booted)</span>':''} ▸</span> ${escapeHtml(p.text)}${known&&!off?` <span style="color:var(--phos);font-size:9px">[origin ${known}]</span>`:''}</div>`;}).join('')}
+        <div class="freply"><input placeholder="post a reply…" maxlength="120"><button>post</button></div></div>`;
+    el.querySelector('.fh').onclick=()=>{if(fOpen.has(th.id))fOpen.delete(th.id);else{fOpen.add(th.id);th._new=false;posts.forEach(p=>discoverFrom(p.text));}renderForum();};
+    el.querySelectorAll('.bootbtn').forEach(bb=>bb.onclick=e=>{e.stopPropagation();openWin('Terminal',true);cmdBoot([bb.dataset.h]);});
+    const inp=el.querySelector('.freply input'),btn=el.querySelector('.freply button');
+    const post=()=>{const v=inp.value.trim();if(!v)return;(AMBIENTADD[th.id]=AMBIENTADD[th.id]||[]).push({by:'you',text:v});renderForum();blip(700,0.05);};
+    btn.onclick=post;inp.onkeydown=e=>{if(e.key==='Enter')post();e.stopPropagation();};inp.onclick=e=>e.stopPropagation();
+    w.appendChild(el);});}
+function newForumThread(flag){if(S.flags[flag])return;S.flags[flag]=true;const th=EVENT_THREADS[flag];if(th)th._new=true;forumNew++;persist();worldBadges();
+  if(th)notify('THE WIRE','new thread: '+th.title.slice(0,32));}
+function ambientPost(){if(!S||$('desktop').hidden)return;
+  const tier=wireTier();
+  // mostly current-mood posts, with some older chatter still bleeding through
+  const t=Math.random()<0.72?tier:RI(0,tier);
+  const th=pick(forumThreads()),tone=t===3?'dark':t===2?'panic':t===4?'calm':null;
+  (AMBIENTADD[th.id]=AMBIENTADD[th.id]||[]).push({by:pick(HANDLES),text:pick(AMBIENT_T[t]),tone});
+  th._new=true;forumNew++;worldBadges();
+  if(!$('winForum').hidden)renderForum();}
+setInterval(()=>{if(!S||$('desktop').hidden)return;
+  const tier=wireTier();
+  ambientPost();                                   // ~1/min baseline
+  if(tier>=2&&Math.random()<0.6)setTimeout(ambientPost,RI(6000,20000));   // panic doubles the traffic
+  if(tier>=3&&Math.random()<0.7)setTimeout(ambientPost,RI(22000,44000));  // bedlam triples it
+},52000);   // the wire never sleeps — ~1/min
+
+/* ================= WORLD EVENTS (living reactions) ================= */
+function worldMsg(type,arg){
+  if(type==='login'){ if(!S.flags.metCr4sh){S.flags.metCr4sh=true;persist();
+    imSend('cr4sh',"oh hey — fresh gateway on the board. i'm cr4sh, been on the wire too long.\nyell if you need routes. and read your DMs, tips show up here.",
+      [{label:'thanks'},{label:'got any tips?',reply:"always. keep an eye on the 'loot tips' thread on the forums. people leak abandoned boxes there. free money if you're fast."}]);} }
+  if(type==='mission'){
+    if(arg==='m0') imSend('SABLE',"clean enough. don't get sentimental out there and you'll last.\n\nyou're running my code now, by the way. HavenCracker was mine — I gave it away.",
+        [{label:'why give it away?',reply:"because this city eats anyone who can't afford tools. consider it a tax on my conscience.\n\nkeep brew handy. the free shelf is deeper than people think."},{label:'appreciated'}]);
+    if(arg==='m1'){ imSend('cr4sh',"ledger job, classic. tip: ALWAYS deletelogs before you drop the line — heat is forever.\n\nand listen: you ran that bare. no botnet. the next marks trace FAST and they'll land straight on your gateway.\ngo buy dummy IPs — 'buybot fullz 5'. that's your route home now.",
+        [{label:'what\'s a botnet?',reply:"rented IPs. the trace has to chew through every one before it reaches you. more IPs = more time. grab a monitor too — MonitorMe is free — so you can see which one they're on and BURN it."},{label:'on it'}]);
+      if(!S.flags.botnetUnlocked){S.flags.botnetUnlocked=true;persist();
+        setTimeout(()=>{pr('<span class="phos">◈ botnet vendors are now dealing with you.</span> <span class="dim">Software → botnets · monitors</span>');renderShop();},1200);} }
+    if(arg==='m2'){ imSend('0RACLE',"you deleted a dead trial to help strangers. interesting — most just take the money.\nwatch Sable. we'll talk.",
+        [{label:'who is this?',reply:"someone who reads the same logs they do. soon."},{label:'not interested'}]);
+      imSend('V01D',"lol a NEWBIE cleared helix. slow day huh.");
+      if(!S.flags.booterUnlocked){S.flags.booterUnlocked=true;persist();
+        imSend('cr4sh',"ignore V01D. actually — don't.\n\non the wire, rep is the only currency that isn't credits, and you get it by BOOTING the people running their mouths. flood their pipe, they drop offline, everyone sees it.\n\ngo buy a Low Orbit Ion Cannon. it's ancient and loud, but it drops anyone who isn't paying attention.",
+          [{label:'how do I boot someone?',reply:"find a post tagging you on the Forums, hit the BOOT button — or type 'boot <handle>'. bigger booters + more botnet IPs = you can drop harder targets."},{label:'say less'}]);
+        setTimeout(()=>{pr('<span class="phos">◈ booters are now on the market.</span> <span class="dim">Software → booters · then <span class="c">boot &lt;handle&gt;</span></span>');renderShop();},1400);} }
+    if(arg==='m3') imSend('cr4sh',"you fixed that kid's record instead of cashing bigger? ok. you're alright. here — found this poking around:",
+        [{label:'what is it?',reply:"abandoned wallet host, 44.9.120.6. one password. go empty it before someone else does.",discover:'44.9.120.6'}]);
+    if(arg==='m1b') imSend('cr4sh',"you read the memo, right? halloway is argus. kestrel is argus. the landlord is argus.\nnew milos is four companies in a coat.");
+    if(arg==='m3b'){ imSend('cr4sh',"you actually pulled the anatomical fork. people have been looking for that build for years.\ndon't post about it.");
+      imSend('Anatomical',"someone opened my dead-drop.\n\nkeep it. it was going to rot there.\n\ni'll know if you use it well.",[{label:'who is this?',reply:"the person who wrote the thing you're now running. that's all you get for a while."},{label:'thank you'}]); }
+    if(arg==='m4') imSend('0RACLE',"argus, senators, all of it — you're building a case for someone. you just don't know who yet.");
+    if(arg==='m4b') imSend('Anonymous',"the river will take twenty years to clear. but vance's name is off the file. his kids will read the right story.\nthank you.");
+    if(arg==='m2b'){ imSend('cr4sh',"V01D is DARK. the whole board saw it.\nyou just became someone people are careful around."); newForumThread('voidDown'); }
+    if(arg==='m5d') imSend('ghosthz',"you cleared ostrand. how many IPs did you burn?\n...that many? yeah. that's the job.");
+    if(arg==='m6b') imSend('0RACLE',"the archivist is a machine in a rented cage, and the rent is paid by the same people who pay Sable.\none more step.");
+    if(arg==='m9') imSend('Anatomical',"it renders the whole mesh at once. no peeling, no passes, no waiting.\n\nyou're the second person to ever hold it. try to be better with it than the first one was.");
+    if(arg==='m5'){ imSend('V01D',"wait. WAS THAT YOU at Meridian?? that was MY mark 😤"); newForumThread('bankHit'); }
+    if(arg==='m6') imSend('0RACLE',"now you've seen 6.0.0.1 in the logs. now you know who reads your mail. finish it.");
+    if(arg==='m7') imSend('SABLE',"...so it's you.");
+    if(arg==='m2') newForumThread('helix');
+  }
+  if(type==='caught') imSend('V01D',"traced AGAIN? 😂 upgrade your gateway, tourist.");
+  if(type==='heat') imSend('cr4sh',"you're running hot right now. 'laylow' before an old job comes back to bite you.");
+  if(type==='discover') imSend('cr4sh',"nice, you turned up "+arg+". those don't stay open long — grab it.");
+}
+let heatWarned=false;
+function worldEvent(type,arg){worldMsg(type,arg);}
+
+/* a periodic "tip" that leaks a loot server via cr4sh, if you haven't found much */
+setInterval(()=>{if(!S||$('desktop').hidden||G.conn)return;
+  if(S.rating>=4&&!S.flags.tipVault&&!S.discovered.includes('201.6.44.90')&&Math.random()<0.25){S.flags.tipVault=true;persist();
+    newForumThread('vaultLeak');imSend('cr4sh',"someone just dumped a fat leak on the forums — numbered vault, bearer bonds. check 'The Wire'. move fast.");}
+},30000);
+
+/* ================= TUTORIAL ================= */
+const COACH=[
+ {sel:'#winTerminal',text:'This is your <b>Terminal</b>. You do everything here — type commands to hack. <code>help</code> lists them all.<br><br><span style="color:var(--phos)">Drag any window by its title bar to move it, and use the ✕ to close it. Rearrange the deck however you like.</span>'},
+ {sel:'.dockapp[data-app="Inbox"]',text:'Contracts and briefings arrive in your <b>Inbox</b>. Read them closely — not every sender is honest.'},
+ {sel:'.dockapp[data-app="Messenger"]',text:'People DM you on <b>Messenger</b> and the <b>Forums</b> buzz with rumors. Some drop <b>tips that lead to loot</b>. The wire is alive.'},
+ {sel:'#winMap',text:'Your bounce route and the <b>reverse-trace</b> show here. The trace crawls home through your relays — finish and vanish before it arrives.'},
+ {sel:'.dockapp[data-app="Software"]',text:'Spend your pay in <b>Software</b> on sharper tools & hardware — Memory Banks let you run tools in parallel.'},
+];
+const TUT=[
+ {id:'mail',label:'open your Inbox & read Sable\'s brief'},
+ {id:'accept',label:'accept the orientation job  (accept m0)'},
+ {id:'getbrew',label:'install brew  (getbrew stable)'},
+ {id:'brewinstall_hc',label:'install a cracker  (brew install havencracker)'},
+ {id:'scan',label:'scan the target'},
+ {id:'connect',label:'connect to it'},
+ {id:'crack',label:'break the password  (hc)'},
+ {id:'ls',label:'list its files  (ls)'},
+ {id:'download',label:'steal sample.dat  (download sample.dat)'},
+ {id:'brewinstall_sqlaudit',label:'get a file manager  (brew install sqlaudit)'},
+ {id:'fmattach',label:'mount their filesystem  (sqlaudit)'},
+ {id:'fmcd',label:'find their log folder  (cd ~/logs/…/logs)'},
+ {id:'fmrm',label:'shred the logs  (ls, then rm *)'},
+ {id:'fmdetach',label:'detach cleanly  (sqlaudit disconnect)'},
+ {id:'disconnect',label:'leave  (disconnect)'},
+];
+let tutOn=false,tutIdx=0,coachIdx=0;
+function tutStart(){if(S.flags.tutDone)return;tutOn=true;coachIdx=0;coachShow();}
+function coachShow(){const c=COACH[coachIdx];const ov=$('coach'),ring=$('coachRing'),tip=$('coachTip');ov.hidden=false;
+  const el=document.querySelector(c.sel);const r=el?el.getBoundingClientRect():{left:innerWidth/2-100,top:innerHeight/2-40,width:200,height:80};
+  const host=ov.getBoundingClientRect();                       // coach lives inside #content (CRT margin)
+  const rx=r.left-host.left, ry=r.top-host.top;
+  ring.style.left=(rx-6)+'px';ring.style.top=(ry-6)+'px';ring.style.width=(r.width+12)+'px';ring.style.height=(r.height+12)+'px';
+  // content first, so we can measure the real box instead of guessing
+  tip.innerHTML=`<div class="step">tour ${coachIdx+1}/${COACH.length}</div>${c.text}<div class="cbtns"><button class="skip" id="coachSkip">skip</button><button id="coachNext">${coachIdx<COACH.length-1?'next ▸':'start ▸'}</button></div>`;
+  tip.style.left='0px';tip.style.top='0px';
+  const th=tip.offsetHeight,tw=tip.offsetWidth,pad=10;
+  let tx=rx, ty=ry+r.height+12;
+  if(ty+th>host.height-pad)ty=ry-th-12;                        // flip above
+  if(ty<pad)ty=Math.max(pad,Math.min(host.height-th-pad,ry));  // still doesn't fit: clamp beside
+  if(tx+tw>host.width-pad)tx=host.width-tw-pad;
+  if(tx<pad)tx=pad;
+  tip.style.left=tx+'px';tip.style.top=ty+'px';
+  $('coachNext').onclick=()=>{coachIdx++;if(coachIdx>=COACH.length){ov.hidden=true;tutBeginTasks();}else coachShow();blip(700,0.05);};
+  $('coachSkip').onclick=()=>tutSkip();}
+/* multi-sequence training system */
+let TUTCUR=null;
+function startTutSeq(seq,title,flag,onDone){TUTCUR={seq,title,flag,onDone,done:new Set()};tutOn=true;renderTut();}
+function tutBeginTasks(){
+  startTutSeq(TUT,'Training · First Job','tutDone',()=>{S.creds+=150;persist();syncTop();
+    typeLine('◈ TRAINING COMPLETE — you\'re a runner now. (+150c)',' phos');
+    pr('<span class="dim">read your mail for the next contract. and check Messenger — cr4sh already pinged you.</span>');imChime();
+    setTimeout(offerAutoHint,900);});
+  pr('<span class="phos">▸ TRAINING: follow the checklist (bottom-left). start by opening your Inbox.</span>');
+  openWin('Inbox',true);}
+function renderTut(){if(!TUTCUR)return;const p=$('tutTask');p.hidden=false;
+  const firstUndone=TUTCUR.seq.findIndex(s=>!TUTCUR.done.has(s.id));
+  let html=`<div class="th"><span>◈ ${TUTCUR.title}</span><span class="sk" id="tutSkip">skip</span></div>`;
+  TUTCUR.seq.forEach((s,i)=>{const d=TUTCUR.done.has(s.id),cur=i===firstUndone;
+    html+=`<div class="tstep ${d?'done':cur?'cur':''}"><span class="bx">${d?'✓':cur?'▸':'○'}</span>${s.label}</div>`;});
+  html+=`<div class="tuttip">tip: drag windows by their title bar if this panel is in the way</div>`;
+  p.innerHTML=html;$('tutSkip').onclick=()=>tutSkip();}
+function tutHook(id){if(!tutOn||!TUTCUR)return;
+  if(!TUTCUR.seq.some(s=>s.id===id)||TUTCUR.done.has(id))return;
+  TUTCUR.done.add(id);blip(900,0.06,'sine',0.05,1200);
+  if(TUTCUR.done.size>=TUTCUR.seq.length)endTut(true);else renderTut();}
+function endTut(finished){const c=TUTCUR;tutOn=false;TUTCUR=null;$('tutTask').hidden=true;$('coach').hidden=true;
+  if(c&&c.flag){S.flags[c.flag]=true;persist();}
+  if(finished&&c&&c.onDone)c.onDone();}
+function tutFinish(){endTut(true);}
+function tutSkip(){pr('<span class="dim">tutorial skipped. type help anytime.</span>');endTut(false);}
+const TUT_WIRE=[
+ {id:'bait',label:'get kr0nos\'s origin  (bait kr0nos)'},
+ {id:'brew_loic',label:'buy a booter  (Software → LOIC)'},
+ {id:'boot',label:'drop him  (boot <his ip>)'},
+];
+
+/* ================= start ================= */
+function startDesktop(){$('login').hidden=true;$('desktop').hidden=false;
+  syncTop();buildDock();renderInbox();renderShop();renderIM();renderForum();cycleFeed();setInterval(cycleFeed,34000);updateBadge();worldBadges();
+  syncRoute();renderMonitor();
+  ['Terminal','Inbox','Connections'].forEach(a=>openWin(a,true));['Software','Messenger','Forums','Monitor'].forEach(a=>openWin(a,false));
+  resizeMap();prompt();humStart();if(P.music)musicStart();updateHeat();
+  pr(`<span class="c">UNITS///OS</span> online. welcome to the wire, <span class="ok">${S.handle}</span>.`);
+  pr(`type <span class="c">help</span>, or open your <span class="c">mail</span> and read what Sable sent.`);
+  pr(`<span class="dim">the first contract (orientation) is a safe practice run. everything after it can trace you.</span>`);
+  cmdInput.focus();worldMsg('login');
+  if(!S.flags.tutDone)setTimeout(tutStart,600);}
+function boot(){const saved=loadSave();
+  if(saved&&saved.handle){$('continueBtn').hidden=false;$('wipeRow').hidden=false;$('continueBtn').textContent=`▷ RESUME — ${saved.handle} · ${rankName(saved.rating)}`;}
+  $('loginBtn').onclick=()=>{ai();const h=($('handle').value.trim()||'ghost').replace(/[^a-zA-Z0-9_\-]/g,'').slice(0,14)||'ghost';S=defaultSave(h);persist();startDesktop();};
+  $('continueBtn').onclick=()=>{ai();S=saved;S.seen=S.seen||['m0'];S.read=S.read||[];S.flags=S.flags||{};S.heat=S.heat||0;S.discovered=S.discovered||[];S.im=S.im||{};S.imUnread=S.imUnread||{};
+    S.crackers=S.crackers||[];S.booters=S.booters||[];S.monitors=S.monitors||[];S.decoders=S.decoders||[];S.botnet=S.botnet||null;S.rep=S.rep||0;S.booted=S.booted||[];S.rerouted=S.rerouted||0;
+    S.resolved=S.resolved||{};S.unaware=S.unaware||{};S.trollIps=S.trollIps||{};S.tools=S.tools||[];S.explained=S.explained||[];
+    for(const k in SOFT)if(S.soft[k]==null)S.soft[k]=SOFT[k].start;syncRoute();startDesktop();};
+  $('wipeLink').onclick=()=>{localStorage.removeItem(KEY);location.reload();};}
+window.addEventListener('load',()=>{loadPrefs();applyPrefs();
+  $('power').className=P.crt?'on':'';
+  runBoot(()=>{$('login').hidden=false;boot();$('handle').focus();});});
+</script>
+</body>
+</html>
