@@ -59,6 +59,9 @@ take the surrender for early rep, or demand tribute — but only if they're scar
 - **Booters & forum reputation** — resolve an origin by social engineering or decoding, then drop them
 - **A living wire** — messenger DMs and a forum that escalates from idle chatter to outright panic as the story turns, then resolves after your ending
 - **Freeplay gigs** — an endless job board between contracts
+- **Getting past 2FA** — banks and socials roll a second factor. Look the account holder up with **InKobos**, wear a caller ID they trust, phone them, and they'll read you their own passkey; **EncryptR** forges the rolling token from it
+- **The record editor** — some clients don't want a file stolen, they want a number changed. `edit` any record and a form opens: a grade, a debt balance, a follower count, a criminal disposition
+- **Start your own thread** — ＋ new post on The Wire. Offer to boot people and see who volunteers (how they answer depends on your rank), shake the board for paid leads, or just ask what everyone's up to
 - **iAliasFast** — `brew install ialiasfast`, then bind any command you're sick of typing: `ias add dl sql delete all`
 - **Full CRT treatment** — curved glass, scanlines, chroma, rolling sync bar, generative ambient score
 

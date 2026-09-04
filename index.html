@@ -320,6 +320,39 @@ body.crt #content{margin:10px;width:calc(100% - 20px);height:calc(100% - 20px);}
 #jobPanel .jstep .bx{display:inline-block;width:14px;}
 #tutTask .tuttip{margin-top:8px;padding-top:7px;border-top:1px solid var(--edge);font-size:9px;color:var(--dim);line-height:1.4;}
 
+/* ===== record editor ===== */
+#edWrap{display:flex;flex-direction:column;height:100%;}
+#edHead{padding:7px 11px;border-bottom:1px solid var(--edge);font-size:10px;color:var(--text);
+  display:flex;gap:14px;justify-content:space-between;align-items:center;}
+#edHead .rk{color:var(--dim);}
+#edBody{flex:1;min-height:0;overflow-y:auto;padding:10px 11px;}
+.edwant{border:1px solid var(--edge-hot);background:#07161f;padding:7px 9px;margin-bottom:11px;
+  font-size:10.5px;color:var(--dim);}
+.edwant b{color:var(--amber);}
+.edrow{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:10.5px;}
+.edrow span{flex:0 0 132px;color:var(--dim);text-align:right;}
+.edrow input{flex:1;min-width:0;background:#050d15;border:1px solid var(--edge);color:var(--text);
+  font-family:var(--mono);font-size:10.5px;padding:4px 7px;}
+.edrow input:focus{outline:none;border-color:var(--cyan);}
+.edrow input:disabled{color:var(--dim);border-color:#0d2130;background:#04090e;}
+.edrow input:not(:disabled){border-color:var(--edge-hot);color:var(--phos);}
+.edbtns{margin-top:14px;display:flex;gap:8px;}
+.edbtns button{background:#07241a;border:1px solid var(--green);color:var(--green);font-family:var(--mono);
+  font-size:10.5px;padding:6px 13px;cursor:pointer;letter-spacing:.5px;}
+.edbtns button:hover{background:var(--green);color:#02120b;}
+.edbtns button.alt{background:transparent;border-color:var(--edge);color:var(--dim);}
+.edbtns button.alt:hover{background:var(--edge);color:var(--text);}
+/* ===== the wire: start your own thread ===== */
+#newPost{margin:0 0 10px;border:1px solid var(--edge);background:#071018;}
+#newPost .np{padding:7px 10px;color:var(--cyan);cursor:pointer;font-size:10.5px;letter-spacing:.5px;}
+#newPost .np:hover{background:#0b1c28;}
+#newPost .opts{border-top:1px solid var(--edge);display:none;}
+#newPost.open .opts{display:block;}
+#newPost .opt{padding:7px 12px;border-bottom:1px solid #0b1c28;color:var(--text);cursor:pointer;font-size:10.5px;}
+#newPost .opt:last-child{border-bottom:none;}
+#newPost .opt:hover{background:#0c2130;color:var(--phos);}
+#newPost .opt em{color:var(--dim);font-style:normal;display:block;font-size:9.5px;margin-top:2px;}
+
 /* ===== nmap gui: someone else's botnet, drawn ===== */
 #nmapWrap{display:flex;flex-direction:column;height:100%;}
 #nmapHead{padding:6px 10px;border-bottom:1px solid var(--edge);font-size:10px;color:var(--dim);
@@ -422,6 +455,11 @@ body.crt #content{margin:10px;width:calc(100% - 20px);height:calc(100% - 20px);}
         <div class="winbody scrollbar"><div class="fwrap" id="fwrap"></div></div>
       </div>
 
+      <div class="window" id="winEditor" data-app="Editor" hidden style="left:300px;top:120px;width:460px;height:400px;">
+        <div class="titlebar"><span class="tt">Record Editor</span><div class="dots"><i class="min"></i><i class="cls"></i></div></div>
+        <div class="winbody"><div id="edWrap"><div id="edHead"></div><div id="edBody" class="scrollbar"></div></div></div>
+      </div>
+
       <div class="window" id="winNmap" data-app="NetMap" hidden style="left:200px;top:96px;width:600px;height:452px;">
         <div class="titlebar"><span class="tt">nmap gui // botnet topology</span><div class="dots"><i class="min"></i><i class="cls"></i></div></div>
         <div class="winbody"><div id="nmapWrap">
@@ -512,11 +550,11 @@ const TARGETS={
   files:[file('watchlist.db',['enc'],'[ ENCRYPTED — surveillance watchlist ]'),
          file('slush.xls',['obj','enc'],'[ ENCRYPTED — off-book payments to 3 senators ]'),
          file('contracts.doc',[],'Government surveillance contracts, unredacted.\ncourier drops burned tools at the dead-drop server 170.3.88.19 — password + firewall, help yourself.')]},
- t_meridian:{ip:'50.7.244.10',name:'Meridian Savings',org:'Meridian Savings Bank',locks:['password','firewall','proxy'],traceRate:3.1,
-  account:480000,
+ t_meridian:{ip:'50.7.244.10',name:'Meridian Savings',org:'Meridian Savings Bank',locks:['password','firewall','2fa'],traceRate:3.1,
+  twofa:'Marcus Rell',
   files:[file('accounts.db',[],'Retail account index.'),
-         file('holding_887.act',['obj'],'HOLDING ACCOUNT #887 — balance available for transfer.'),
-         file('board.txt',[],'the holding account is where we park the laundered funds. -CFO')]},
+         file('holding_887.act',['obj'],'HOLDING ACCOUNT #887 — full transaction history, counterparties, and the routing behind every deposit.\nThis is the paperwork, not the money.'),
+         file('board.txt',[],'the holding account is where we park the laundered funds. keep #887 off every statement. -CFO')]},
  t_relaywatch:{ip:'160.44.2.88',name:'Kowloon Data Exchange',org:'public relay',locks:['password'],traceRate:2.7,
   answer:'6.0.0.1',
   files:[file('access.log',['obj'],
@@ -602,9 +640,9 @@ const MISSIONS=[
  {id:'m2b',from:'cr4sh',subj:'V01D has been selling your runs',rankReq:6,boot:true,
   obj:{type:'boot',handle:'V01D'},pay:2000,rating:3,
   body:`I told you kr0nos was a parasite. V01D is worse, because V01D is <em>good</em>.\n\nHe's been logging every run you make and selling the telemetry. That's why the traces have been getting faster.\n\nAnd he's not kr0nos — you will not bait him. He's been on this wire too long to click a link, and he sits behind an <b>amorphous botnet</b>. Baiting won't touch him.\n\nYou'll have to decode him: <b>resolve V01D</b> with a real decoder — Parity at absolute minimum, and expect it to collapse.\n\nParity won't <em>name</em> him. It'll knock out relays until a handful of hosts are left, and then it's your eye, not the tool. Open <b>nmap gui V01D</b>, hover the nodes for their addresses, read the fingerprints and pick one. Guess wrong and you flood a relay — he stays up, and he'll say so publicly. Then hit the right IP with something bigger than a LOIC. He's not going down to a starter flood.`},
- {id:'m5',from:'SABLE',subj:'drain the holding account',rankReq:7,target:'t_meridian',
-  obj:{type:'transfer',amount:120000},pay:1500,rating:3,
-  body:`Meridian Savings launders through a holding account — #887. Password, firewall, AND a proxy.\nOnce you're in, 'transfer' at least 120,000c out. Whatever you pull, you keep on top of the fee. But money moves loud — their trace is fast and long routes are your only friend.\nDon't be greedy. Greedy gets traced.`},
+ {id:'m5',from:'SABLE',subj:'copy the holding account',rankReq:7,target:'t_meridian',
+  obj:{type:'download',file:'holding_887.act'},pay:4200,rating:3,
+  body:`Meridian Savings launders through a holding account — #887. I don't want the money in it. Money moves loud, and a missing 120k is a phone call to a federal agent inside the hour.\n\nI want the <b>paperwork</b>. Pull <b>holding_887.act</b> — every counterparty, every routing line — and bring it to me. Their own board minutes hang them; the ledger names everyone else.\n\nOne problem. The account holder is a man called <b>Marcus Rell</b>, and the box asks him for a code every time it's touched. A cracker won't do it. You'll have to get the code from Rell himself.\n\nThe wire has tools for that. Look at <b>InKobos</b> and <b>EncryptR</b> on the free shelf.`},
  {id:'m5d',from:'ghosthz',subj:'the hot host — expect to lose IPs',rankReq:8,target:'t_ostrand',
   obj:{type:'download',file:'customs.db'},pay:2600,rating:3,
   body:`Fair warning, this one bites.\n\nOstrand Freight runs active counter-intrusion. Their reverse-trace is the fastest thing outside a government host, and it <em>will</em> chew through your botnet while you're still working.\n\nThis is what monitors are for. Keep <b>MonitorMe</b> open. When a node lights up TRACED, <b>burn &lt;ip&gt;</b> — you lose that IP but the trace loses the thread and you buy yourself another thirty seconds. You may burn three or four before you're out.\n\nBring more IPs than you think you need. Anyone who tells you they cleared Ostrand without burning is lying.`},
@@ -740,6 +778,8 @@ const PKGS={
  sqlaudit    :{n:'SQLaudit File Manager',key:'tools',id:'sqlaudit',d:'mount remote filesystems · wipe logs'},
  wire        :{n:'WireCLI',        key:'tools',id:'wirecli',  d:'job-board client for The Wire · freeplay gigs'},
  ialiasfast  :{n:'iAliasFast',      key:'tools',id:'ialias',   d:'alias any long command to a short one (ias)'},
+ inkobos     :{n:'InKobos Autodialer',key:'tools',id:'inkobos', d:'people-search · caller-ID spoofing · social engineering by phone'},
+ encryptr    :{n:'EncryptR',        key:'tools',id:'encryptr', d:'forge a 2FA rolling token from a stolen passkey SHA'},
 };
 const BOTNETS={
  fullz :{n:'Fullz Botlist',    min:1, max:5, per:480,d:'cheap dummy IPs · stalls medium-speed traces'},
@@ -780,9 +820,9 @@ function trollPost(){if(!S||$('desktop').hidden)return;
   const t=pick(live),th=pick(forumThreads());
   const line=pick(t.lines).replace(/%h%/g,S.handle).replace(/%y%/g,'2049');
   (AMBIENTADD[th.id]=AMBIENTADD[th.id]||[]).push({by:t.h,text:line,hostile:true});
-  th._new=true;forumNew++;worldBadges();notify('THE WIRE','@'+t.h+' tagged you');
+  th._new=true;forumNew++;worldBadges();wireTick(t.h,line);notify('THE WIRE','@'+t.h+' tagged you');
   if(!$('winForum').hidden)renderForum();}
-setInterval(()=>{if(S&&!$('desktop').hidden&&!G.conn&&Math.random()<0.35)trollPost();},52000);
+setInterval(()=>{if(S&&!$('desktop').hidden&&!G.conn&&Math.random()<0.5)trollPost();},47000);
 
 /* ---------- FREEPLAY GIGS (posted on the wire between contracts) ---------- */
 const GIGCORPS=[['Vantt Logistics','shipping manifests'],['Kestrel Dental Group','patient billing'],['Mireau Foods','supplier contracts'],
@@ -790,8 +830,62 @@ const GIGCORPS=[['Vantt Logistics','shipping manifests'],['Kestrel Dental Group'
  ['NM Transit Authority','fare data'],['Corvid Media','unaired footage'],['Brackwater Chem','safety audits'],['Lin-Hao Imports','ledgers']];
 const GIGPOSTERS=['w1re','n1ght','p1ng','ghosthz','m0th','v0xel','d3adhand'];
 let GIGS=[];
-function genGig(){const [corp,what]=pick(GIGCORPS),id='g'+RI(1000,9999);
-  const tier=RI(1,3),locks=tier===1?['password']:tier===2?['password','firewall']:['password','firewall','proxy'];
+/* somebody's life, in a database, one field away from being different */
+const RECJOBS=[
+ {inst:'Rialto University Registrar',fname:'transcript.rec',title:'ACADEMIC TRANSCRIPT',
+  who:['a very stressed junior','somebody\'s kid','a guy three credits from expulsion'],
+  fields:()=>({'student':pick(['T. Okonkwo','R. Vasilenko','D. Marchetti','P. Ngo']),'term':'2049 · fall',
+    'course':pick(['ORGANIC CHEM II','STATISTICS 340','MEDIEVAL LIT']),'grade':pick(['F','D-','D']),'credits':'4','status':'ON PROBATION'}),
+  field:'grade',want:()=>pick(['A','A-','B+']),label:'the grade',
+  ask:(w,f)=>`my ${f.course.toLowerCase()} grade is a ${f.grade} and it is going to end me. make it ${w}. registrar box, one password.`},
+ {inst:'Meridian Collections',fname:'account.rec',title:'DEBT ACCOUNT',
+  who:['someone drowning','a guy who co-signed for his brother','a nurse with two jobs'],
+  fields:()=>({'debtor':pick(['L. Ferreira','A. Whitlock','J. Sandoval']),'account':'#'+RI(100000,999999),
+    'principal':RI(9,44)+',000','balance':RI(11,52)+',480','status':'IN COLLECTIONS','last payment':'—'}),
+  field:'balance',want:()=>'0',label:'the balance',
+  ask:(w)=>`the interest is bigger than the debt now. i'm not asking you to pay it. i'm asking you to set it to ${w}.`},
+ {inst:'Nova Social',fname:'profile.rec',title:'CREATOR PROFILE',
+  who:['an influencer with a brand deal riding on it','somebody\'s manager','a very online person'],
+  fields:()=>({'handle':'@'+pick(['lys.void','mirrorkid','okay.storm','tarpit99']),'tier':'MICRO',
+    'followers':RI(900,9400).toLocaleString(),'engagement':(R(0.4,2.2)).toFixed(1)+'%','verified':'no'}),
+  field:'followers',want:()=>pick(['250000','500000','1000000']),label:'the follower count',
+  ask:(w)=>`brand deal closes friday and the threshold is ${(+w).toLocaleString()}. i just need the number to say ${(+w).toLocaleString()}.`},
+ {inst:'Metro PD Records',fname:'record.rec',title:'CRIMINAL RECORD',
+  who:['someone who did their time','a guy who cannot get hired','a woman applying for custody'],
+  fields:()=>({'subject':pick(['K. Adeyemi','S. Brannick','M. Delacroix']),'file':'NM-'+RI(10000,99999),
+    'offence':pick(['POSSESSION','TRESPASS','GRAND THEFT AUTO']),'disposition':'CONVICTED','sealed':'NO'}),
+  field:'disposition',want:()=>'EXPUNGED',label:'the disposition',
+  ask:(w)=>`i served it. i did every day of it. nobody will hire a CONVICTED. make it ${w}.`},
+ {inst:'Halloway Realty',fname:'tenancy.rec',title:'TENANCY FILE',
+  who:['a family about to be listed','somebody with a baby on the way'],
+  fields:()=>({'tenant':pick(['O. Rask','C. Ibarra','N. Feld']),'unit':RI(2,19)+pick(['A','B','C']),
+    'arrears':RI(2,9)+','+RI(100,900),'flag':'EVICTION FILED','references':'POOR'}),
+  field:'flag',want:()=>'IN GOOD STANDING',label:'the tenancy flag',
+  ask:(w)=>`eviction hearing is in nine days. if the file says ${w} there is no hearing.`},
+ {inst:'NM Credit Bureau',fname:'score.rec',title:'CREDIT FILE',
+  who:['a couple who lost a mortgage','a guy with one bad year on him'],
+  fields:()=>({'subject':pick(['H. Petrov','B. Nakamura','R. Osei']),'score':RI(430,560),
+    'delinquencies':RI(2,7),'utilisation':RI(88,99)+'%','flag':'HIGH RISK'}),
+  field:'score',want:()=>String(RI(760,820)),label:'the score',
+  ask:(w)=>`one bad year and the bureau will hold it against me for seven more. put it at ${w}.`},
+];
+function genRecGig(){const J=pick(RECJOBS),id='g'+RI(1000,9999),tid='gt_'+id;
+  const fields=J.fields(),want=J.want();
+  const locks=(S.soft.fwbypass||0)>0&&Math.random()<0.5?['password','firewall']:['password'];
+  const rec={title:J.title,fields,field:J.field,want,label:J.label};
+  TARGETS[tid]={ip:randIP(),name:J.inst,org:J.inst,locks,traceRate:1.7+locks.length*0.5,gig:true,
+    files:[Object.assign(file(J.fname,['obj'],`[ ${J.title} — open with 'edit ${J.fname}' ]`),{rec}),
+           file('index.txt',[],`${J.inst} records host. every file here is somebody's year.`)]};
+  return {id,gig:true,rec:true,from:pick(GIGPOSTERS),subj:`change ${J.label} — ${J.inst}`,target:tid,
+    obj:{type:'modify',file:J.fname},pay:520+locks.length*260+RI(0,180),rating:1,rankReq:0,
+    body:`posting for ${pick(J.who)}.\n\n${J.ask(want,fields)}\n\n${J.inst}, ${locks.length} lock${locks.length>1?'s':''}. the file is <b>${J.fname}</b> — <b>edit</b> it, change <b>${J.label}</b> to <b>${want}</b>, save. don't take anything, don't break anything else.`};}
+/* the board never posts a job you have no tool for — an unopenable gig just squats there */
+function gigLocks(){const max=(S.soft.proxy||0)>0?3:(S.soft.fwbypass||0)>0?2:1;
+  const tier=RI(1,max);
+  return tier===1?['password']:tier===2?['password','firewall']:['password','firewall','proxy'];}
+function genGig(){if(Math.random()<0.45)return genRecGig();
+  const [corp,what]=pick(GIGCORPS),id='g'+RI(1000,9999);
+  const locks=gigLocks(),tier=locks.length;
   const del=Math.random()<0.4;
   const fname=del?pick(['audit.log','incident.db','memo_final.doc']):pick(['records.db','contracts.xls','dump.tar']);
   const tid='gt_'+id;
@@ -800,10 +894,18 @@ function genGig(){const [corp,what]=pick(GIGCORPS),id='g'+RI(1000,9999);
   return {id,gig:true,from:pick(GIGPOSTERS),subj:`${del?'wipe':'pull'} ${what} — ${corp}`,target:tid,
     obj:{type:del?'delete':'download',file:fname},pay:340+tier*280+RI(0,160),rating:1,rankReq:0,
     body:`${del?'need something gone':'need a copy'}: ${corp}, ${what}. ${locks.length} lock${locks.length>1?'s':''}. paying on delivery, no questions.`};}
-function refreshGigs(){const stale=GIGS.filter(g=>S.completed.includes(g.id));
+function gigOpenable(g){const t=TARGETS[g.target];if(!t)return false;
+  return !t.locks.some(l=>(l==='firewall'&&!(S.soft.fwbypass||0))||(l==='proxy'&&!(S.soft.proxy||0)));}
+function refreshGigs(){
+  /* drop anything on the board you have no tool for, so it can't squat there forever */
+  GIGS.filter(g=>!gigOpenable(g)&&S.activeGig!==g.id).forEach(g=>{
+    if(g.target&&TARGETS[g.target]&&TARGETS[g.target].gig)delete TARGETS[g.target];});
+  GIGS=GIGS.filter(g=>gigOpenable(g)||S.activeGig===g.id);
+  const stale=GIGS.filter(g=>S.completed.includes(g.id));
   stale.forEach(g=>{if(g.target&&TARGETS[g.target]&&TARGETS[g.target].gig)delete TARGETS[g.target];}); // don't leak hosts
   GIGS=GIGS.filter(g=>!S.completed.includes(g.id));
-  while(GIGS.length<3)GIGS.push(genGig());}
+  while(GIGS.length<4)GIGS.push(genGig());
+  if(!GIGS.some(g=>g.rec))GIGS[GIGS.length-1]=genRecGig();}   // always one record job on the board
 function gigThread(){refreshGigs();
   const head=owned('tools','wirecli')
     ?{by:'the wire',text:`board client detected. take one with  gig <id>  ·  walk away with  gig drop`}
@@ -939,6 +1041,9 @@ const PROGINFO={
  nmapgui:{n:'nmap GUI',tag:'recon',what:'Draws somebody\'s botnet as a live topology. Hover any node to expose its address. Your decoder greys out the relays it can prove are dead ends — whatever is still lit is a candidate, and choosing between them is your call, not the tool\'s.',how:'nmap gui &lt;handle&gt; · nmap &lt;handle&gt;'},
  nmaprk:{n:'nmap GUI · R00tKernel',tag:'recon',what:'A R00tKernel botnet is sequential lines of relays all converging on one machine. Only the outermost live relay on a line can be reached — decode it to expose its address, flood it off, and the next one behind it steps forward. Clear a whole line and the machine at the end is yours. He can patch replacements onto a line while you work, so speed matters.',how:'resolve &lt;handle&gt; → boot &lt;exposed ip&gt; → repeat'},
  nmapamorph:{n:'nmap GUI · Amorphous',tag:'recon',what:'An amorphous mesh has no order — every relay is reachable, but each one sits under layers of shell you have to strip before you can touch it. The trade is parallelism: a good decoder strips several at once, and you can flood several at once. Take the whole cloud down and the machine underneath is exposed.',how:'resolve &lt;handle&gt; → boot &lt;ip&gt; &lt;ip&gt; &lt;ip&gt;'},
+ inkobos:{n:'InKobos Autodialer',tag:'social',what:'A people-search directory and a caller-ID spoofer in one package. Look someone up to get their mobile number and — more usefully — the one organisation they will actually pick up for. Wear that name and phone them, and most people will read their own 2FA code out loud to you.',how:'inkobos &lt;name&gt; → spoof &lt;org&gt; → dial &lt;number&gt;'},
+ encryptr:{n:'EncryptR',tag:'utility',what:'Banks and socials do not fall to a cracker — they roll a second factor every thirty seconds. EncryptR forges that rolling token, but only if you feed it the account holder\'s passkey SHA. Getting the SHA is somebody else\'s job (see InKobos).',how:'encryptr &lt;passkey SHA&gt;  — at a host with a 2fa lock'},
+ editor:{n:'Record Editor',tag:'utility',what:'Some clients do not want a file stolen. They want a number changed. Any record file opens in a form — edit the field, save, and the institution\'s own database now says what your client needs it to say.',how:'edit &lt;file&gt;'},
  ialias:{n:'iAliasFast',tag:'utility',what:'A tiny alias engine. Bind any command you are sick of typing to a short name under the ias prefix.',how:'ias add sl sql seelogs · then ias sl'},
  parity:{n:'Parity via 1NetLynx',tag:'decoder',what:'Adds shaky amorphous-mesh support to 1NetLynx. It peels one node per pass and collapses about 4 times in 10 — but it is free, and it is the only free thing that touches a mesh.',how:'decode &lt;ip&gt;'},
  prime:{n:'Parity Prime',tag:'decoder',what:'A real amorphous decoder. Two nodes per pass, no collapses, and it walks sequential R00tKernel chains without complaining.',how:'decode &lt;ip&gt; · resolve &lt;handle&gt;'},
@@ -987,8 +1092,8 @@ function cmdDecode(a){const ip=(a[0]||'').trim();
   const D=DECODERS[did],M=meshState(key);
   if(M.done){pr(`already decoded. mother IP: <span class="phos">${M.mother}</span> — <span class="c">submit ${M.mother}</span>`,'warn');return;}
   const cap=canDecode(D,M.type);
-  if(!cap){pr(`<span class="err">✗ ${D.n} cannot decode an amorphous mesh.</span>`);
-    pr('<span class="dim">you need Parity or better. the free shelf has <span class="c">brew install parity</span>.</span>');return;}
+  if(!cap){pr(`<span class="err">✗ ${D.n} cannot decode ${M.type==='rootk'?'a R00tKernel mesh':'an amorphous mesh'}.</span>`);
+    pr(`<span class="dim">${decoderAdvice(M.type)}</span>`);return;}
   // how many layers this decoder peels per pass
   const perPass=D.sonic?999:D.amorph==='multi'?4:D.amorph===true?2:1;
   const secs=D.sonic?2.2:(3.4/(0.4+D.tier*0.4))*(cap==='slow'?1.9:1);
@@ -1173,8 +1278,8 @@ function netMap(h){S.maps=S.maps||{};
       for(let i=0;i<depth;i++){const n=newNode();n.line=L;n.pos=i;n.st=i===0?'live':'hidden';n.hp=1;M.nodes.push(n);}}
     const core=newNode();core.origin=true;core.core=true;core.ip=trollIp(h);core.st='hidden';core.line=-1;M.nodes.push(core);
   }else if(sh.mode==='amorph'){
-    const count=7+t.def;
-    for(let i=0;i<count;i++){const n=newNode();n.st='live';n.hp=1+(Math.random()<0.45?1:0)+(t.def>=5?1:0);M.nodes.push(n);}
+    const count=4+t.def;
+    for(let i=0;i<count;i++){const n=newNode();n.st='live';n.hp=1;M.nodes.push(n);}
     const core=newNode();core.origin=true;core.core=true;core.ip=trollIp(h);core.st='hidden';core.hp=1;M.nodes.push(core);
   }else{
     const count=Math.max(1,sh.base+Math.round((t.def-1)*1.6));   // higher-ranked people run bigger nets
@@ -1244,28 +1349,64 @@ function checkCore(M){const core=coreNode(M);if(!core||core.st!=='hidden')return
   pr(`<span class="phos">  @${M.h} → ${core.ip}</span>  <span class="dim">decode it, then <span class="c">boot ${core.ip}</span></span>`);
   core.hp=0;blip(1100,0.22,'sine',0.06,1600);return true;}
 
-function siegeDecode(M,D,g){
-  /* R00tKernel: read down the line. Amorphous: strip a layer off several nodes at once. */
+/* one pass opens everything you can currently reach. after that the map keeps itself
+   up to date as you knock nodes over — you never have to re-decode to see the next one. */
+function expose(M){let opened=0;
   if(M.mode==='rk'){
-    let seen=0;const notes=[];
-    rkLines(M).forEach(L=>{const arr=M.nodes.filter(n=>n.line===L&&n.st!=='dead').sort((a,b)=>a.pos-b.pos);
-      for(let i=0;i<arr.length&&i<g.perPass;i++){const n=arr[i];
-        if(n.st==='hidden'){n.st='live';n.hp=1;}
-        if(n.hp>0&&i===0){n.hp=0;notes.push(`  <span class="ok">◂ line ${L+1}</span> <span class="phos">${n.ip}</span> <span class="dim">— exposed, floodable</span>`);seen++;}
-        else if(n.st==='live'&&i>0){notes.push(`  <span class="dim">◂ line ${L+1} · ${i} deep: ${n.ip}</span>`);seen++;}}});
-    notes.forEach(x=>pr(x));
-    return seen;}
-  /* amorphous */
-  const pool=M.nodes.filter(n=>n.st==='live'&&n.hp>0);
-  if(!pool.length&&coreNode(M).st==='hidden')return 0;
-  let done=0;
-  for(let i=0;i<g.perPass&&pool.length;i++){
-    const n=pool.splice(RI(0,pool.length-1),1)[0];n.hp--;done++;
-    pr(n.hp<=0?`  <span class="ok">◂ ${n.ip}</span> <span class="dim">— shell stripped, floodable</span>`
-              :`  <span class="dim">◂ ${n.ip} — ${n.hp} layer${n.hp===1?'':'s'} of shell left</span>`);}
-  const core=coreNode(M);if(core&&core.st==='live'&&core.hp>0&&!done){core.hp=0;pr(`  <span class="ok">◂ ${core.ip}</span> <span class="dim">— the machine itself. floodable.</span>`);done++;}
-  return done;}
+    rkLines(M).forEach(L=>{const f=frontier(M,L);
+      if(f&&(f.st==='hidden'||f.hp>0)){f.st='live';f.hp=0;opened++;}});
+  }else if(M.mode==='amorph'){
+    M.nodes.forEach(n=>{if(!n.core&&n.st==='live'&&n.hp>0){n.hp=0;opened++;}});}
+  const core=coreNode(M);if(core&&core.st==='live'&&core.hp>0){core.hp=0;opened++;}
+  return opened;}
+function siegeDecode(M,D,g){
+  const opened=expose(M);
+  if(!opened)return 0;
+  M.nodes.filter(n=>nodeAttackable(M,n)).forEach(n=>
+    pr(`  <span class="ok">◂ ${n.ip}</span> <span class="dim">— ${M.mode==='rk'?'line '+(n.line+1)+' frontier, ':''}exposed, floodable</span>`));
+  if(M.mode==='rk'){const deep=M.nodes.filter(n=>n.st==='hidden'&&!n.core).length;
+    if(deep)pr(`  <span class="dim">${deep} more relay${deep===1?'':'s'} sitting behind them. drop what's in front and they step up on their own.</span>`);}
+  return opened;}
 
+/* every siege gets its own thread. sometimes he starts it, sometimes a bystander does. */
+const SIEGE_THREADS={};
+const SIEGE_TITLES_SELF=[
+ 'someone is chewing through my relays',
+ 'if you are hitting my chain, say it to my face',
+ 'PSA: somebody on this board has too much booter time',
+];
+const SIEGE_TITLES_OTHER=[
+ 'who is hitting @%t% right now??',
+ '@%t% relays dropping one by one — anyone watching this',
+ 'somebody is dismantling @%t% live on the board',
+];
+function siegeThreadFor(M){
+  if(SIEGE_THREADS[M.h])return SIEGE_THREADS[M.h];
+  const self=Math.random()<0.55, watcher=pick(HANDLES);
+  const th={id:'t_siege_'+M.h.toLowerCase(),
+    by:self?M.h:watcher,
+    title:(self?pick(SIEGE_TITLES_SELF):pick(SIEGE_TITLES_OTHER)).replace(/%t%/g,M.h),
+    posts:self
+      ?[{by:M.h,text:`three of my boxes went down inside ten minutes. that is not weather, that is a person.`,hostile:true},
+        {by:watcher,text:`lol somebody is mad`}]
+      :[{by:watcher,text:`${M.h}'s relays are going dark in order. someone is walking his net in real time.`},
+        {by:M.h,text:`nothing is happening. mind your own pipe.`,hostile:true}]};
+  SIEGE_THREADS[M.h]=th;th._new=true;forumNew++;worldBadges();
+  notify('THE WIRE','new thread: '+th.title.slice(0,32));
+  wireTick(th.by,th.title);
+  if(!$('winForum').hidden)renderForum();
+  return th;}
+function siegePost(M,by,text,hostile){const th=siegeThreadFor(M);
+  (AMBIENTADD[th.id]=AMBIENTADD[th.id]||[]).push({by,text,hostile:!!hostile});
+  th._new=true;forumNew++;worldBadges();wireTick(by,text);
+  if(!$('winForum').hidden)renderForum();}
+const SIEGE_CROWD=[
+ 'that is %n% relays now. whoever this is, they are not stopping.',
+ 'watching @%t% lose boxes in real time is the most entertainment this board has had all month',
+ '@%t% you good?',
+ 'someone is being very methodical about this and i respect it',
+ 'genuinely how many spares does one person rent',
+];
 const SIEGE_TAUNT=[
  "somebody is chewing on my relays. cute. i have more.",
  "@%h% you are burning booter time on machines i rent by the hour.",
@@ -1278,11 +1419,11 @@ const SIEGE_PANIC=[
  "@%h% i'm asking you to stop.",
  "that was the last spare i had. @%h% please.",
 ];
-function siegeTaunt(M,panicked){const th=pick(forumThreads());
-  const line=pick(panicked?SIEGE_PANIC:SIEGE_TAUNT).replace(/%h%/g,S.handle);
-  (AMBIENTADD[th.id]=AMBIENTADD[th.id]||[]).push({by:M.h,text:line,hostile:!panicked});
-  th._new=true;forumNew++;worldBadges();notify('THE WIRE','@'+M.h+' posted about you');
-  if(!$('winForum').hidden)renderForum();}
+function siegeTaunt(M,panicked){
+  siegePost(M,M.h,pick(panicked?SIEGE_PANIC:SIEGE_TAUNT).replace(/%h%/g,S.handle),!panicked);
+  if(Math.random()<0.55)siegePost(M,pick(HANDLES),
+    pick(SIEGE_CROWD).replace(/%t%/g,M.h).replace(/%n%/g,M.kills));
+  notify('THE WIRE','@'+M.h+' posted about you');}
 function siegeFear(M,amount){
   const before=M.fear;M.fear=clamp(M.fear+amount,0,100);persist();
   if(M.fear<45&&Math.random()<0.45)siegeTaunt(M,false);
@@ -1310,7 +1451,8 @@ function siegeReply(h,kind){
   if(kind==='talk'){
     M.angry=true;M.fear=clamp(M.fear-12,0,100);S.rep=(S.rep||0)+2;persist();syncTop();
     imSend(h,`fine. FINE. i've got spares you haven't found and i'm patching every line you touch.\n\nsee you on the other end of it.`);
-    siegeTaunt(M,false);
+    siegePost(M,h,`for the record: @${S.handle} was offered a way out and told me where to go. remember that when it's your turn.`,true);
+    siegePost(M,pick(HANDLES),`oh he's ANGRY angry`);
     pr(`<span class="warn">you told @${h} where to go. he's patching harder now — expect replacements. rep +2.</span>`);
     renderNmap();return;}
   if(kind==='tribute'){
@@ -1318,7 +1460,7 @@ function siegeReply(h,kind){
     if(M.fear<need){
       M.fear=clamp(M.fear-20,0,100);M.angry=true;persist();
       imSend(h,`tribute? you've dropped a couple of rentals and you think i'm broke?\n\nno. keep swinging.`);
-      siegeTaunt(M,false);
+      siegePost(M,h,`someone just tried to shake me down for money. over RENTALS. i've never laughed harder.`,true);
       pr(`<span class="err">✗ he isn't scared enough to pay. he's scared enough to be insulted. take more of his net first.</span>`);
       renderNmap();return;}
     const amt=tributeAmount(M,M.parley);
@@ -1339,11 +1481,11 @@ function endSiege(M,how,line){
   (S.settled=S.settled||{})[M.h]=how;
   persist();syncTop();
   pr('');pr(line);
-  const th=pick(forumThreads());
-  (AMBIENTADD[th.id]=AMBIENTADD[th.id]||[]).push(
-    how==='tribute'?{by:'p1ng',text:`${M.h} has gone very quiet all of a sudden. wonder what that cost him.`}
-                   :{by:'cr4sh',text:`${M.h} deleted his posts and walked. ${S.handle} did that without dropping him. cold.`});
-  th._new=true;forumNew++;worldBadges();renderForum();renderNmap();
+  siegePost(M,M.h,how==='tribute'?`this thread is done. i'm done. don't @ me.`:`you all saw it. i'm off the boards.`);
+  siegePost(M,pick(HANDLES),how==='tribute'
+    ?`${M.h} has gone very quiet all of a sudden. wonder what that cost him.`
+    :`${M.h} deleted his posts and walked. ${S.handle} did that without dropping him. cold.`);
+  renderNmap();
   const am=activeMission();
   if(am&&am.obj&&am.obj.type==='boot'&&am.obj.handle===M.h&&!am._done){am._done=true;completeMission(am);}
   chord&&chord([440,554,659]);}
@@ -1353,19 +1495,32 @@ function siegeBoot(M,list,B){
   artLine(ART[bestBooter()]);G.active2=true;
   runOp(`${B.n} → flooding ${list.length>1?list.length+' nodes':names}`,3.0+list.length*0.4,()=>{
     G.active2=false;let killed=0;
+    const force=B.power+Math.min(3,botIPs().length/8);
     list.forEach(n=>{
-      const win=(B.power+Math.min(3,botIPs().length/8))>=Math.max(1,M.def-1);
-      if(!win){pr(`<span class="err">✗ ${n.ip} soaked it — that relay is bigger than your booter.</span>`);return;}
+      /* relays are boxes he rents by the hour. the machine itself is his — but every
+         relay you take off it is one less thing standing between you and it. */
+      const need=n.core?Math.max(1,M.def-M.kills*0.6):Math.max(1,M.def-2);
+      if(force<need){
+        if(n.core){pr(`<span class="err">✗ ${M.h}'s machine soaked it — he's still standing on too much of his own net.</span>`);
+          pr('<span class="dim">take more of it down first, or come back with a bigger booter.</span>');}
+        else pr(`<span class="err">✗ ${n.ip} soaked it — that relay is bigger than your booter.</span>`);
+        return;}
       n.st='dead';killed++;M.kills++;
       pr(`<span class="ok">✦ ${n.ip} dropped.</span>`);
       if(n.core){coreDropped(M);return;}
       if(M.mode==='rk'){
-        const chance=clamp(0.16+M.def*0.03-(DECODERS[bestDecoder()]||{tier:1}).tier*0.03+(M.angry?0.15:0),0.05,0.5);
-        if(Math.random()<chance){const nn=newNode();nn.line=n.line;nn.pos=-1;nn.st='live';nn.hp=1;M.nodes.push(nn);
-          pr(`<span class="warn">⚠ he patched a replacement onto line ${n.line+1} — the way in just got longer.</span>`);}}
+        const chance=clamp(0.12+M.def*0.02-(DECODERS[bestDecoder()]||{tier:1}).tier*0.03+(M.angry?0.12:0),0.03,0.34);
+        if(Math.random()<chance){const nn=newNode();nn.line=n.line;nn.pos=-1;nn.st='live';nn.hp=0;M.nodes.push(nn);
+          pr(`<span class="warn">⚠ he patched a replacement onto line ${n.line+1}: ${nn.ip}</span>`);}}
     });
     relayout(M);
+    /* whatever was behind the wreckage steps forward by itself */
+    const opened=expose(M);
+    if(opened&&!M.settled){const nx=M.nodes.filter(x=>nodeAttackable(M,x));
+      if(nx.length)pr(`<span class="phos">▸ next up: ${nx.map(x=>x.ip).join(' · ')}</span> <span class="dim">— <span class="c">boot all</span></span>`);}
     if(killed&&!M.settled){
+      if(M.kills>=2&&Math.random()<0.5)siegePost(M,pick(HANDLES),
+        pick(SIEGE_CROWD).replace(/%t%/g,M.h).replace(/%n%/g,M.kills));
       const prog=M.kills/Math.max(1,M.nodes.filter(x=>!x.core).length);
       siegeFear(M,(10+28*prog)*(1.4-M.def*0.08)*killed);
       S.heat=clamp((S.heat||0)+3*killed,0,100);updateHeat();
@@ -1382,7 +1537,9 @@ function coreDropped(M){
     pr(`<span class="m">║</span>  <span class="phos">▲ THE WIRE RECOGNISES YOU</span>`);
     pr(`<span class="m">║</span>  <span class="dim">${before}</span> → <span class="ok" style="font-size:14px;">${forumRank()}</span>`);
     pr('<span class="m">╚══════════════════════════════════════╝</span>');chord([523,659,784]);},700);
-  bootThreadPost(t,true);tutHook('boot');persist();syncTop();renderForum();worldBadges();
+  if(SIEGE_THREADS[M.h]||M.kills>1){siegePost(M,pick(HANDLES),`and that's the machine itself. ${M.h} is gone. ${S.handle} took the whole net apart to get to him.`);}
+  else bootThreadPost(t,true);
+  tutHook('boot');persist();syncTop();renderForum();worldBadges();
   const am=activeMission();
   if(am&&am.obj&&am.obj.type==='boot'&&am.obj.handle===M.h&&!am._done){am._done=true;completeMission(am);}}
 
@@ -1460,13 +1617,15 @@ function nmSummary(M){
     ? `<span class="rk">origin:</span> <span class="ok">${(S.resolved||{})[M.h]}</span> — <span class="rk">hit it with</span> <span class="c">boot ${(S.resolved||{})[M.h]}</span>`
     : `<span class="rk">${mapCands(M).length} unclassified hosts. your decoder can't separate them — read the fingerprints and pick one.</span><br><span class="rk">a wrong call costs you rep and tells them somebody is looking.</span>`;
   const ready=M.nodes.filter(n=>nodeAttackable(M,n));
-  if(M.mode==='rk')return `<span class="rk">${rkLines(M).length} sequential lines converge on his machine. only the outermost relay on a line can be hit — drop it and the next one steps up.</span><br>
-    <span class="rk">${ready.length?'floodable now: ':'nothing exposed. run '}</span>${ready.length?ready.map(n=>`<span class="c">${n.ip}</span>`).join(' · '):`<span class="c">resolve ${M.h}</span>`}`;
-  const par=(decodeGrade(DECODERS[bestDecoder()]||{},M.net)||{perPass:1}).perPass;
-  return `<span class="rk">no order to a mesh — every shell you strip is another node you can hit, and you can hit ${par>90?'all of them':'up to '+par} at once.</span><br>
+  if(M.mode==='rk')return `<span class="rk">${rkLines(M).length} sequential lines converge on his machine. only the outermost relay on a line can be hit — drop it and the next one steps up on its own.</span><br>
+    ${bootAllBtn(M)}<br><span class="rk">${ready.length?'floodable now: ':'nothing exposed. run '}</span>${ready.length?ready.map(n=>`<span class="c">${n.ip}</span>`).join(' · '):`<span class="c">resolve ${M.h}</span>`}`;
+  const par=siegeWidth(M);
+  return `<span class="rk">no order to a mesh — every node is reachable, and your decoder drives ${par>90?'all of them':'up to '+par} at once.</span>${bootAllBtn(M)}<br>
     <span class="rk">${ready.length?'floodable now: ':'everything is still shelled. run '}</span>${ready.length?ready.map(n=>`<span class="c">${n.ip}</span>`).join(' · '):`<span class="c">resolve ${M.h}</span>`}`;}
+function bootAllBtn(M){return M.nodes.some(n=>nodeAttackable(M,n))?'<br><button id="nmAll">▶ boot everything exposed</button>':'';}
+function wireBootAll(M){const b=$('nmAll');if(b)b.onclick=()=>{openWin('Terminal',true);siegeBootCmd(M,['all']);};}
 function nmRead(M,i,sel){const read=$('nmapRead');if(!read)return;
-  if(i===null||i===undefined||!M.nodes[i]){read.innerHTML=nmSummary(M);return;}
+  if(i===null||i===undefined||!M.nodes[i]){read.innerHTML=nmSummary(M);wireBootAll(M);return;}
   const n=M.nodes[i],off=(S.booted||[]).includes(M.h);
   if(n.st==='hidden'){read.innerHTML=`<span class="rk">addr</span> <span class="rv" style="color:var(--dim)">?? · ?? · ??</span>
     <span class="rk">depth</span> <span class="rv">${M.mode==='rk'?'line '+(n.line+1)+', '+(n.pos+1)+' deep':'—'}</span><br>${nmStatus(M,n)}`;return;}
@@ -1498,6 +1657,11 @@ function cmdNmap(a){
     +`<span class="${n.st==='relay'||n.st==='dead'?'dim':'phos'}">${n.ip}</span>`
     +`<span class="dim">  ${n.st==='unknown'?'candidate '+n.conf+'%':n.st}</span>`));}
 
+/* what you actually need to get through a given kind of net */
+function decoderAdvice(net){
+  if(net==='rootk')return 'a R00tKernel chain needs <span class="c">Parity Prime</span> (4,200c, slow) or <span class="c">Partisan Occulus</span> (11,000c, fast). both are in <span class="c">shop</span> — nothing on the free shelf touches one.';
+  if(net==='amorph')return 'you need Parity or better: <span class="c">brew install parity</span> (free, and it collapses), or something from <span class="c">shop</span> that does not.';
+  return 'start with <span class="c">brew install 1netlynx</span> (free).';}
 function bestDecoder(){let b=null;for(const id in DECODERS)if(owned('decoders',id)&&(!b||DECODERS[id].tier>DECODERS[b].tier))b=id;return b;}
 function canDecode(D,net){ // net: none | fullz | amorph | rootk
   if(!D)return false;
@@ -1518,7 +1682,7 @@ function cmdResolve(a){const raw=(a[0]||'').replace('@','');
   const D=DECODERS[did],net=t.net||'none',g=decodeGrade(D,net);
   pr(`<span class="dim">${D.n} → ${t.h} is behind ${NETNAME[net]}.</span>`);
   if(!g){pr(`<span class="err">✗ ${D.n} can't decode ${NETNAME[net]}.</span>`);
-    pr('<span class="dim">you need a stronger decoder — or <span class="c">bait</span> them into revealing it themselves.</span>');return;}
+    pr(`<span class="dim">${decoderAdvice(net)}</span>`);return;}
   if(g.note)pr(`<span class="dim">${g.note}.</span>`);
   const M=netMap(t.h);
   if(M.mode!=='classify'){
@@ -1533,8 +1697,7 @@ function cmdResolve(a){const raw=(a[0]||'').replace('@','');
       const got=siegeDecode(M,D,g);
       if(!got)pr('<span class="dim">nothing new to read — everything reachable is already exposed. drop something.</span>');
       const ready=M.nodes.filter(n=>nodeAttackable(M,n));
-      if(ready.length)pr(`<span class="phos">▸ floodable now: ${ready.map(n=>n.ip).join(' · ')}</span>`
-        +(M.mode==='amorph'&&ready.length>1?` <span class="dim">— <span class="c">boot ${ready.slice(0,2).map(n=>n.ip).join(' ')}</span> hits them together</span>`:''));
+      if(ready.length)pr(`<span class="phos">▸ ${ready.length} host${ready.length===1?'':'s'} exposed — <span class="c">boot all</span> hits ${ready.length===1?'it':'everything your decoder can drive at once'}.</span>`);
       persist();openNmap(t.h);renderNmap();});
     return;}
   if(mapCands(M).length<=g.residual&&M.passes){
@@ -1566,8 +1729,16 @@ function cmdResolve(a){const raw=(a[0]||'').replace('@','');
       blip(520,0.1,'sine',0.05,700);}
     persist();openNmap(t.h);renderNmap();});}
 /* boot on a siege net: one node, or several at once on an amorphous mesh */
+function siegeWidth(M){
+  const D=DECODERS[bestDecoder()];
+  if(M.mode==='rk')return Math.max(1,rkLines(M).filter(L=>!lineClear(M,L)).length);  // one per line — lines are independent
+  if(!D)return 1;
+  return D.sonic?99:D.amorph==='multi'?8:D.amorph===true?4:2;}
 function siegeBootCmd(M,a,forced){
-  const ips=a.map(x=>String(x).replace('@','').trim()).filter(Boolean);
+  let ips=a.map(x=>String(x).replace('@','').trim()).filter(Boolean);
+  if(!ips.length||ips[0].toLowerCase()==='all'){
+    ips=M.nodes.filter(n=>nodeAttackable(M,n)).map(n=>n.ip);
+    if(!ips.length){pr('nothing is exposed to hit. <span class="c">resolve '+M.h+'</span>','warn');return;}}
   const picked=[],bad=[];
   ips.forEach(ip=>{const n=M.nodes.find(x=>x.ip===ip);
     if(!n){bad.push([ip,'not a node on this map']);return;}
@@ -1575,13 +1746,13 @@ function siegeBootCmd(M,a,forced){
     if(n.st==='hidden'){bad.push([ip,'still covered — you can\'t reach it yet']);return;}
     if(n.hp>0){bad.push([ip,`still shelled (${n.hp} layer${n.hp===1?'':'s'}) — <span class="c">resolve ${M.h}</span>`]);return;}
     if(!nodeAttackable(M,n)){bad.push([ip,M.mode==='rk'?'a live relay is standing in front of it':'not exposed']);return;}
+    if(M.mode==='rk'&&picked.some(x=>x.line===n.line)){bad.push([ip,'you\'re already hitting that line this pass']);return;}
     picked.push(n);});
   bad.forEach(([ip,why])=>pr(`<span class="err">✗ ${ip}</span> <span class="dim">— ${why}</span>`));
   if(!picked.length)return;
-  const par=(decodeGrade(DECODERS[bestDecoder()]||{},M.net)||{perPass:1}).perPass;
-  const cap=M.mode==='amorph'?par:1;
+  const cap=siegeWidth(M);
   if(picked.length>cap){
-    pr(`<span class="warn">${M.mode==='rk'?'a R00tKernel chain is sequential — one node at a time.'
+    pr(`<span class="warn">${M.mode==='rk'?'a R00tKernel line is sequential — one node per line at a time.'
       :`${DECODERS[bestDecoder()].n} can only drive ${cap} node${cap===1?'':'s'} at once.`}</span>`);
     picked.length=cap;
     pr(`<span class="dim">hitting ${picked.map(n=>n.ip).join(', ')}.</span>`);}
@@ -1608,9 +1779,41 @@ function bootRelay(M,n,B){
     if(solved)pr(`<span class="phos">✦ …but that only leaves one host standing: ${solved.ip}</span>`);
     persist();syncTop();renderNmap();blip(180,0.2,'square',0.05);});}
 /* ---------- booting (by IP — you must resolve them first) ---------- */
+/* the siege you're currently working — so `boot all` knows whose net you mean */
+function activeSiege(){
+  const maps=S.maps||{};
+  const live=h=>maps[h]&&maps[h].mode!=='classify'&&!maps[h].settled&&!(S.booted||[]).includes(h)
+    &&maps[h].nodes.some(n=>nodeAttackable(maps[h],n));
+  if(nmapH&&live(nmapH))return maps[nmapH];
+  const am=activeMission();
+  if(am&&am.obj&&am.obj.type==='boot'&&live(am.obj.handle))return maps[am.obj.handle];
+  const all=Object.keys(maps).filter(live);
+  return all.length===1?maps[all[0]]:null;}
 function cmdBoot(a,forced){
   const raw=(a[0]||'').replace('@','');
+  if(!raw||raw.toLowerCase()==='all'){
+    const M=activeSiege();
+    if(M)return siegeBootCmd(M,['all'],forced);
+    if(raw){pr('nothing under siege right now. <span class="c">resolve &lt;handle&gt;</span> to open one.','warn');return;}}
   if(!raw){pr('usage: <span class="c">boot &lt;ip&gt;</span> — you need their origin IP first (<span class="c">bait</span> or <span class="c">resolve</span>).','dim');return;}
+  const vol=(S.volunteers||{})[raw];
+  if(vol&&!vol.done){
+    if(!bestBooter()){pr('you don\'t own a booter. buy one in <span class="c">shop</span>.','err');return;}
+    const BV=BOOTERS[forced||bestBooter()];
+    if(BV.needBot&&!botIPs().length){pr(`${BV.n} rides a botnet — you don't have one. <span class="c">buybot</span> first.`,'err');return;}
+    artLine(ART[forced||bestBooter()]);G.active2=true;
+    runOp(`${BV.n} → flooding ${vol.by} (consented)`,3.0,()=>{G.active2=false;vol.done=true;
+      S.rep=(S.rep||0)+vol.rep;persist();syncTop();
+      pr(`<span class="ok">✦ ${vol.by} went down — and he asked for it, so nobody's angry.</span>`);
+      pr(`<span class="phos">forum rep +${vol.rep} → ${S.rep} (${forumRank()})</span>`);
+      const th=Object.keys(MYTHREADS).map(k=>MYTHREADS[k]).find(x=>x.posts.some(pp=>pp.by===vol.by));
+      if(th){(AMBIENTADD[th.id]=AMBIENTADD[th.id]||[]).push(
+        {by:vol.by,text:pick(['ok that was faster than i expected. respect.','well. that answers that.','worth it. tell people i took it well.'])},
+        {by:pick(HANDLES),text:`${vol.by} said he'd say so publicly and he did. that's the board working.`});
+        th._new=true;forumNew++;}
+      worldBadges();renderForum();blip(1150,0.25,'sawtooth',0.05,320);});
+    return;}
+  if(vol&&vol.done){pr(`${vol.by} is already down. he volunteered once, not twice.`,'warn');return;}
   let t=trollByIp(raw);
   const hit=mapNodeByIp(raw);
   if(!t){const named=TROLLS.find(x=>x.h.toLowerCase()===raw.toLowerCase());
@@ -1783,7 +1986,7 @@ const KEY='units_os_save', PKEY='units_os_prefs';
 let S=null, P={crt:true,snd:true,music:true,vol:0.8,scan:0.6,autohint:false};
 function defaultSave(h){const soft={};for(const k in SOFT)soft[k]=SOFT[k].start;
   return {handle:h,creds:200,rating:0,soft,completed:[],active:null,seen:['m0'],read:[],flags:{},heat:0,discovered:[],im:{},imUnread:{},
-    crackers:[],booters:[],monitors:[],decoders:[],tools:[],explained:[],mesh:null,botnet:null,rep:0,booted:[],jobStarted:false,pendingClaim:null,rerouted:0,resolved:{},unaware:{},trollIps:{},activeGig:null,maps:{},alias:{},settled:{}};}
+    crackers:[],booters:[],monitors:[],decoders:[],tools:[],explained:[],mesh:null,botnet:null,rep:0,booted:[],jobStarted:false,pendingClaim:null,rerouted:0,resolved:{},unaware:{},trollIps:{},activeGig:null,maps:{},alias:{},settled:{},marks:{},shas:{},volunteers:{}};}
 /* storage is per-browser and per-visitor: every player gets their own private save */
 let storageOK=null,storageWarned=false;
 function storageAvailable(){if(storageOK!==null)return storageOK;
@@ -1885,6 +2088,7 @@ function openWin(app,on){const w=document.querySelector(`.window[data-app="${app
   if(app==='Forums'&&on){forumNew=0;worldBadges();renderForum();}
   if(app==='Monitor'&&on)renderMonitor();
   if(app==='NetMap'&&on)renderNmap();
+  if(app==='Editor'&&on){renderEditor();explain('editor');}
   if(app==='Inbox'&&on)tutHook('mail');}
 document.querySelectorAll('.window').forEach(w=>{const tb=w.querySelector('.titlebar');
   w.addEventListener('pointerdown',()=>focusWin(w));
@@ -1952,7 +2156,7 @@ function cmdHint(){const m=activeMission();
       if(!nmapSeen(H))return say(`his network is mapped — look at it: <span class="c">nmap gui ${H}</span>`);
       const ready=MM.nodes.filter(n=>nodeAttackable(MM,n));
       if(!bestBooter())return say('you can see his net but you can\'t hit it. buy a booter in <span class="c">shop</span> (Software).');
-      if(ready.length)return say(`drop what's exposed: <span class="c">boot ${ready.slice(0,MM.mode==='amorph'?3:1).map(n=>n.ip).join(' ')}</span>`);
+      if(ready.length)return say(`drop what's exposed: <span class="c">boot all</span>`);
       return say(`nothing is exposed. decode another pass: <span class="c">resolve ${H}</span>`);}
     if(!ip&&MM&&!MM.solved&&!nmapSeen(H))return say(`his network is mapped — look at it: <span class="c">nmap gui ${H}</span> (hover a node to expose its address).`);
     if(!ip&&MM&&!MM.solved)return say(`${mapCands(MM).length} hosts your decoder can't separate. either trick him into confirming it — <span class="c">bait ${H}</span> — or back your own read and <span class="c">boot</span> the node you think is his.`);
@@ -1960,7 +2164,9 @@ function cmdHint(){const m=activeMission();
     if(!bestBooter())return say('you have his IP but nothing to hit it with. buy a booter in <span class="c">shop</span> (Software).');
     return say(`drop him: <span class="c">boot ${ip}</span>`);}
   if(m.mesh){const D=MESHES[m.mesh],M=meshState(m.mesh);
-    if(!bestDecoder())return say('you need a decoder: <span class="c">brew install 1netlynx</span>, then <span class="c">brew install parity</span> for meshes.');
+    if(!bestDecoder())return say('you need a decoder: <span class="c">brew install 1netlynx</span> (free) to start.');
+    if(!canDecode(DECODERS[bestDecoder()],D.type))
+      return say(`${DECODERS[bestDecoder()].n} can't touch this one. ${decoderAdvice(D.type)}`);
     if(!M.done)return say(`peel their mesh: <span class="c">decode ${D.ip}</span> — repeat until it reaches the mother IP (${M.revealed.length}/${M.total} peeled)`);
     return say(`report it: <span class="c">submit ${M.mother}</span>`);}
   const t=TARGETS[m.target];if(!t)return say('check your <span class="c">mail</span> for the briefing.');
@@ -1970,13 +2176,24 @@ function cmdHint(){const m=activeMission();
   if(!G.access){const left=t.locks.filter(l=>!G.cleared.has(l));
     if(left.includes('password'))return say('break the password: <span class="c">crack</span>');
     if(left.includes('firewall'))return say('take down the firewall: <span class="c">bypass firewall</span>');
-    if(left.includes('proxy'))return say('take down the proxy: <span class="c">bypass proxy</span>');}
+    if(left.includes('proxy'))return say('take down the proxy: <span class="c">bypass proxy</span>');
+    if(left.includes('2fa')){const own=t.twofa;
+      if(!owned('tools','inkobos'))return say(`this box rolls a code at ${own} every 30 seconds. you need his phone: <span class="c">brew install inkobos</span>`);
+      if(!(S.marks||{})[own])return say(`find out who ${own} picks up for: <span class="c">inkobos ${own}</span>`);
+      const mk=markByName(own);
+      if(!(S.shas||{})[own]&&(!G.spoof||G.spoof.toLowerCase()!==mk.trusts.toLowerCase()))
+        return say(`wear a name he trusts: <span class="c">spoof ${mk.trusts}</span>`);
+      if(!(S.shas||{})[own])return say(`now phone him and ask for the code: <span class="c">dial ${mk.num}</span>`);
+      if(!owned('tools','encryptr'))return say('you have his passkey but nothing to forge the token with: <span class="c">brew install encryptr</span>');
+      return say(`feed it to the lock: <span class="c">encryptr ${S.shas[own]}</span>`);}}
   if(!m._done){const o=m.obj;
     if(o.type==='download'){const f=findFile(o.file);
       if(f&&f.enc)return say(`${o.file} is encrypted. <span class="c">decrypt ${o.file}</span> first (needs a File Decrypter from the shop).`);
       return say(`take it: <span class="c">ls</span> to look around, then <span class="c">download ${o.file}</span>`);}
     if(o.type==='delete')return say(`destroy it: <span class="c">delete ${o.file}</span>`);
-    if(o.type==='modify')return say(`rewrite it: <span class="c">modify ${o.file}</span>`);
+    if(o.type==='modify'){const rf=findFile(o.file);
+      if(rf&&rf.rec)return say(`open the record and change ${rf.rec.label} to <b>${rf.rec.want}</b>: <span class="c">edit ${o.file}</span>`);
+      return say(`rewrite it: <span class="c">modify ${o.file}</span>`);}
     if(o.type==='transfer')return say(`move the money: <span class="c">transfer ${o.amount}</span>`);
     if(o.type==='multi'){for(const p of o.parts){const f=findFile(p.file);
       const doneP=p.type==='download'?(f&&f.got):p.type==='delete'?(!f||f.deleted):(f&&f.modified);
@@ -2001,6 +2218,8 @@ const COMMANDS={
   hc:a=>cmdCrack(a,'hc'),hcr:a=>cmdCrack(a,'hcr'),
   heaven:a=>cmdCrack(a,'heaven'),blackwing:a=>cmdCrack(a,'blackwing'),
   boot:a=>cmdBoot(a),bait:a=>cmdBait(a),resolve:a=>cmdResolve(a),nmap:a=>cmdNmap(a),ias:a=>cmdIas(a),
+  inkobos:a=>cmdInkobos(a),lookup:a=>cmdInkobos(a),spoof:a=>cmdSpoof(a),dial:a=>cmdDial(a),call:a=>cmdDial(a),
+  encryptr:a=>cmdEncryptr(a),twofa:a=>cmdEncryptr(a),
   loic:a=>cmdBoot(a,'loic'),loicr:a=>cmdBoot(a,'loicr'),
   eloheim:a=>cmdBoot(a,'eloheim'),valheim:a=>cmdBoot(a,'valheim'),
   brew:a=>cmdBrew(a),getbrew:a=>cmdGetbrew(a),gig:a=>cmdGig(a),gigs:()=>cmdGig([]),decode:a=>cmdDecode(a),
@@ -2012,7 +2231,7 @@ const COMMANDS={
   decrypt:a=>cmdDecrypt(a),download:a=>cmdDownload(a),copy:a=>cmdDownload(a),
   delete:a=>((a[0]||'').toLowerCase()==='log'?cmdDeleteLog(a.slice(1)):cmdDelete(a)),
   rm:a=>((a[0]||'').toLowerCase()==='log'?cmdDeleteLog(a.slice(1)):cmdDelete(a)),
-  modify:a=>cmdModify(a),edit:a=>cmdModify(a),
+  modify:a=>cmdModify(a),edit:a=>cmdEdit(a),editor:a=>cmdEdit(a),
   transfer:a=>cmdTransfer(a),submit:a=>cmdSubmit(a),
   deletelogs:()=>cmdDeleteLogs(),cleanlogs:()=>cmdDeleteLogs(),
   disconnect:()=>cmdDisconnect(),exit:()=>cmdDisconnect(),
@@ -2078,11 +2297,14 @@ function cmdHelp(){pr('<span class="c">── command reference ──</span>');
   if(S.flags.botnetUnlocked)g('staying alive',[['botnet','your route home'],['buybot &lt;type&gt; &lt;n&gt;','fullz 1-5 · amorph 10-20 · rootk 21-60'],
     ['monitor','see which IP they\'re tracing'],['burn &lt;ip&gt;','cut a traced IP loose'],['burn all','destroy botnet, vanish']]);
   if(S.flags.booterUnlocked)g('the wire',[['rep','your standing on the wire']]);
-  g('the payload',[['ls / cat &lt;f&gt;','list / read files'],['decrypt &lt;f&gt;','decrypt a file'],['download &lt;f&gt;','copy a file'],['delete &lt;f&gt;','delete a file'],['modify &lt;f&gt;','alter a record'],['transfer &lt;amt&gt;','move funds to you'],['submit &lt;ip&gt;','answer an investigation']]);
+  if(owned('tools','inkobos')||owned('tools','encryptr'))g('getting past 2FA',[['inkobos &lt;name&gt;','look them up — number + who they trust'],
+    ['spoof &lt;org&gt;','wear that name on their caller ID'],['dial &lt;number&gt;','phone them; they read you the code'],
+    ['encryptr &lt;sha&gt;','forge the rolling token at a 2fa lock']]);
+  g('the payload',[['ls / cat &lt;f&gt;','list / read files'],['decrypt &lt;f&gt;','decrypt a file'],['download &lt;f&gt;','copy a file'],['delete &lt;f&gt;','delete a file'],['edit &lt;f&gt;','open a record in the editor'],['transfer &lt;amt&gt;','move funds to you'],['submit &lt;ip&gt;','answer an investigation']]);
   g('the exit',[['deletelogs','wipe your trail — do it BEFORE leaving (or heat rises)'],['disconnect','drop the line'],['abort','cancel running tool(s)']]);
   g('software',[['brew list','free packages on the wire'],['brew install &lt;pkg&gt;','install one (havencracker, 1netlynx…)'],['shop / buy &lt;id&gt;','paid gear & hardware']]);
   if(S.flags.tutDone)g('freeplay',[['brew install wire','the job-board client (once)'],['gig list','open gigs on The Wire'],['gig &lt;id&gt;','take one — repeatable'],['gig drop','walk away from a job that got too hot']]);
-  if(S.flags.booterUnlocked)g('people',[['bait &lt;handle&gt;','social-engineer their origin out of them'],['resolve &lt;handle&gt;','decode their botnet — eliminates relays'],['nmap gui &lt;handle&gt;','draw their botnet · hover a node for its IP'],['boot &lt;ip&gt;','flood the node you believe is the origin']]);
+  if(S.flags.booterUnlocked)g('people',[['bait &lt;handle&gt;','social-engineer their origin out of them'],['resolve &lt;handle&gt;','decode their botnet — eliminates relays'],['nmap gui &lt;handle&gt;','draw their botnet · hover a node for its IP'],['boot &lt;ip&gt;','flood one node'],['boot all','flood everything currently exposed']]);
   if(owned('tools','ialias'))g('iAliasFast',[['ias add &lt;short&gt; &lt;cmd&gt;','e.g. ias add dl sql delete all'],['ias &lt;short&gt;','run it'],['ias list / ias rm &lt;short&gt;','manage aliases']]);
   g('life admin',[['mail','contracts & messages'],['laylow','burn heat when trails follow you'],['settings','crt, sound, music'],['status','who you are']]);
   pr('<span class="dim">Memory Banks let you run tools in parallel — crack + decrypt at once beats a fast trace.</span>');
@@ -2162,7 +2384,8 @@ function cmdConnect(a){const ip=a[0];if(!ip){pr('usage: connect &lt;ip&gt;','dim
     else{pr(`<span class="err">⚠ intrusion detected by host. reverse-trace initialising…</span>`);
       pr(`route home: ${hops?'target → '+[...G.route].reverse().join(' → ')+' → YOU':'<span class="err">DIRECT — they land on you the moment the bar fills!</span>'}`);}
     if(G.access)pr('no security. <span class="c">ls</span> to list files.');
-    else pr('locks: '+t.locks.map(l=>`<span class="warn">${l}</span>`).join(' · ')+' — <span class="c">crack</span> / <span class="c">bypass firewall|proxy</span>.');
+    else{pr('locks: '+t.locks.map(l=>`<span class="warn">${l}</span>`).join(' · ')+' — <span class="c">crack</span> / <span class="c">bypass firewall|proxy</span>.');
+      if(t.locks.includes('2fa'))pr(`<span class="warn">⚠ two-factor: this account rolls a code to <span class="c">${t.twofa}</span>'s phone. no cracker touches that — you need the code out of him. <span class="c">hint</span> will walk you through it.</span>`);}
     $('tbConn').textContent=t.ip;$('tracePill').classList.remove('hidden2');
     $('tracePill').classList.toggle('active',!t.safe);
     if(t.safe)$('tbTracePct').textContent='SAFE';
@@ -2231,6 +2454,11 @@ function cmdDownload(a){if(!needAccess())return;const f=findFile(a[0]);if(!f){pr
     checkObjective();},true);}
 function cmdDelete(a){if(!needAccess())return;const f=findFile(a[0]);if(!f){pr('no such file.','err');return;}G.active2=true;
   runOp('shredding '+f.name,1.6*cpuFactor(),()=>{f.deleted=true;pr(`<span class="warn">✗ ${f.name} destroyed.</span>`);checkObjective();},true);}
+function cmdEdit(a){if(!needAccess())return;const f=findFile(a[0]);
+  if(!f){pr('no such file.','err');return;}
+  if(f.enc){pr('encrypted — <span class="c">decrypt '+f.name+'</span> first.','warn');return;}
+  if(f.rec){pr(`<span class="dim">opening ${f.name} in the record editor…</span>`);recOpen(f);return;}
+  return cmdModify(a);}
 function cmdModify(a){if(!needAccess())return;const f=findFile(a[0]);if(!f){pr('no such file.','err');return;}if(f.enc){pr('encrypted — decrypt first.','warn');return;}G.active2=true;
   runOp('rewriting '+f.name,2.0*cpuFactor(),()=>{f.modified=true;pr(`<span class="ok">✎ ${f.name} altered. the record now says what you need it to.</span>`);checkObjective();},true);}
 function cmdTransfer(a){if(!needAccess())return;if(!G.conn.account){pr('no financial account on this host.','err');return;}
@@ -2389,7 +2617,7 @@ const FEED=[
  '//CHATTER: anyone got a clean bounce through Rialto? mine\'s burned',
  '//BULLETIN: Uplink raises minimum rating for tier-3 contracts',
  '//NORAD grid status: <b>NOMINAL</b>',
- '//CHATTER: heard someone drained a holding account at Meridian. legend.',
+ '//CHATTER: heard someone walked out of Meridian with the ledger and left the money. cold.',
  '//NEWSWIRE: Helix Biotech IPO "delayed pending review"',
  '//WARNING: <span class="r">trace-back times down 30% this quarter — route deep</span>',
  '//CHATTER: 0RACLE is real. i\'ve seen the messages. don\'t take the last job',
@@ -2521,7 +2749,9 @@ function cmdBuy(a){const k=a[0];
   if(CRACKERS[k])return buyNamed('crackers',k,CRACKERS);
   if(BOOTERS[k])return buyNamed('booters',k,BOOTERS);
   if(MONITORS[k])return buyNamed('monitors',k,MONITORS);
-  if(!SOFT[k]){pr('items: '+Object.keys(CRACKERS).join(', ')+', '+Object.keys(BOOTERS).join(', ')+', '+Object.keys(MONITORS).join(', ')+', '+Object.keys(SOFT).join(', '),'err');return;}
+  if(DECODERS[k])return buyNamed('decoders',k,DECODERS);
+  if(!SOFT[k]){const buyable=d=>Object.keys(d).filter(x=>d[x].price);
+    pr('items: '+buyable(CRACKERS).concat(buyable(BOOTERS),buyable(DECODERS),Object.keys(MONITORS).filter(x=>MONITORS[x].price),Object.keys(SOFT)).join(', '),'err');return;}
   doBuy(k);}
 
 /* ================= map ================= */
@@ -2641,6 +2871,115 @@ function renderChat(){const chat=$('imChat');if(!imOpen||!S.im[imOpen]){chat.inn
     if(r.discover){S.discovered.push(r.discover);persist();pr(`<span class="phos">✦ ${CONTACTS[imOpen].n} leaked you a server: ${r.discover} — added to links.</span>`);}
   });}
 
+/* ================= 2FA: InKobos Autodialer → EncryptR ================= */
+/* banks and socials don't fall to a cracker. you have to make the account holder
+   read you their own code, and for that they have to believe you're their bank. */
+const MARKS={
+ 'marcus rell'  :{n:'Marcus Rell',   num:'555-0148',carrier:'NM Cellular',job:'Meridian Savings',trusts:'Meridian Savings',mood:'busy'},
+ 'dana ossoff'  :{n:'Dana Ossoff',   num:'555-0193',carrier:'Corvid Mobile',job:'Nova Social',trusts:'Nova Social',mood:'wary'},
+ 'p. valdes'    :{n:'P. Valdes',     num:'555-0271',carrier:'NM Cellular',job:'Rialto University',trusts:'Rialto University',mood:'helpful'},
+ 'lorne bracken':{n:'Lorne Bracken', num:'555-0330',carrier:'Kowloon Telecom',job:'Brackwater Chem',trusts:'Brackwater Chem',mood:'wary'},
+ 'e. mireau'    :{n:'E. Mireau',     num:'555-0407',carrier:'Corvid Mobile',job:'Mireau Foods',trusts:'Meridian Savings',mood:'busy'},
+};
+function markByName(q){const k=String(q||'').toLowerCase().trim();
+  if(MARKS[k])return MARKS[k];
+  return Object.values(MARKS).find(m=>m.n.toLowerCase()===k||m.n.toLowerCase().split(' ').pop()===k)||null;}
+function markByNum(q){const s=String(q||'').replace(/[^0-9]/g,'');
+  return Object.values(MARKS).find(m=>m.num.replace(/[^0-9]/g,'')===s)||null;}
+function cmdInkobos(a){
+  if(!owned('tools','inkobos')){pr('<span class="err">inkobos: command not found.</span>');
+    pr('<span class="dim">people-search and caller-ID spoofing live in one package: <span class="c">brew install inkobos</span></span>');return;}
+  const q=a.join(' ').trim();
+  if(!q){pr('usage: <span class="c">inkobos &lt;name&gt;</span> — look someone up in the New Milos directory.','dim');
+    pr('<span class="dim">then <span class="c">spoof &lt;org&gt;</span> and <span class="c">dial &lt;number&gt;</span>.</span>');return;}
+  const m=markByName(q);
+  if(!m){pr(`no listing for "${escapeHtml(q)}". the directory only covers New Milos.`,'err');return;}
+  runOp(`InKobos → directory lookup: ${m.n}`,2.0,()=>{
+    S.marks=S.marks||{};S.marks[m.n]=true;persist();
+    pr(`<span class="c">── InKobos listing ──</span>`);
+    pr(`  <span class="k">name</span>     <span class="phos">${m.n}</span>`);
+    pr(`  <span class="k">mobile</span>   <span class="phos">${m.num}</span> <span class="dim">(${m.carrier})</span>`);
+    pr(`  <span class="k">employer</span> ${m.job}`);
+    pr(`  <span class="k">answers</span>  <span class="warn">calls from ${m.trusts}</span> <span class="dim">— and almost nobody else</span>`);
+    pr(`<span class="dim">▸ <span class="c">spoof ${m.trusts}</span>, then <span class="c">dial ${m.num}</span>.</span>`);blip(880,0.1);});}
+function cmdSpoof(a){
+  if(!owned('tools','inkobos')){pr('<span class="err">spoof: command not found.</span> <span class="dim">brew install inkobos</span>');return;}
+  const who=a.join(' ').trim();
+  if(!who){pr('usage: <span class="c">spoof &lt;organisation&gt;</span> — what your caller ID should say.','dim');return;}
+  G.spoof=who;pr(`<span class="ok">✓ outbound caller ID set to "${escapeHtml(who)}".</span>`);
+  pr('<span class="dim">their handset will show that name. now <span class="c">dial</span> them.</span>');}
+const SHAHEX='0123456789abcdef';
+function makeSha(){let s='';for(let i=0;i<16;i++)s+=SHAHEX[RI(0,15)];return 'SHA-'+s.toUpperCase();}
+function cmdDial(a){
+  if(!owned('tools','inkobos')){pr('<span class="err">dial: command not found.</span> <span class="dim">brew install inkobos</span>');return;}
+  const m=markByNum(a[0])||markByName(a.join(' '));
+  if(!m){pr('that number isn\'t in the directory. <span class="c">inkobos &lt;name&gt;</span> first.','err');return;}
+  if(!(S.marks||{})[m.n]){pr(`you don't have ${m.n}'s number yet — <span class="c">inkobos ${m.n}</span>.`,'err');return;}
+  S.shas=S.shas||{};
+  if(S.shas[m.n]){pr(`you already have ${m.n}'s passkey: <span class="phos">${S.shas[m.n]}</span>`,'warn');return;}
+  const trusted=G.spoof&&G.spoof.toLowerCase()===m.trusts.toLowerCase();
+  runOp(`dialling ${m.num}${G.spoof?` as "${G.spoof}"`:' (caller ID: your gateway)'}`,3.4,()=>{
+    if(!G.spoof){pr(`<span class="err">✗ ${m.n} let it ring out. an unknown number at this hour? no.</span>`);
+      pr('<span class="dim">give him a name he trusts first: <span class="c">spoof ' + m.trusts + '</span></span>');return;}
+    if(!trusted){pr(`<span class="err">✗ "${escapeHtml(G.spoof)}"? ${m.n} doesn't bank with them.</span>`);
+      pr(`<span class="dim">he answered, got suspicious and hung up. he trusts <span class="c">${m.trusts}</span>.</span>`);
+      S.heat=clamp((S.heat||0)+4,0,100);updateHeat();persist();return;}
+    const sha=makeSha();S.shas[m.n]=sha;persist();
+    pr(`<span class="dim">"${m.trusts} fraud desk, we've flagged a login on your account —</span>`);
+    pr(`<span class="dim"> can you read me the six characters we just sent you?"</span>`);
+    pr(`<span class="ok">✦ ${m.n} read it out. passkey captured:</span> <span class="phos">${sha}</span>`);
+    pr(`<span class="dim">feed it to the lock: <span class="c">encryptr ${sha}</span> once you're on their box.</span>`);
+    blip(1000,0.16,'sine',0.06,1400);});}
+function cmdEncryptr(a){
+  if(!owned('tools','encryptr')){pr('<span class="err">encryptr: command not found.</span>');
+    pr('<span class="dim">2FA needs a token forger: <span class="c">brew install encryptr</span></span>');return;}
+  if(!needConn())return;
+  if(!G.conn.locks.includes('2fa')){pr('no 2FA challenge on this host.','dim');return;}
+  if(G.cleared.has('2fa')){pr('2FA already satisfied.','warn');return;}
+  const sha=(a[0]||'').trim().toUpperCase();
+  const owner=G.conn.twofa;
+  if(!sha){pr('usage: <span class="c">encryptr &lt;passkey SHA&gt;</span>','dim');
+    pr(`<span class="dim">this account belongs to <span class="c">${owner}</span>. you need his passkey — <span class="c">inkobos ${owner}</span>.</span>`);return;}
+  const want=(S.shas||{})[owner];
+  if(!want){pr(`<span class="err">✗ you have no passkey for ${owner}.</span>`);
+    pr(`<span class="dim">get one out of him: <span class="c">inkobos ${owner}</span> → <span class="c">spoof</span> → <span class="c">dial</span>.</span>`);return;}
+  if(sha!==want.toUpperCase()){pr('<span class="err">✗ that SHA doesn\'t belong to this account.</span>');return;}
+  G.active2=true;
+  runOp('EncryptR → forging rolling token from passkey',2.6,()=>{
+    G.cleared.add('2fa');pr('<span class="ok">✓ 2FA satisfied — the token rolled clean. you are him now.</span>');accessCheck();});}
+
+/* ================= the record editor ================= */
+/* some clients don't want a file stolen. they want a number changed. */
+let edFile=null;
+function recOpen(f){edFile=f;openWin('Editor',true);renderEditor();}
+function renderEditor(){const b=$('edBody'),h=$('edHead');if(!b)return;
+  if(!edFile||!edFile.rec){h.innerHTML='<span class="rk">no record open</span>';b.innerHTML=
+    '<div class="rk" style="padding:10px">open one with <span class="c">edit &lt;file&gt;</span> while you\'re on the host.</div>';return;}
+  const R=edFile.rec;
+  h.innerHTML=`<span>${escapeHtml(R.title)}</span><span class="rk">${escapeHtml(edFile.name)}</span>
+    <span class="rk">${edFile.modified?'<span style="color:var(--green)">saved</span>':'unsaved'}</span>`;
+  b.innerHTML=`<div class="edwant">client wants <b>${escapeHtml(R.label)}</b> to read <b>${escapeHtml(String(R.want))}</b></div>`
+    +Object.keys(R.fields).map(k=>`<label class="edrow"><span>${escapeHtml(k)}</span>
+      <input data-k="${escapeHtml(k)}" value="${escapeHtml(String(R.fields[k]))}"${k===R.field?'':' disabled'}></label>`).join('')
+    +`<div class="edbtns"><button id="edSave">save record</button><button id="edClose" class="alt">close</button></div>`;
+  b.querySelectorAll('input').forEach(i=>i.addEventListener('input',()=>{R.fields[i.dataset.k]=i.value;}));
+  $('edSave').onclick=()=>recSave();
+  $('edClose').onclick=()=>openWin('Editor',false);}
+function recMatches(R){const got=String(R.fields[R.field]).trim().toLowerCase(),want=String(R.want).trim().toLowerCase();
+  if(got===want)return true;
+  const a=parseFloat(got.replace(/[^0-9.-]/g,'')),w=parseFloat(want.replace(/[^0-9.-]/g,''));
+  return !isNaN(a)&&!isNaN(w)&&a===w;}
+function recSave(){if(!edFile||!edFile.rec)return;const R=edFile.rec;
+  if(!G.conn||!G.conn.files.includes(edFile)){pr('you\'re not on that host any more — the write failed.','err');return;}
+  G.active2=true;
+  runOp(`rewriting ${edFile.name}`,2.0*cpuFactor(),()=>{
+    if(!recMatches(R)){edFile.modified=false;
+      pr(`<span class="warn">✎ saved — but ${R.label} still reads "${R.fields[R.field]}". the client asked for "${R.want}".</span>`);
+      renderEditor();return;}
+    edFile.modified=true;
+    pr(`<span class="ok">✎ ${edFile.name} rewritten — ${R.label} now reads ${R.fields[R.field]}.</span>`);
+    renderEditor();checkObjective();},true);}
+
 /* ================= FORUMS ("The Wire") ================= */
 const FORUM=[
  {id:'welcome',title:'read this first — new agents',by:'sysop',posts:[
@@ -2671,8 +3010,8 @@ const EVENT_THREADS={
    {by:'wb_leaks',text:'the phase-II adverse-event file is GONE from their box. right before IPO. hmm.'},
    {by:'cr4sh',text:'someone did the world a favor.'},
    {by:'V01D',text:'or erased evidence for a paycheck. spare me the hero arc.'}]},
- bankHit:{id:'t_meridian',title:'someone DRAINED a Meridian holding account 👀',by:'p1ng',posts:[
-   {by:'p1ng',text:'six figures out of acct #887 overnight. surgical.'},
+ bankHit:{id:'t_meridian',title:'Meridian holding account #887 — the PAPERWORK walked 👀',by:'p1ng',posts:[
+   {by:'p1ng',text:'nothing was stolen. that\'s the scary part. somebody copied the whole transaction history and left the balance sitting there.'},
    {by:'ghosthz',text:'that was a laundering account — they literally can\'t report it lmao'},
    {by:'V01D',text:'that was MY mark. whoever you are, we have a problem.'}]},
  vaultLeak:{id:'t_vaultleak',title:'LEAK: numbered vault, bonds inside',by:'d3adhand',posts:[
@@ -2772,8 +3111,12 @@ const PANIC_THREADS={
 function forumThreads(){const base=FORUM.concat(Object.keys(EVENT_THREADS).filter(f=>S.flags[f]).map(f=>EVENT_THREADS[f]));
   const tier=wireTier(),panic=[];
   for(let t=4;t>=2;t--)if(tier>=t&&PANIC_THREADS[t])panic.push(PANIC_THREADS[t]);   // newest crisis on top
-  const all=panic.concat(base);
-  return S.flags.tutDone?[gigThread()].concat(all):all;}
+  const sieges=Object.keys(SIEGE_THREADS).filter(h=>{const M=(S.maps||{})[h];
+    return M&&(!M.settled||(AMBIENTADD['t_siege_'+h.toLowerCase()]||[]).length);}).map(h=>SIEGE_THREADS[h]);
+  const mine=Object.keys(MYTHREADS).map(k=>MYTHREADS[k]).reverse();
+  const all=sieges.concat(panic,base);
+  /* your own thread goes above everything — you just posted it */
+  return mine.concat(S.flags.tutDone?[gigThread()].concat(all):all);}
 function repBanner(){const rep=S.rep||0,rank=forumRank();
   let idx=FRANKS.findIndex(([t])=>rep<t);
   const nextT=idx>=0?FRANKS[idx][0]:null,prevT=idx>0?FRANKS[idx-1][0]:0;
@@ -2784,7 +3127,19 @@ function repBanner(){const rep=S.rep||0,rank=forumRank();
     <div class="rnext">${nextT?`<b>${nextT-rep}</b> rep to <b>${FRANKS[idx][1]}</b> · rep comes from booting people who earn it`
       :'top of the wire — nobody talks back to you any more'}</div>`;
   return el;}
-function renderForum(){const w=$('fwrap');if(!w)return;w.innerHTML='';w.appendChild(repBanner());
+const COMPOSE=[
+ ['challenge','"who wants me to boot them? drop IPs."','see whose defence is worth testing — how they answer depends on your rank'],
+ ['leads','"any $$$ leads?"','shake the board for paid work'],
+ ['upto','"what\'s everyone up to?"','just talk to people'],
+];
+function composeBox(){const el=document.createElement('div');el.id='newPost';
+  el.innerHTML=`<div class="np">＋ new post</div><div class="opts">`
+    +COMPOSE.map(([k,t,d])=>`<div class="opt" data-k="${k}">${t}<em>${d}</em></div>`).join('')+`</div>`;
+  el.querySelector('.np').onclick=()=>{el.classList.toggle('open');blip(700,0.04);};
+  el.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{const th=myThread(o.dataset.k);
+    setTimeout(()=>{const n=document.querySelector('.fthread');if(n)n.scrollIntoView&&n.scrollIntoView();},30);});
+  return el;}
+function renderForum(){const w=$('fwrap');if(!w)return;w.innerHTML='';w.appendChild(repBanner());w.appendChild(composeBox());
   forumThreads().forEach(th=>{const posts=th.posts.concat(AMBIENTADD[th.id]||[]);
     const el=document.createElement('div');el.className='fthread'+(fOpen.has(th.id)?' open':'')+(th._new?' new':'');
     el.innerHTML=`<div class="fh"><span class="ti">${th.title}</span><span class="meta">${posts.length} posts · ${th.by}</span></div>
@@ -2798,22 +3153,120 @@ function renderForum(){const w=$('fwrap');if(!w)return;w.innerHTML='';w.appendCh
     const post=()=>{const v=inp.value.trim();if(!v)return;(AMBIENTADD[th.id]=AMBIENTADD[th.id]||[]).push({by:'you',text:v});renderForum();blip(700,0.05);};
     btn.onclick=post;inp.onkeydown=e=>{if(e.key==='Enter')post();e.stopPropagation();};inp.onclick=e=>e.stopPropagation();
     w.appendChild(el);});}
+/* ---------- starting your own thread on the wire ---------- */
+const MYTHREADS={};
+/* how the board talks to you depends entirely on what your rep says you are */
+function repStanding(){const r=S.rep||0;return r>=900?3:r>=400?2:r>=120?1:0;}
+const CHALLENGE_YES=[
+ [ // nobody knows you
+  {by:'sk1d',text:'lol sure. %ip%. do your worst.'},
+  {by:'n1ght',text:'%ip%. i rent this box by the week and i want to see what you\'ve got.'}],
+ [ // known
+  {by:'v0xel',text:'alright, i\'ve heard the name. %ip%. don\'t embarrass me.'},
+  {by:'p1ng',text:'%ip%. i\'ve got a fullz chain up. curious how long it holds.'}],
+ [ // respected
+  {by:'m0th',text:'i\'ll bite. %ip%. if you drop me i\'ll say so publicly, that\'s the deal.'},
+  {by:'w1re',text:'%ip%. genuinely honoured to be asked. be gentle.'}],
+ [ // feared
+  {by:'d3adhand',text:'people are going to think i\'m insane for this. %ip%. go on then.'},
+  {by:'ghosthz',text:'%ip%. i want to be able to say i was on the receiving end of it.'}],
+];
+const CHALLENGE_NO=[
+ ['not clicking that. post your own IP first.','who is this','hard pass lol','ratio + you have no rep'],
+ ['maybe. not tonight.','i\'ve seen your rank. still no.','ask me when i\'ve had less to lose'],
+ ['not a chance. i\'ve seen what you did to the last one.','respectfully: no. i like my uptime.'],
+ ['absolutely not. i\'ve read the threads.','no. NO. why would anyone say yes to you.','some of us have jobs'],
+];
+const CHALLENGE_HEAD=[
+ 'who is this and why should we care',
+ 'alright, people know the name. brave of you.',
+ 'when %h% opens a thread the board reads it.',
+ 'the fact that you\'re ASKING is the flex. everyone knows you don\'t have to.',
+];
+const UPTO=[
+ 'three hours into a proxy and i think it is winning',
+ 'eating cold noodles over a gateway that will not hold',
+ 'watching a trace bar and pretending i am calm',
+ 'rewriting the same bypass for the fourth time tonight',
+ 'sitting on a box i should have left twenty minutes ago',
+ 'i have not seen daylight since tuesday and the job is not even done',
+ 'burning a botnet i paid too much for',
+ 'reading someone\'s memos. they are having a worse week than me.',
+ 'nothing. deliberately nothing. laying low and it is killing me.',
+ 'teaching my cousin what a firewall is. send help.',
+];
+const LEADS=[
+ 'heard %corp% still runs one password on their records box. that is all i am saying.',
+ 'freeport ring is soft right now if you have a decrypter',
+ 'somebody is paying real money for %what%. check the board.',
+ 'do not touch %corp% this week, they logged a friend of mine into a cell',
+ 'the boring hosts pay best. nobody guards a billing server.',
+];
+function myThread(kind){
+  const id='t_me_'+kind+'_'+RI(100,999);
+  const rank=repStanding(),head=CHALLENGE_HEAD[rank].replace(/%h%/g,S.handle);
+  let title,posts=[];
+  if(kind==='challenge'){
+    title='who wants me to boot them? drop IPs.';
+    posts.push({by:'you',text:'who wants me to boot them? drop IPs. see if your defence is strong enough.'});
+    posts.push({by:pick(HANDLES),text:head});
+    /* the higher you stand, the more people volunteer — and the more the refusals sting */
+    const yes=[0,1,1,2][rank]+(Math.random()<0.4?1:0);
+    const pool=CHALLENGE_YES[rank].slice();
+    for(let i=0;i<yes&&pool.length;i++){
+      const v=pool.splice(RI(0,pool.length-1),1)[0],ip=randIP();
+      S.volunteers=S.volunteers||{};S.volunteers[ip]={by:v.by,rep:12+rank*9+RI(0,10)};
+      posts.push({by:v.by,text:v.text.replace(/%ip%/g,ip)});}
+    const nos=[3,2,2,1][rank];
+    for(let i=0;i<nos;i++)posts.push({by:pick(HANDLES),text:pick(CHALLENGE_NO[rank]),hostile:rank===0});
+    if(yes)posts.push({by:'the wire',text:`▸ volunteered hosts are live. hit one with  boot <ip>  — they agreed, so there's no heat and no bad blood.`});
+    else posts.push({by:'the wire',text:'▸ nobody took you up on it. climb the board and ask again.'});
+  }else if(kind==='leads'){
+    title='any $$$ leads?';
+    posts.push({by:'you',text:'any $$$ leads? paying attention, not paying finder\'s fees.'});
+    refreshGigs();
+    for(let i=0;i<2;i++){const [corp,what]=pick(GIGCORPS);
+      posts.push({by:pick(HANDLES),text:pick(LEADS).replace(/%corp%/g,corp).replace(/%what%/g,what)});}
+    const fresh=genGig();GIGS.push(fresh);
+    posts.push({by:fresh.from,text:`actually yeah — [${fresh.id}] ${fresh.subj}, pays ${fresh.pay}c. it's on the board now.`});
+    posts.push({by:'the wire',text:owned('tools','wirecli')?`▸ take it with  gig ${fresh.id}`:'▸ install the board client to bid:  brew install wire'});
+  }else{
+    title='what\'s everyone up to?';
+    posts.push({by:'you',text:'what\'s everyone up to?'});
+    const seen=[];for(let i=0;i<4;i++){let l=pick(UPTO);if(seen.includes(l))l=pick(UPTO);seen.push(l);
+      posts.push({by:pick(HANDLES),text:l});}
+    if(rank>=2)posts.push({by:pick(HANDLES),text:`less than you, clearly. how is ${S.handle} even awake`});
+  }
+  const th={id,title,by:'you',posts,mine:true};
+  MYTHREADS[id]=th;th._new=false;fOpen.add(id);
+  worldBadges();renderForum();wireTick(S.handle,title);
+  notify('THE WIRE','your thread is live');blip(880,0.1);
+  return th;}
 function newForumThread(flag){if(S.flags[flag])return;S.flags[flag]=true;const th=EVENT_THREADS[flag];if(th)th._new=true;forumNew++;persist();worldBadges();
   if(th)notify('THE WIRE','new thread: '+th.title.slice(0,32));}
+/* newest wire chatter scrolls across the top of the screen so the board feels busy
+   even when you're not looking at it */
+let wireLive=[];
+function wireTick(by,text){wireLive.unshift(`<b>@${escapeHtml(by)}</b> ${escapeHtml(String(text)).slice(0,90)}`);
+  wireLive=wireLive.slice(0,5);const t=$('tkText');if(!t)return;
+  t.innerHTML=wireLive.join('   <span class="a">///</span>   ')||'the wire is quiet…';
+  t.style.animation='none';void t.offsetWidth;t.style.animation='';}
 function ambientPost(){if(!S||$('desktop').hidden)return;
   const tier=wireTier();
   // mostly current-mood posts, with some older chatter still bleeding through
   const t=Math.random()<0.72?tier:RI(0,tier);
   const th=pick(forumThreads()),tone=t===3?'dark':t===2?'panic':t===4?'calm':null;
-  (AMBIENTADD[th.id]=AMBIENTADD[th.id]||[]).push({by:pick(HANDLES),text:pick(AMBIENT_T[t]),tone});
-  th._new=true;forumNew++;worldBadges();
+  const by=pick(HANDLES),text=pick(AMBIENT_T[t]);
+  (AMBIENTADD[th.id]=AMBIENTADD[th.id]||[]).push({by,text,tone});
+  th._new=true;forumNew++;worldBadges();wireTick(by,text);
   if(!$('winForum').hidden)renderForum();}
 setInterval(()=>{if(!S||$('desktop').hidden)return;
   const tier=wireTier();
-  ambientPost();                                   // ~1/min baseline
-  if(tier>=2&&Math.random()<0.6)setTimeout(ambientPost,RI(6000,20000));   // panic doubles the traffic
-  if(tier>=3&&Math.random()<0.7)setTimeout(ambientPost,RI(22000,44000));  // bedlam triples it
-},52000);   // the wire never sleeps — ~1/min
+  ambientPost();                                                          // a post a minute, always
+  setTimeout(ambientPost,RI(14000,34000));                                // …usually two
+  if(tier>=2&&Math.random()<0.7)setTimeout(ambientPost,RI(8000,22000));   // panic doubles the traffic
+  if(tier>=3&&Math.random()<0.8)setTimeout(ambientPost,RI(24000,50000));  // bedlam triples it
+},58000);   // the wire never sleeps
 
 /* ================= WORLD EVENTS (living reactions) ================= */
 function worldMsg(type,arg){
@@ -2963,7 +3416,7 @@ function boot(){const saved=loadSave();
   $('loginBtn').onclick=()=>{ai();const h=($('handle').value.trim()||'ghost').replace(/[^a-zA-Z0-9_\-]/g,'').slice(0,14)||'ghost';S=defaultSave(h);persist();startDesktop();};
   $('continueBtn').onclick=()=>{ai();S=saved;S.seen=S.seen||['m0'];S.read=S.read||[];S.flags=S.flags||{};S.heat=S.heat||0;S.discovered=S.discovered||[];S.im=S.im||{};S.imUnread=S.imUnread||{};
     S.crackers=S.crackers||[];S.booters=S.booters||[];S.monitors=S.monitors||[];S.decoders=S.decoders||[];S.botnet=S.botnet||null;S.rep=S.rep||0;S.booted=S.booted||[];S.rerouted=S.rerouted||0;
-    S.resolved=S.resolved||{};S.unaware=S.unaware||{};S.trollIps=S.trollIps||{};S.maps=S.maps||{};S.alias=S.alias||{};S.settled=S.settled||{};S.tools=S.tools||[];S.explained=S.explained||[];
+    S.resolved=S.resolved||{};S.unaware=S.unaware||{};S.trollIps=S.trollIps||{};S.maps=S.maps||{};S.alias=S.alias||{};S.settled=S.settled||{};S.marks=S.marks||{};S.shas=S.shas||{};S.volunteers=S.volunteers||{};S.tools=S.tools||[];S.explained=S.explained||[];
     if(S.jobStarted==null)S.jobStarted=!!S.active;
     if(S.pendingClaim===undefined)S.pendingClaim=null;   // old saves mid-job stay playable
     for(const k in SOFT)if(S.soft[k]==null)S.soft[k]=SOFT[k].start;syncRoute();startDesktop();};
