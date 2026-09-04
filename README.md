@@ -29,15 +29,24 @@ sq exit                         close the session
 disconnect                      leave before the trace gets home
 ```
 
+Going after someone on the wire:
+
+```
+resolve V01D                    map their botnet, eliminate relays
+nmap gui V01D                   draw it — hover the nodes for IPs
+boot 210.161.245.60             call it. guess wrong and they'll say so publicly
+```
+
 ## Features
 
 - **20 story quests** across four acts, three endings, two post-ending endgame contracts
 - **Named arsenal** — Brew, HavenCracker, HavenCracker Redux, HeavenCrackR, Mythos Blackwing
-- **Decoders** — 1NetLynx, Parity, Parity Prime, Partisan Occulus, PPOP (VirtualEcholocation)
+- **Decoders & the nmap GUI** — 1NetLynx, Parity, Parity Prime, Partisan Occulus, PPOP (VirtualEcholocation). `resolve` draws the target's botnet as a live topology; hover a node to expose its address. Your decoder greys out the relays it can *prove* are dead ends — whatever is still lit is a candidate, and picking the real one is your call, not the tool's. Better decoders leave you fewer candidates; the premium ones name the origin outright.
 - **Botnets & monitors** — Fullz / Amorphous / R00tKernel, with MonitorMe, ObsidianGUI and KernelGuide
 - **Booters & forum reputation** — resolve an origin by social engineering or decoding, then drop them
 - **A living wire** — messenger DMs and a forum that escalates from idle chatter to outright panic as the story turns, then resolves after your ending
 - **Freeplay gigs** — an endless job board between contracts
+- **iAliasFast** — `brew install ialiasfast`, then bind any command you're sick of typing: `ias add dl sql delete all`
 - **Full CRT treatment** — curved glass, scanlines, chroma, rolling sync bar, generative ambient score
 
 ## Credits
