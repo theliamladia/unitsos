@@ -328,8 +328,15 @@ body.crt #content{margin:10px;width:calc(100% - 20px);height:calc(100% - 20px);}
 #nmapCanvas{flex:1;position:relative;min-height:0;overflow:hidden;
   background:radial-gradient(ellipse at 50% 45%,#08141e 0%,#03080d 100%);}
 #nmapCanvas svg{width:100%;height:100%;display:block;}
+#nmapCanvas.amorph{background:radial-gradient(ellipse at 50% 50%,#0d1020 0%,#04060d 70%);}
+#nmapCanvas.rk{background:linear-gradient(90deg,#03080d 0%,#071520 70%,#0b2418 100%);}
 .nmEdge{stroke:#11384b;stroke-width:1;}
 .nmEdge.hot{stroke:#1c5772;}
+.nmEdge.gone{stroke:#1a1016;stroke-dasharray:2 4;}
+.nmDot.ghost{fill:#060a10;stroke:#22384a;stroke-width:1;stroke-dasharray:2 2;}
+.nmDot.shell{fill:#0a1a2c;stroke:#2f6f96;stroke-width:1.4;}
+.nmShell{fill:none;stroke:#1d4a66;stroke-width:.8;opacity:.75;}
+.nmNode.hitme .nmDot{filter:drop-shadow(0 0 5px var(--cyan));}
 .nmNode{cursor:pointer;}
 .nmHit{fill:transparent;}
 .nmDot.unknown{fill:#0a2431;stroke:var(--cyan);stroke-width:1.6;animation:nmPulse 2.4s ease-in-out infinite;}
@@ -578,7 +585,7 @@ const MISSIONS=[
   body:`Helix sat on a drug trial that killed people, and they're about to IPO on it.\nTheir records box — password AND firewall. Delete trials.db. Make it look like it was never written.\nSome of us still think that matters.`},
  {id:'mb',from:'cr4sh',subj:'somebody needs to shut kr0nos up',rankReq:2,boot:true,
   obj:{type:'boot',handle:'kr0nos'},pay:900,rating:2,
-  body:`You've seen kr0nos in the threads. He's not a rival, he's a parasite — he's been threatening to post people's gateway logs, and two runners I know have gone dark over it.\n\nHere's the thing nobody tells rookies: <b>you cannot boot a handle.</b> A forum shows you a name, not an origin. You need his real IP first, and there are exactly two ways to get one:\n\n1. <b>Social engineering</b> — 'bait kr0nos'. You post something he can't resist clicking. When he bites, his origin leaks. Free. He's arrogant, he'll bite.\n2. <b>Software</b> — a Bloodhound Resolver correlates a handle across boards. Costs real credits, works on people too careful to click.\n\nOnce you have the IP: 'boot <ip>' with a booter loaded. Drop him. The wire will remember it.`},
+  body:`You've seen kr0nos in the threads. He's not a rival, he's a parasite — he's been threatening to post people's gateway logs, and two runners I know have gone dark over it.\n\nHere's the thing nobody tells rookies: <b>you cannot boot a handle.</b> A forum shows you a name, not an origin. You need his real IP first, and there are exactly two ways to get one:\n\n1. <b>Social engineering</b> — 'bait kr0nos'. You post something he can't resist clicking. When he bites, his origin leaks. Free. He's arrogant, he'll bite.\n2. <b>Decoding</b> — 'resolve kr0nos' walks his botnet and knocks out the relays it can prove are dead ends. Then 'nmap gui kr0nos' draws what's left. Hover a node and it gives up its address.\n\nDo both, in that order. 1NetLynx is free ('brew install 1netlynx') and it'll get you close, but on a Fullz chain it'll leave you staring at two hosts and no way to tell them apart — that's the part no tool does for you. So map him first, look at the picture, <em>then</em> bait him. When he bites, the map collapses and you'll see which of those two was always the real machine.\n\nLearn to read that picture here, where you get a free answer. The next one won't hand you one.\n\nThen 'boot <ip>' with a booter loaded. Drop him. The wire will remember it.`},
  {id:'m3',from:'a friend',subj:'fix a frame job',rankReq:3,target:'t_metro',
   obj:{type:'modify',file:'record_4471.dat'},pay:1500,rating:2,
   body:`A nineteen-year-old is doing eight years for something he didn't do. Metro PD records — password + firewall.\nrecord_4471.dat says CONVICTED. Use 'modify' to rewrite it to CLEARED. One keystroke changes a life. Don't overthink it.`},
@@ -930,6 +937,8 @@ const PROGINFO={
  monitorme:{n:'MonitorMe GUI',tag:'botnet monitor',what:'Pings the IPs in your botnet and tells you which one a reverse-trace has reached. Burn that IP and the trace loses the thread.',how:'monitor · burn &lt;ip&gt;'},
  wirecli:{n:'WireCLI',tag:'job board client',what:'The Wire\'s paid-work board is machine-readable — this is the client that reads it. Lists open freeplay gigs, takes one, and lets you walk away from a job that turns out hotter than it paid for.',how:'gig list · gig &lt;id&gt; · gig drop'},
  nmapgui:{n:'nmap GUI',tag:'recon',what:'Draws somebody\'s botnet as a live topology. Hover any node to expose its address. Your decoder greys out the relays it can prove are dead ends — whatever is still lit is a candidate, and choosing between them is your call, not the tool\'s.',how:'nmap gui &lt;handle&gt; · nmap &lt;handle&gt;'},
+ nmaprk:{n:'nmap GUI · R00tKernel',tag:'recon',what:'A R00tKernel botnet is sequential lines of relays all converging on one machine. Only the outermost live relay on a line can be reached — decode it to expose its address, flood it off, and the next one behind it steps forward. Clear a whole line and the machine at the end is yours. He can patch replacements onto a line while you work, so speed matters.',how:'resolve &lt;handle&gt; → boot &lt;exposed ip&gt; → repeat'},
+ nmapamorph:{n:'nmap GUI · Amorphous',tag:'recon',what:'An amorphous mesh has no order — every relay is reachable, but each one sits under layers of shell you have to strip before you can touch it. The trade is parallelism: a good decoder strips several at once, and you can flood several at once. Take the whole cloud down and the machine underneath is exposed.',how:'resolve &lt;handle&gt; → boot &lt;ip&gt; &lt;ip&gt; &lt;ip&gt;'},
  ialias:{n:'iAliasFast',tag:'utility',what:'A tiny alias engine. Bind any command you are sick of typing to a short name under the ias prefix.',how:'ias add sl sql seelogs · then ias sl'},
  parity:{n:'Parity via 1NetLynx',tag:'decoder',what:'Adds shaky amorphous-mesh support to 1NetLynx. It peels one node per pass and collapses about 4 times in 10 — but it is free, and it is the only free thing that touches a mesh.',how:'decode &lt;ip&gt;'},
  prime:{n:'Parity Prime',tag:'decoder',what:'A real amorphous decoder. Two nodes per pass, no collapses, and it walks sequential R00tKernel chains without complaining.',how:'decode &lt;ip&gt; · resolve &lt;handle&gt;'},
@@ -1020,7 +1029,8 @@ function jobSteps(m){
   const t=m.target?TARGETS[m.target]:null,steps=[];
   if(m.boot){const ip=(S.resolved||{})[m.obj.handle];
     const MM=(S.maps||{})[m.obj.handle];
-    if(MM&&!ip)steps.push({l:`narrow his botnet (${mapCands(MM).length} candidates)`,d:false});
+    if(MM&&MM.mode!=='classify')steps.push({l:MM.settled?'he stood down':`tear down his net (${MM.kills} of ${MM.nodes.length-1} relays down)`,d:!!MM.settled||!!coreNode(MM)&&coreNode(MM).st!=='hidden'});
+    else if(MM&&!ip)steps.push({l:`narrow his botnet (${mapCands(MM).length} candidates)`,d:false});
     steps.push({l:`get @${m.obj.handle}'s origin`,d:!!ip});
     steps.push({l:'own a booter',d:!!bestBooter()});
     steps.push({l:'boot his IP',d:(S.booted||[]).includes(m.obj.handle)});
@@ -1091,6 +1101,9 @@ function cmdBait(a){const raw=(a[0]||'').replace('@','');
   if(!t){pr('no such user on the wire.','err');return;}
   if((S.resolved||{})[t.h]){pr(`you already have ${t.h}'s origin: <span class="phos">${S.resolved[t.h]}</span>`,'warn');return;}
   if((S.booted||[]).includes(t.h)){pr(`${t.h} is already offline.`,'warn');return;}
+  if(t.net==='amorph'||t.net==='rootk'){
+    pr(`<span class="err">✗ ${t.h} won't click anything you post.</span>`);
+    pr(`<span class="dim">people who run ${NETNAME[t.net]} have been on this wire too long for that. you'll have to take it apart: <span class="c">resolve ${t.h}</span></span>`);return;}
   const line=pick(BAITS).replace(/%t%/g,t.h);
   pr(`<span class="dim">social engineering:</span> ${line}…`);
   const th=pick(forumThreads());
@@ -1099,10 +1112,14 @@ function cmdBait(a){const raw=(a[0]||'').replace('@','');
   runOp(`waiting for ${t.h} to take the bait`,4.0,()=>{
     const scripted=S.active==='mb'&&t.h==='kr0nos';        // the training mark always bites
     if(scripted||Math.random()<t.bite){
-      const ip=trollIp(t.h);(S.resolved=S.resolved||{})[t.h]=ip;(S.unaware=S.unaware||{})[t.h]=true;persist();
+      const ip=trollIp(t.h);(S.resolved=S.resolved||{})[t.h]=ip;(S.unaware=S.unaware||{})[t.h]=true;
+      const BM=(S.maps||{})[t.h];
+      if(BM){BM.nodes.forEach(n=>{n.st=n.origin?'origin':(n.st==='dead'?'dead':'relay');});BM.solved=true;renderNmap();}
+      persist();
       (AMBIENTADD[th.id]=AMBIENTADD[th.id]||[]).push({by:t.h,text:`what proof? there's nothing there. you're bluffing.`,hostile:true});
       pr(`<span class="ok">✦ ${t.h} clicked it.</span>`);
       pr(`<span class="phos">origin resolved → ${ip}</span>  <span class="dim">(saved to your links)</span>`);
+      if((S.maps||{})[t.h])pr('<span class="dim">the map just collapsed — every other node greyed out. that green one was always the machine.</span>');
       pr(`<span class="dim">now hit it: <span class="c">boot ${ip}</span></span>`);
       renderForum();tutHook('bait');blip(1000,0.14,'sine',0.06,1400);
     }else{
@@ -1114,15 +1131,18 @@ function cmdBait(a){const raw=(a[0]||'').replace('@','');
     persist();syncTop();});}
 
 /* ---------- NMAP GUI: someone else's botnet, drawn ----------
-   resolve no longer hands you an answer. it eliminates relays until your decoder
-   runs out of resolution — whatever candidates are left, you judge yourself. */
+   two different games behind one window:
+   · Fullz / bare gateway  → classify. the decoder eliminates relays, you name the origin.
+   · R00tKernel / Amorphous → siege. you decode a node to see it, then boot it off to
+     reach what was behind it. they watch you do it, and they get scared. */
 const NETSHAPE={
- none  :{n:'bare gateway',     base:1, shape:'point'},
- fullz :{n:'Fullz chain',      base:5, shape:'chain'},
- amorph:{n:'Amorphous mesh',   base:9, shape:'cloud'},
- rootk :{n:'R00tKernel chain', base:12,shape:'rings'},
+ none  :{n:'bare gateway',     base:1, shape:'point', mode:'classify'},
+ fullz :{n:'Fullz chain',      base:5, shape:'chain', mode:'classify'},
+ amorph:{n:'Amorphous mesh',   base:9, shape:'cloud', mode:'amorph'},
+ rootk :{n:'R00tKernel chain', base:12,shape:'rings', mode:'rk'},
 };
-/* residual = candidates the decoder CANNOT separate. 1 = it names the origin outright. */
+/* residual = candidates the decoder CANNOT separate (classify mode).
+   perPass  = nodes decoded per pass, and — on an amorphous mesh — nodes you can hit at once. */
 function decodeGrade(D,net){
   const cap=canDecode(D,net); if(!cap)return null;
   const g={cap,residual:2,perPass:2,collapse:0,speed:1,note:''};
@@ -1131,90 +1151,297 @@ function decodeGrade(D,net){
   else if(net==='fullz'){g.residual=D.tier>=2?1:2;g.perPass=1+D.tier;g.speed=0.85;}
   else if(net==='amorph'){
     if(D.amorph==='weak'){g.residual=4;g.perPass=1;g.collapse=0.35;g.speed=1.9;g.note='one node a pass, and it drops the key often';}
-    else if(D.amorph===true){g.residual=2;g.perPass=2;g.note='clean amorphous decode — two nodes a pass';}
-    else {g.residual=1;g.perPass=4;g.speed=0.75;g.note='multicore basetracking — it will name the origin';}
+    else if(D.amorph===true){g.residual=2;g.perPass=2;g.note='clean amorphous decode — two nodes at a time';}
+    else {g.residual=1;g.perPass=4;g.speed=0.75;g.note='multicore basetracking — four nodes at a time';}
   }else if(net==='rootk'){
     /* premium decoders pen straight through a R00tKernel chain */
-    if(D.rootk===true){g.residual=1;g.perPass=5;g.speed=0.55;g.note='R00tKernel bruteforce — it tears down five layers a pass';}
+    if(D.rootk===true){g.residual=1;g.perPass=5;g.speed=0.55;g.note='R00tKernel bruteforce — it reads five layers deep';}
     else {g.residual=4;g.perPass=1;g.collapse=0.3;g.speed=2.2;g.note='tracking a R00tKernel chain one layer at a time';}
   }
   return g;}
+function newNode(){return {ip:randIP(),st:'unknown',conf:0,x:0,y:0,ring:0,hp:0,line:0,pos:0,
+  up:RI(2,880),jit:+R(0.4,9.4).toFixed(1),ports:RI(1,5),os:pick(['linux 4.x','bsd','embedded','win-svc','unknown'])};}
 function netMap(h){S.maps=S.maps||{};
   if(S.maps[h])return S.maps[h];
   const t=TROLLS.find(x=>x.h===h); if(!t)return null;
   const net=t.net||'none',sh=NETSHAPE[net];
-  const count=Math.max(1,sh.base+Math.round((t.def-1)*1.6));   // higher-ranked people run bigger nets
-  const nodes=[];
-  for(let i=0;i<count;i++)nodes.push({ip:randIP(),st:'unknown',conf:0,x:0,y:0,ring:0,
-    up:RI(2,880),jit:+R(0.4,9.4).toFixed(1),ports:RI(1,5),os:pick(['linux 4.x','bsd','embedded','win-svc','unknown'])});
-  const oi=(sh.shape==='cloud')?RI(0,count-1):count-1;         // amorphous hides it anywhere; chains bury it deepest
-  nodes[oi].origin=true;nodes[oi].ip=trollIp(h);
-  layoutNet(nodes,sh.shape);
-  const M={h,net,shape:sh.shape,nodes,edges:netEdges(nodes,sh.shape),passes:0,misses:0,solved:false};
-  S.maps[h]=M;persist();return M;}
+  const M={h,net,shape:sh.shape,mode:sh.mode,def:t.def,nodes:[],edges:[],passes:0,misses:0,
+    solved:false,seen:false,fear:0,parley:0,angry:false,settled:null,kills:0};
+  if(sh.mode==='rk'){
+    const lines=t.def>=6?3:2;
+    for(let L=0;L<lines;L++){const depth=2+RI(1,3);
+      for(let i=0;i<depth;i++){const n=newNode();n.line=L;n.pos=i;n.st=i===0?'live':'hidden';n.hp=1;M.nodes.push(n);}}
+    const core=newNode();core.origin=true;core.core=true;core.ip=trollIp(h);core.st='hidden';core.line=-1;M.nodes.push(core);
+  }else if(sh.mode==='amorph'){
+    const count=7+t.def;
+    for(let i=0;i<count;i++){const n=newNode();n.st='live';n.hp=1+(Math.random()<0.45?1:0)+(t.def>=5?1:0);M.nodes.push(n);}
+    const core=newNode();core.origin=true;core.core=true;core.ip=trollIp(h);core.st='hidden';core.hp=1;M.nodes.push(core);
+  }else{
+    const count=Math.max(1,sh.base+Math.round((t.def-1)*1.6));   // higher-ranked people run bigger nets
+    for(let i=0;i<count;i++)M.nodes.push(newNode());
+    const oi=count-1;M.nodes[oi].origin=true;M.nodes[oi].ip=trollIp(h);
+  }
+  relayout(M);S.maps[h]=M;persist();return M;}
+function relayout(M){const N=M.nodes;
+  if(M.mode==='rk'){
+    const lines={};N.forEach(n=>{if(n.line>=0)(lines[n.line]=lines[n.line]||[]).push(n);});
+    const keys=Object.keys(lines);
+    keys.forEach((k,li)=>{const arr=lines[k].sort((a,b)=>a.pos-b.pos);
+      arr.forEach((n,i)=>{n.pos=i;n.x=.06+.62*(arr.length===1?.5:i/(arr.length-1));n.y=(li+1)/(keys.length+1);});});
+    const core=N.find(n=>n.core);if(core){core.x=.94;core.y=.5;}
+    M.edges=[];keys.forEach(k=>{const arr=lines[k].sort((a,b)=>a.pos-b.pos);
+      for(let i=0;i<arr.length-1;i++)M.edges.push([N.indexOf(arr[i]),N.indexOf(arr[i+1])]);
+      if(core&&arr.length)M.edges.push([N.indexOf(arr[arr.length-1]),N.indexOf(core)]);});
+    return;}
+  if(M.mode==='amorph'){
+    const n=N.length;N.forEach((d,i)=>{const a=i*2.3999+R(-.2,.2),r=.10+.35*Math.sqrt((i+.7)/n);
+      d.x=.5+Math.cos(a)*r;d.y=.5+Math.sin(a)*r;});
+    const core=N.find(x=>x.core);if(core){core.x=.5;core.y=.5;}
+    M.edges=[];for(let i=0;i<n;i++){M.edges.push([i,(i+1)%n]);M.edges.push([i,(i+RI(2,Math.max(2,n-2)))%n]);}
+    return;}
+  layoutNet(N,M.shape);M.edges=netEdges(N,M.shape);}
 function layoutNet(nodes,shape){const n=nodes.length;
   if(shape==='point'){nodes[0].x=.5;nodes[0].y=.5;return;}
   if(shape==='chain'){nodes.forEach((d,i)=>{d.x=.08+.84*(i/Math.max(1,n-1));d.y=.5+Math.sin(i*1.9)*.20;d.ring=i;});return;}
-  if(shape==='cloud'){nodes.forEach((d,i)=>{const a=i*2.3999+R(-.25,.25),r=.10+.34*Math.sqrt((i+.7)/n);
-    d.x=.5+Math.cos(a)*r;d.y=.5+Math.sin(a)*r;d.ring=0;});return;}
-  const rings=3,per=Math.ceil(n/rings);
-  nodes.forEach((d,i)=>{const ring=Math.min(rings-1,Math.floor(i/per)),k=i%per;
-    const a=(k/per)*Math.PI*2+ring*.8,rr=.42-ring*.13;
-    d.x=.5+Math.cos(a)*rr;d.y=.5+Math.sin(a)*rr;d.ring=ring;});}
+  nodes.forEach((d,i)=>{const a=i*2.3999+R(-.25,.25),r=.10+.34*Math.sqrt((i+.7)/n);
+    d.x=.5+Math.cos(a)*r;d.y=.5+Math.sin(a)*r;d.ring=0;});}
 function netEdges(nodes,shape){const e=[],n=nodes.length;
   if(shape==='point')return e;
   if(shape==='chain'){for(let i=0;i<n-1;i++)e.push([i,i+1]);return e;}
-  if(shape==='cloud'){for(let i=0;i<n;i++){const a=(i+1)%n,b=(i+RI(2,Math.max(2,n-2)))%n;
-    e.push([i,a]);if(b!==i&&b!==a)e.push([i,b]);}return e;}
-  for(let i=0;i<n;i++){const j=nodes.findIndex((x,k)=>k!==i&&x.ring===nodes[i].ring+1);
-    if(j>=0)e.push([i,j]);
-    const nx=nodes.findIndex((x,k)=>k>i&&x.ring===nodes[i].ring);if(nx>=0)e.push([i,nx]);}
+  for(let i=0;i<n;i++){e.push([i,(i+1)%n]);const b=(i+RI(2,Math.max(2,n-2)))%n;if(b!==i)e.push([i,b]);}
   return e;}
-/* the decoder's read on each surviving candidate. weak tools give you noise. */
+/* the decoder's read on each surviving candidate (classify mode). weak tools give you noise. */
 function scoreCandidates(M,g){
   const spread=g.residual<=1?60:g.residual===2?26:g.residual===3?15:8;
   M.nodes.forEach(n=>{if(n.st!=='unknown')return;
     n.conf=Math.round(clamp(R(18,52)+(n.origin?spread:0)+R(-6,6),3,99));});}
-function mapCands(M){return M.nodes.filter(n=>n.st==='unknown');}
+function mapCands(M){return M.mode==='classify'?M.nodes.filter(n=>n.st==='unknown')
+  :M.nodes.filter(n=>n.st==='live'||n.st==='hidden');}
 function mapNodeByIp(ip){const maps=S.maps||{};
   for(const h in maps){const n=(maps[h].nodes||[]).find(x=>x.ip===ip);if(n)return {M:maps[h],n};}
   return null;}
-function markSolvedIfAlone(M){const c=mapCands(M);
+function markSolvedIfAlone(M){if(M.mode!=='classify')return null;const c=mapCands(M);
   if(c.length===1){c[0].st='origin';M.solved=true;(S.resolved=S.resolved||{})[M.h]=c[0].ip;persist();return c[0];}
   return null;}
 
+/* ---------- siege: R00tKernel lines & Amorphous meshes ---------- */
+function frontier(M,line){return M.nodes.filter(n=>n.line===line&&n.st!=='dead').sort((a,b)=>a.pos-b.pos)[0]||null;}
+function rkLines(M){return [...new Set(M.nodes.filter(n=>n.line>=0).map(n=>n.line))].sort();}
+function lineClear(M,line){return !M.nodes.some(n=>n.line===line&&n.st!=='dead');}
+function coreNode(M){return M.nodes.find(n=>n.core);}
+function siegeLive(M){return M.nodes.filter(n=>!n.core&&n.st!=='dead');}
+function nodeAttackable(M,n){
+  if(n.st==='dead')return false;
+  if(M.mode==='rk'){if(n.core)return n.st==='live';return n.st==='live'&&n.hp<=0&&frontier(M,n.line)===n;}
+  if(M.mode==='amorph')return n.st==='live'&&n.hp<=0;
+  return n.st==='unknown'||n.st==='origin';}
+/* expose the core once the way in is clear */
+function checkCore(M){const core=coreNode(M);if(!core||core.st!=='hidden')return false;
+  const open=M.mode==='rk'?rkLines(M).some(l=>lineClear(M,l)):siegeLive(M).length===0;
+  if(!open)return false;
+  core.st='live';core.hp=1;(S.resolved=S.resolved||{})[M.h]=core.ip;M.solved=true;persist();
+  pr('');pr(`<span class="phos">✦ the last relay is gone — you're looking straight at the machine.</span>`);
+  pr(`<span class="phos">  @${M.h} → ${core.ip}</span>  <span class="dim">decode it, then <span class="c">boot ${core.ip}</span></span>`);
+  core.hp=0;blip(1100,0.22,'sine',0.06,1600);return true;}
+
+function siegeDecode(M,D,g){
+  /* R00tKernel: read down the line. Amorphous: strip a layer off several nodes at once. */
+  if(M.mode==='rk'){
+    let seen=0;const notes=[];
+    rkLines(M).forEach(L=>{const arr=M.nodes.filter(n=>n.line===L&&n.st!=='dead').sort((a,b)=>a.pos-b.pos);
+      for(let i=0;i<arr.length&&i<g.perPass;i++){const n=arr[i];
+        if(n.st==='hidden'){n.st='live';n.hp=1;}
+        if(n.hp>0&&i===0){n.hp=0;notes.push(`  <span class="ok">◂ line ${L+1}</span> <span class="phos">${n.ip}</span> <span class="dim">— exposed, floodable</span>`);seen++;}
+        else if(n.st==='live'&&i>0){notes.push(`  <span class="dim">◂ line ${L+1} · ${i} deep: ${n.ip}</span>`);seen++;}}});
+    notes.forEach(x=>pr(x));
+    return seen;}
+  /* amorphous */
+  const pool=M.nodes.filter(n=>n.st==='live'&&n.hp>0);
+  if(!pool.length&&coreNode(M).st==='hidden')return 0;
+  let done=0;
+  for(let i=0;i<g.perPass&&pool.length;i++){
+    const n=pool.splice(RI(0,pool.length-1),1)[0];n.hp--;done++;
+    pr(n.hp<=0?`  <span class="ok">◂ ${n.ip}</span> <span class="dim">— shell stripped, floodable</span>`
+              :`  <span class="dim">◂ ${n.ip} — ${n.hp} layer${n.hp===1?'':'s'} of shell left</span>`);}
+  const core=coreNode(M);if(core&&core.st==='live'&&core.hp>0&&!done){core.hp=0;pr(`  <span class="ok">◂ ${core.ip}</span> <span class="dim">— the machine itself. floodable.</span>`);done++;}
+  return done;}
+
+const SIEGE_TAUNT=[
+ "somebody is chewing on my relays. cute. i have more.",
+ "@%h% you are burning booter time on machines i rent by the hour.",
+ "whoever is hitting my chain — i can see you doing it. keep going, it's funny.",
+ "losing nodes tonight. not mine that matter. @%h% try harder.",
+ "@%h% every box you drop costs you more than it costs me.",
+];
+const SIEGE_PANIC=[
+ "why are you still going. you made your point.",
+ "@%h% i'm asking you to stop.",
+ "that was the last spare i had. @%h% please.",
+];
+function siegeTaunt(M,panicked){const th=pick(forumThreads());
+  const line=pick(panicked?SIEGE_PANIC:SIEGE_TAUNT).replace(/%h%/g,S.handle);
+  (AMBIENTADD[th.id]=AMBIENTADD[th.id]||[]).push({by:M.h,text:line,hostile:!panicked});
+  th._new=true;forumNew++;worldBadges();notify('THE WIRE','@'+M.h+' posted about you');
+  if(!$('winForum').hidden)renderForum();}
+function siegeFear(M,amount){
+  const before=M.fear;M.fear=clamp(M.fear+amount,0,100);persist();
+  if(M.fear<45&&Math.random()<0.45)siegeTaunt(M,false);
+  else if(M.fear>=45&&M.fear<78&&before<45&&M.parley<1)siegeParley(M,1);
+  else if(M.fear>=78&&M.parley<2)siegeParley(M,2);
+  else if(M.fear>=55&&Math.random()<0.3)siegeTaunt(M,true);}
+function tributeAmount(M,level){return Math.round(M.def*(level>=2?820:430)+RI(200,900));}
+function siegeParley(M,level){M.parley=level;persist();
+  const h=M.h;
+  if(!CONTACTS[h])CONTACTS[h]={n:h,tag:'the wire · hostile'};
+  const text=level>=2
+    ? `okay. OKAY. you've taken the whole thing apart and i can't patch it fast enough.\n\ni'm not doing this any more. name it and i'll do it, just get off my pipe.`
+    : `stop.\n\ni don't know what i said to you and i don't care. you've dropped ${M.kills} of my boxes and i'm running out of spares.\n\nwhat do you want.`;
+  const bribe=tributeAmount(M,level);
+  imSend(h,text,[
+    {label:'▶ tell him where to go',action:'siege',kind:'talk',h},
+    {label:`▶ demand tribute — ${bribe}c`,action:'siege',kind:'tribute',h},
+    {label:'▶ accept his surrender',action:'siege',kind:'accept',h},
+  ]);
+  pr('');pr(`<span class="warn">◈ @${h} is messaging you.</span> <span class="dim">open <span class="c">Messenger</span>.</span>`);
+  blip(560,0.2,'sine',0.05,760);}
+function siegeReply(h,kind){
+  const M=(S.maps||{})[h];if(!M)return;
+  const t=TROLLS.find(x=>x.h===h)||{def:M.def};
+  if(kind==='talk'){
+    M.angry=true;M.fear=clamp(M.fear-12,0,100);S.rep=(S.rep||0)+2;persist();syncTop();
+    imSend(h,`fine. FINE. i've got spares you haven't found and i'm patching every line you touch.\n\nsee you on the other end of it.`);
+    siegeTaunt(M,false);
+    pr(`<span class="warn">you told @${h} where to go. he's patching harder now — expect replacements. rep +2.</span>`);
+    renderNmap();return;}
+  if(kind==='tribute'){
+    const need=M.parley>=2?0:65;
+    if(M.fear<need){
+      M.fear=clamp(M.fear-20,0,100);M.angry=true;persist();
+      imSend(h,`tribute? you've dropped a couple of rentals and you think i'm broke?\n\nno. keep swinging.`);
+      siegeTaunt(M,false);
+      pr(`<span class="err">✗ he isn't scared enough to pay. he's scared enough to be insulted. take more of his net first.</span>`);
+      renderNmap();return;}
+    const amt=tributeAmount(M,M.parley);
+    S.creds+=amt;const gain=Math.round(t.def*5+8);S.rep=(S.rep||0)+gain;
+    imSend(h,`sent. that's everything liquid i have.\n\nwe're done. don't come back.`);
+    endSiege(M,'tribute',`<span class="ok">✦ @${h} paid up — +${amt}c, rep +${gain}.</span>`);
+    pr('<span class="dim">he stays online. he also stays quiet. everyone on the wire notices which.</span>');return;}
+  if(kind==='accept'){
+    const gain=Math.round(t.def*9+20);S.rep=(S.rep||0)+gain;
+    imSend(h,`…thank you.\n\ni'm off the boards. you won't see me again.`);
+    endSiege(M,'surrender',`<span class="ok">✦ @${h} stood down — rep +${gain}.</span>`);
+    pr('<span class="dim">faster than tearing the rest of it down. worth less than the kill, worth more than your time.</span>');}}
+function endSiege(M,how,line){
+  M.settled=how;M.solved=true;const core=coreNode(M);
+  if(core){core.st='origin';(S.resolved=S.resolved||{})[M.h]=core.ip;}
+  M.nodes.forEach(n=>{if(n.st==='hidden'||n.st==='live')if(!n.core)n.st='relay';});
+  if(!(S.booted||[]).includes(M.h))(S.booted=S.booted||[]).push(M.h);
+  (S.settled=S.settled||{})[M.h]=how;
+  persist();syncTop();
+  pr('');pr(line);
+  const th=pick(forumThreads());
+  (AMBIENTADD[th.id]=AMBIENTADD[th.id]||[]).push(
+    how==='tribute'?{by:'p1ng',text:`${M.h} has gone very quiet all of a sudden. wonder what that cost him.`}
+                   :{by:'cr4sh',text:`${M.h} deleted his posts and walked. ${S.handle} did that without dropping him. cold.`});
+  th._new=true;forumNew++;worldBadges();renderForum();renderNmap();
+  const am=activeMission();
+  if(am&&am.obj&&am.obj.type==='boot'&&am.obj.handle===M.h&&!am._done){am._done=true;completeMission(am);}
+  chord&&chord([440,554,659]);}
+/* flooding one node of a siege net */
+function siegeBoot(M,list,B){
+  const names=list.map(n=>n.ip).join(', ');
+  artLine(ART[bestBooter()]);G.active2=true;
+  runOp(`${B.n} → flooding ${list.length>1?list.length+' nodes':names}`,3.0+list.length*0.4,()=>{
+    G.active2=false;let killed=0;
+    list.forEach(n=>{
+      const win=(B.power+Math.min(3,botIPs().length/8))>=Math.max(1,M.def-1);
+      if(!win){pr(`<span class="err">✗ ${n.ip} soaked it — that relay is bigger than your booter.</span>`);return;}
+      n.st='dead';killed++;M.kills++;
+      pr(`<span class="ok">✦ ${n.ip} dropped.</span>`);
+      if(n.core){coreDropped(M);return;}
+      if(M.mode==='rk'){
+        const chance=clamp(0.16+M.def*0.03-(DECODERS[bestDecoder()]||{tier:1}).tier*0.03+(M.angry?0.15:0),0.05,0.5);
+        if(Math.random()<chance){const nn=newNode();nn.line=n.line;nn.pos=-1;nn.st='live';nn.hp=1;M.nodes.push(nn);
+          pr(`<span class="warn">⚠ he patched a replacement onto line ${n.line+1} — the way in just got longer.</span>`);}}
+    });
+    relayout(M);
+    if(killed&&!M.settled){
+      const prog=M.kills/Math.max(1,M.nodes.filter(x=>!x.core).length);
+      siegeFear(M,(10+28*prog)*(1.4-M.def*0.08)*killed);
+      S.heat=clamp((S.heat||0)+3*killed,0,100);updateHeat();
+      checkCore(M);}
+    persist();syncTop();renderNmap();});}
+function coreDropped(M){
+  const t=TROLLS.find(x=>x.h===M.h)||{def:M.def,h:M.h};
+  (S.booted=S.booted||[]).push(M.h);
+  const gain=t.def*14+12,before=forumRank();S.rep=(S.rep||0)+gain;
+  pr(`<span class="ok">✦ ${M.h} DROPPED — you took the whole net apart to get there.</span>`);
+  pr(`<span class="phos">forum rep +${gain} → ${S.rep} (${forumRank()})</span>`);
+  if(forumRank()!==before)setTimeout(()=>{pr('');
+    pr('<span class="m">╔══════════════════════════════════════╗</span>');
+    pr(`<span class="m">║</span>  <span class="phos">▲ THE WIRE RECOGNISES YOU</span>`);
+    pr(`<span class="m">║</span>  <span class="dim">${before}</span> → <span class="ok" style="font-size:14px;">${forumRank()}</span>`);
+    pr('<span class="m">╚══════════════════════════════════════╝</span>');chord([523,659,784]);},700);
+  bootThreadPost(t,true);tutHook('boot');persist();syncTop();renderForum();worldBadges();
+  const am=activeMission();
+  if(am&&am.obj&&am.obj.type==='boot'&&am.obj.handle===M.h&&!am._done){am._done=true;completeMission(am);}}
+
 /* ---- the window ---- */
 let nmapH=null,nmapSel=null;
-function openNmap(h){nmapH=h;nmapSel=null;openWin('NetMap',true);renderNmap();explain('nmapgui');}
-function nmStatus(n){return n.st==='origin'?'<span class="ok">ORIGIN — this is the machine</span>'
-  :n.st==='relay'?'<span class="dim">relay — eliminated</span>'
-  :n.st==='dead'?'<span class="err">offline — you flooded this one</span>'
-  :'<span class="warn">unclassified — candidate</span>';}
+function nmapSeen(h){const M=(S.maps||{})[h];return !!(M&&M.seen);}
+function openNmap(h){nmapH=h;nmapSel=null;
+  const M=(S.maps||{})[h];if(M&&!M.seen){M.seen=true;persist();}
+  openWin('NetMap',true);renderNmap();explain(M&&M.mode==='rk'?'nmaprk':M&&M.mode==='amorph'?'nmapamorph':'nmapgui');}
+function nmStatus(M,n){
+  if(n.st==='dead')return '<span class="err">offline — you dropped this one</span>';
+  if(n.st==='relay')return '<span class="dim">relay — eliminated</span>';
+  if(n.st==='origin')return '<span class="ok">ORIGIN — this is the machine</span>';
+  if(M.mode==='classify')return '<span class="warn">unclassified — candidate</span>';
+  if(n.st==='hidden')return '<span class="dim">behind a live relay — decode your way to it</span>';
+  if(n.core)return '<span class="ok">THE MACHINE — flood it and he\'s done</span>';
+  if(n.hp>0)return `<span class="warn">shelled — ${n.hp} layer${n.hp===1?'':'s'} left. run <span class="c">resolve ${M.h}</span></span>`;
+  if(M.mode==='rk'&&frontier(M,n.line)!==n)return '<span class="dim">covered by the relay in front of it</span>';
+  return '<span class="ok">exposed — floodable</span>';}
+function nmDotClass(M,n){
+  if(n.st==='dead')return 'dead';
+  if(n.st==='relay')return 'relay';
+  if(n.st==='origin'||(n.core&&n.st==='live'))return 'origin';
+  if(n.st==='hidden')return 'ghost';
+  if(M.mode==='classify')return 'unknown';
+  return n.hp>0?'shell':'unknown';}
 function renderNmap(){
   const head=$('nmapHead'),cvs=$('nmapCanvas'),read=$('nmapRead');
   if(!head||!cvs)return;
   if(!nmapH||!(S.maps||{})[nmapH]){head.innerHTML='<span>no host mapped</span>';
     cvs.innerHTML='';read.innerHTML='<span class="rk">run <span class="c">resolve &lt;handle&gt;</span> first, then <span class="c">nmap gui &lt;handle&gt;</span>.</span>';return;}
-  const M=S.maps[nmapH],cands=mapCands(M),did=bestDecoder(),D=did?DECODERS[did]:null;
+  const M=S.maps[nmapH],did=bestDecoder(),D=did?DECODERS[did]:null;
   const off=(S.booted||[]).includes(M.h);
+  cvs.className=M.mode;
+  let state;
+  if(off)state=`<span style="color:var(--dim)">${M.settled==='tribute'?'paid you off':M.settled?'stood down':'host offline'}</span>`;
+  else if(M.mode==='classify')state=M.solved?'<span style="color:var(--green)">origin identified</span>'
+    :`<span style="color:var(--amber)">${mapCands(M).length} candidates</span>`;
+  else state=`<span style="color:var(--amber)">${siegeLive(M).length} relay${siegeLive(M).length===1?'':'s'} standing</span> · <span style="color:var(--dim)">${M.kills} dropped</span>`;
+  const fear=M.mode==='classify'||off?'':`<span>nerve <b style="color:${M.fear>70?'var(--red)':M.fear>40?'var(--amber)':'var(--cyan)'}">${Math.round(100-M.fear)}%</b></span>`;
   head.innerHTML=`<span>target <b>@${M.h}</b></span><span>net <b>${NETSHAPE[M.net].n}</b></span>
-    <span>nodes <b>${M.nodes.length}</b></span><span>passes <b>${M.passes}</b></span>
-    <span>${off?'<span style="color:var(--dim)">host offline</span>':M.solved?'<span style="color:var(--green)">origin identified</span>'
-      :`<span style="color:var(--amber)">${cands.length} candidate${cands.length===1?'':'s'}</span>`}</span>
+    <span>nodes <b>${M.nodes.length}</b></span><span>passes <b>${M.passes}</b></span>${fear}<span>${state}</span>
     <span class="rk">hover a node for its address</span>`;
   const W=560,H=250,PX=34,PY=26;
   const X=n=>PX+n.x*(W-PX*2),Y=n=>PY+n.y*(H-PY*2);
   let svg=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
   M.edges.forEach(([a,b])=>{const p=M.nodes[a],q=M.nodes[b];if(!p||!q)return;
-    const hot=p.st==='unknown'&&q.st==='unknown';
-    svg+=`<line class="nmEdge${hot?' hot':''}" x1="${X(p).toFixed(1)}" y1="${Y(p).toFixed(1)}" x2="${X(q).toFixed(1)}" y2="${Y(q).toFixed(1)}"/>`;});
-  M.nodes.forEach((n,i)=>{const x=X(n),y=Y(n),r=n.st==='unknown'?6.5:n.st==='origin'?8:4.5;
-    const lab=n.st==='unknown'||n.st==='origin'?n.ip:n.ip;
-    svg+=`<g class="nmNode${nmapSel===i?' sel':''}" data-i="${i}">
-      <circle class="nmHit" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="15"/>
-      <circle class="nmDot ${n.st}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}"/>
-      ${n.st==='unknown'&&n.conf?`<text class="nmConf" x="${x.toFixed(1)}" y="${(y-11).toFixed(1)}" text-anchor="middle">${n.conf}%</text>`:''}
-      <text class="nmTag" x="${x.toFixed(1)}" y="${(y+18).toFixed(1)}" text-anchor="middle">${lab}</text></g>`;});
+    const dead=p.st==='dead'||q.st==='dead',hot=nodeAttackable(M,p)||nodeAttackable(M,q);
+    svg+=`<line class="nmEdge${dead?' gone':hot?' hot':''}" x1="${X(p).toFixed(1)}" y1="${Y(p).toFixed(1)}" x2="${X(q).toFixed(1)}" y2="${Y(q).toFixed(1)}"/>`;});
+  M.nodes.forEach((n,i)=>{const x=X(n),y=Y(n),cls=nmDotClass(M,n);
+    const r=cls==='origin'?8:cls==='ghost'?4:n.st==='dead'||n.st==='relay'?4.5:6.5;
+    const lab=n.st==='hidden'?'?? · ?? · ??':n.ip;
+    let shells='';
+    for(let k=0;k<(n.hp||0);k++)shells+=`<circle class="nmShell" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r+3.5+k*3.2).toFixed(1)}"/>`;
+    svg+=`<g class="nmNode${nmapSel===i?' sel':''}${nodeAttackable(M,n)?' hitme':''}" data-i="${i}">
+      <circle class="nmHit" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="15"/>${shells}
+      <circle class="nmDot ${cls}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}"/>
+      ${M.mode==='classify'&&n.st==='unknown'&&n.conf?`<text class="nmConf" x="${x.toFixed(1)}" y="${(y-11).toFixed(1)}" text-anchor="middle">${n.conf}%</text>`:''}
+      <text class="nmTag" x="${x.toFixed(1)}" y="${(y+18+(n.hp||0)*3).toFixed(1)}" text-anchor="middle">${lab}</text></g>`;});
   svg+='</svg>';cvs.innerHTML=svg;
   const gs=cvs.querySelectorAll('.nmNode');
   gs.forEach(g=>{
@@ -1226,23 +1453,33 @@ function renderNmap(){
       gs.forEach(x=>x.classList.toggle('sel',+x.dataset.i===i));
       nmRead(M,i,true);blip(660,0.04);});});
   nmRead(M,nmapSel,nmapSel!==null);}
+function nmSummary(M){
+  const off=(S.booted||[]).includes(M.h);
+  if(off)return `<span class="rk">${M.settled==='tribute'?'he paid and went quiet.':M.settled?'he stood down and left the boards.':'this one is finished.'}</span>`;
+  if(M.mode==='classify')return M.solved
+    ? `<span class="rk">origin:</span> <span class="ok">${(S.resolved||{})[M.h]}</span> — <span class="rk">hit it with</span> <span class="c">boot ${(S.resolved||{})[M.h]}</span>`
+    : `<span class="rk">${mapCands(M).length} unclassified hosts. your decoder can't separate them — read the fingerprints and pick one.</span><br><span class="rk">a wrong call costs you rep and tells them somebody is looking.</span>`;
+  const ready=M.nodes.filter(n=>nodeAttackable(M,n));
+  if(M.mode==='rk')return `<span class="rk">${rkLines(M).length} sequential lines converge on his machine. only the outermost relay on a line can be hit — drop it and the next one steps up.</span><br>
+    <span class="rk">${ready.length?'floodable now: ':'nothing exposed. run '}</span>${ready.length?ready.map(n=>`<span class="c">${n.ip}</span>`).join(' · '):`<span class="c">resolve ${M.h}</span>`}`;
+  const par=(decodeGrade(DECODERS[bestDecoder()]||{},M.net)||{perPass:1}).perPass;
+  return `<span class="rk">no order to a mesh — every shell you strip is another node you can hit, and you can hit ${par>90?'all of them':'up to '+par} at once.</span><br>
+    <span class="rk">${ready.length?'floodable now: ':'everything is still shelled. run '}</span>${ready.length?ready.map(n=>`<span class="c">${n.ip}</span>`).join(' · '):`<span class="c">resolve ${M.h}</span>`}`;}
 function nmRead(M,i,sel){const read=$('nmapRead');if(!read)return;
-  if(i===null||i===undefined||!M.nodes[i]){
-    const c=mapCands(M);
-    read.innerHTML=M.solved?`<span class="rk">origin:</span> <span class="ok">${(S.resolved||{})[M.h]}</span> — <span class="rk">hit it with</span> <span class="c">boot ${(S.resolved||{})[M.h]}</span>`
-      :`<span class="rk">${c.length} unclassified host${c.length===1?'':'s'}. your decoder can't separate them — read the fingerprints and pick one.</span><br>
-        <span class="rk">a wrong call costs you rep and tells them somebody is looking.</span>`;
-    return;}
+  if(i===null||i===undefined||!M.nodes[i]){read.innerHTML=nmSummary(M);return;}
   const n=M.nodes[i],off=(S.booted||[]).includes(M.h);
+  if(n.st==='hidden'){read.innerHTML=`<span class="rk">addr</span> <span class="rv" style="color:var(--dim)">?? · ?? · ??</span>
+    <span class="rk">depth</span> <span class="rv">${M.mode==='rk'?'line '+(n.line+1)+', '+(n.pos+1)+' deep':'—'}</span><br>${nmStatus(M,n)}`;return;}
   read.innerHTML=`<span class="rk">addr</span> <span class="rv" style="color:var(--phos)">${n.ip}</span>
-     <span class="rk">depth</span> <span class="rv">${M.shape==='cloud'?'—':'layer '+(n.ring+1)}</span>
+     <span class="rk">depth</span> <span class="rv">${M.mode==='rk'?(n.core?'core':'line '+(n.line+1)+', '+(n.pos+1)+' deep'):M.mode==='amorph'?(n.core?'core':'mesh'):'layer '+(n.ring+1)}</span>
      <span class="rk">uptime</span> <span class="rv">${n.up}h</span>
      <span class="rk">jitter</span> <span class="rv">${n.jit}ms</span>
      <span class="rk">svcs</span> <span class="rv">${n.ports}</span>
      <span class="rk">os</span> <span class="rv">${n.os}</span><br>
-     ${nmStatus(n)}${n.st==='unknown'&&n.conf?` <span class="rk">· decoder confidence</span> <span style="color:var(--amber)">${n.conf}%</span>`:''}
-     ${sel&&!off&&(n.st==='unknown'||n.st==='origin')?`<br><button id="nmBoot">▶ boot ${n.ip}</button>`:''}`;
+     ${nmStatus(M,n)}${M.mode==='classify'&&n.st==='unknown'&&n.conf?` <span class="rk">· decoder confidence</span> <span style="color:var(--amber)">${n.conf}%</span>`:''}
+     ${sel&&!off&&nodeAttackable(M,n)?`<br><button id="nmBoot">▶ boot ${n.ip}</button>`:''}`;
   const b=$('nmBoot');if(b)b.onclick=()=>{openWin('Terminal',true);cmdBoot([n.ip]);};}
+
 function cmdNmap(a){
   const sub=(a[0]||'').toLowerCase();
   if(!bestDecoder()){pr('<span class="err">nmap: no decoder installed.</span>');
@@ -1254,7 +1491,8 @@ function cmdNmap(a){
   if(!t){pr('no such user on the wire.','err');return;}
   const M=(S.maps||{})[t.h];
   if(!M){pr(`you haven't mapped ${t.h}'s network. <span class="c">resolve ${t.h}</span> first.`,'err');return;}
-  if(gui){openNmap(t.h);pr(`<span class="dim">nmap gui → @${t.h} · ${M.nodes.length} nodes · hover a node to expose its address.</span>`);return;}
+  if(gui){openNmap(t.h);tutHook('nmapgui');
+    pr(`<span class="dim">nmap gui → @${t.h} · ${M.nodes.length} nodes · hover a node to expose its address.</span>`);return;}
   pr(`<span class="c">@${t.h}</span> <span class="dim">— ${NETSHAPE[M.net].n}, ${M.nodes.length} nodes, ${M.passes} decode pass(es)</span>`);
   M.nodes.forEach(n=>pr(`  ${n.st==='unknown'?'<span class="warn">?</span>':n.st==='origin'?'<span class="ok">◉</span>':n.st==='dead'?'<span class="err">×</span>':'<span class="dim">·</span>'} `
     +`<span class="${n.st==='relay'||n.st==='dead'?'dim':'phos'}">${n.ip}</span>`
@@ -1283,6 +1521,22 @@ function cmdResolve(a){const raw=(a[0]||'').replace('@','');
     pr('<span class="dim">you need a stronger decoder — or <span class="c">bait</span> them into revealing it themselves.</span>');return;}
   if(g.note)pr(`<span class="dim">${g.note}.</span>`);
   const M=netMap(t.h);
+  if(M.mode!=='classify'){
+    if(M.settled||(S.booted||[]).includes(t.h)){pr(`${t.h} is done. nothing left to decode.`,'warn');openNmap(t.h);return;}
+    if(D.sonic)pr('<span class="phos">VirtualEcholocation: sonicmapping the entire net in one pass…</span>');
+    const secs0=((3.5+(M.net==='rootk'?5:4))/(0.5+D.tier*0.55))*g.speed;
+    runOp(`${D.n} → decoding ${t.h}'s ${M.net==='rootk'?'chain':'mesh'}`,secs0,()=>{
+      if(g.collapse&&Math.random()<g.collapse){
+        pr(`<span class="err">✗ pass collapsed — ${D.n} lost the key.</span>`);
+        pr('<span class="dim">run it again, or upgrade your decoder.</span>');return;}
+      M.passes++;tutHook('resolve');
+      const got=siegeDecode(M,D,g);
+      if(!got)pr('<span class="dim">nothing new to read — everything reachable is already exposed. drop something.</span>');
+      const ready=M.nodes.filter(n=>nodeAttackable(M,n));
+      if(ready.length)pr(`<span class="phos">▸ floodable now: ${ready.map(n=>n.ip).join(' · ')}</span>`
+        +(M.mode==='amorph'&&ready.length>1?` <span class="dim">— <span class="c">boot ${ready.slice(0,2).map(n=>n.ip).join(' ')}</span> hits them together</span>`:''));
+      persist();openNmap(t.h);renderNmap();});
+    return;}
   if(mapCands(M).length<=g.residual&&M.passes){
     pr(`<span class="warn">${D.n} has taken you as far as it goes — ${mapCands(M).length} hosts it can't separate.</span>`);
     pr('<span class="dim">read the map yourself: <span class="c">nmap gui '+t.h+'</span> — or come back with a better decoder.</span>');
@@ -1299,7 +1553,7 @@ function cmdResolve(a){const raw=(a[0]||'').replace('@','');
     const kill=Math.min(g.perPass,Math.max(0,pool.length-Math.max(0,g.residual-1)));
     for(let k=0;k<kill;k++){const idx=RI(0,pool.length-1),pnode=pool.splice(idx,1)[0];
       pnode.st='relay';pr(`  <span class="dim">◂ ${pnode.ip} — relay, dead end</span>`);}
-    scoreCandidates(M,g);
+    scoreCandidates(M,g);tutHook('resolve');
     const solved=markSolvedIfAlone(M);
     if(solved){
       pr(`<span class="phos">✦ origin resolved → ${solved.ip}</span>`);
@@ -1311,6 +1565,31 @@ function cmdResolve(a){const raw=(a[0]||'').replace('@','');
       pr('<span class="dim">the map is open — hover the nodes, read the fingerprints, and call it: <span class="c">nmap gui '+t.h+'</span></span>');
       blip(520,0.1,'sine',0.05,700);}
     persist();openNmap(t.h);renderNmap();});}
+/* boot on a siege net: one node, or several at once on an amorphous mesh */
+function siegeBootCmd(M,a,forced){
+  const ips=a.map(x=>String(x).replace('@','').trim()).filter(Boolean);
+  const picked=[],bad=[];
+  ips.forEach(ip=>{const n=M.nodes.find(x=>x.ip===ip);
+    if(!n){bad.push([ip,'not a node on this map']);return;}
+    if(n.st==='dead'){bad.push([ip,'already down']);return;}
+    if(n.st==='hidden'){bad.push([ip,'still covered — you can\'t reach it yet']);return;}
+    if(n.hp>0){bad.push([ip,`still shelled (${n.hp} layer${n.hp===1?'':'s'}) — <span class="c">resolve ${M.h}</span>`]);return;}
+    if(!nodeAttackable(M,n)){bad.push([ip,M.mode==='rk'?'a live relay is standing in front of it':'not exposed']);return;}
+    picked.push(n);});
+  bad.forEach(([ip,why])=>pr(`<span class="err">✗ ${ip}</span> <span class="dim">— ${why}</span>`));
+  if(!picked.length)return;
+  const par=(decodeGrade(DECODERS[bestDecoder()]||{},M.net)||{perPass:1}).perPass;
+  const cap=M.mode==='amorph'?par:1;
+  if(picked.length>cap){
+    pr(`<span class="warn">${M.mode==='rk'?'a R00tKernel chain is sequential — one node at a time.'
+      :`${DECODERS[bestDecoder()].n} can only drive ${cap} node${cap===1?'':'s'} at once.`}</span>`);
+    picked.length=cap;
+    pr(`<span class="dim">hitting ${picked.map(n=>n.ip).join(', ')}.</span>`);}
+  const bid=forced||bestBooter();
+  if(!bid){pr('you don\'t own a booter. buy one in <span class="c">shop</span>.','err');return;}
+  const B=BOOTERS[bid];
+  if(B.needBot&&!botIPs().length){pr(`${B.n} rides a botnet — you don't have one. <span class="c">buybot</span> first.`,'err');return;}
+  siegeBoot(M,picked,B);}
 /* flooding a node that turned out to be a relay */
 function bootRelay(M,n,B){
   artLine(ART[bestBooter()]);G.active2=true;
@@ -1337,6 +1616,7 @@ function cmdBoot(a,forced){
   if(!t){const named=TROLLS.find(x=>x.h.toLowerCase()===raw.toLowerCase());
     if(named){pr(`you can't boot a <em>handle</em> — forums don't hand out IPs.`,'err');
       pr(`<span class="dim">get ${named.h}'s origin first: <span class="c">bait ${named.h}</span> (free, social engineering) or <span class="c">resolve ${named.h}</span> (map their botnet).</span>`);return;}
+    if(hit&&hit.M.mode!=='classify')return siegeBootCmd(hit.M,a,forced);
     if(hit){ /* a node off somebody's map — could be the real one, could be a relay */
       if(hit.n.st==='dead'){pr('that node is already down. it stays down.','warn');return;}
       if(hit.n.st==='relay'){pr('you already classified that one as a relay. flooding it does nothing for you.','warn');return;}
@@ -1346,6 +1626,7 @@ function cmdBoot(a,forced){
       if(B0.needBot&&!botIPs().length){pr(`${B0.n} rides a botnet — you don't have one. <span class="c">buybot</span> first.`,'err');return;}
       bootRelay(hit.M,hit.n,B0);return;}
     pr('that IP isn\'t attached to anyone you\'ve resolved.','err');return;}
+  if(hit&&hit.M.mode!=='classify'&&!hit.M.settled)return siegeBootCmd(hit.M,a,forced);
   if(!(S.resolved||{})[t.h]&&!hit){pr('you haven\'t resolved that origin yet.','err');return;}
   if(!(S.resolved||{})[t.h]&&hit){ /* you picked it out of the map yourself */
     (S.resolved=S.resolved||{})[t.h]=raw;hit.n.st='origin';hit.M.solved=true;persist();
@@ -1502,7 +1783,7 @@ const KEY='units_os_save', PKEY='units_os_prefs';
 let S=null, P={crt:true,snd:true,music:true,vol:0.8,scan:0.6,autohint:false};
 function defaultSave(h){const soft={};for(const k in SOFT)soft[k]=SOFT[k].start;
   return {handle:h,creds:200,rating:0,soft,completed:[],active:null,seen:['m0'],read:[],flags:{},heat:0,discovered:[],im:{},imUnread:{},
-    crackers:[],booters:[],monitors:[],decoders:[],tools:[],explained:[],mesh:null,botnet:null,rep:0,booted:[],jobStarted:false,pendingClaim:null,rerouted:0,resolved:{},unaware:{},trollIps:{},activeGig:null,maps:{},alias:{}};}
+    crackers:[],booters:[],monitors:[],decoders:[],tools:[],explained:[],mesh:null,botnet:null,rep:0,booted:[],jobStarted:false,pendingClaim:null,rerouted:0,resolved:{},unaware:{},trollIps:{},activeGig:null,maps:{},alias:{},settled:{}};}
 /* storage is per-browser and per-visitor: every player gets their own private save */
 let storageOK=null,storageWarned=false;
 function storageAvailable(){if(storageOK!==null)return storageOK;
@@ -1659,14 +1940,23 @@ function offerAutoHint(){const m=$('progModal');m.hidden=false;
 function cmdHint(){const m=activeMission();
   const say=(t,c)=>pr('<span class="phos">▸ next:</span> '+t,c);
   if(!hasBrew())return say('your deck has no tools yet. install the package manager: <span class="c">getbrew stable</span>');
-  if(!bestCracker())return say('you need something that can break a password: <span class="c">brew install havencracker</span>');
+  if(!bestCracker()&&!(activeMission()||{}).boot)return say('you need something that can break a password: <span class="c">brew install havencracker</span>');
   if(S.pendingClaim)return say('your work is done — open your <span class="c">Inbox</span> and hit the green <span class="c">COMPLETE TASK</span> button to get paid.');
   if(!m)return say('you have no job. open your <span class="c">mail</span> (Inbox) and accept a contract'+(owned('tools','wirecli')?' — or take a freeplay gig with <span class="c">gig list</span>.':'.'));
   if(!S.jobStarted&&!m.gig)return say(`${m.from} sent you the details — open <span class="c">Messenger</span> and hit <span class="c">▶ START JOB</span>.`);
-  if(m.boot){const ip=(S.resolved||{})[m.obj.handle];
-    const MM=(S.maps||{})[m.obj.handle];
-    if(!ip&&MM&&!MM.solved)return say(`his network is mapped but ${mapCands(MM).length} hosts are still unclassified. open <span class="c">nmap gui ${m.obj.handle}</span>, hover the nodes, and pick the real one — or run <span class="c">resolve ${m.obj.handle}</span> again with a better decoder.`);
-    if(!ip)return say(`you need @${m.obj.handle}'s real IP. forums don't show IPs — trick it out of him (<span class="c">bait ${m.obj.handle}</span>) or map his botnet (<span class="c">resolve ${m.obj.handle}</span>).`);
+  if(m.boot){const ip=(S.resolved||{})[m.obj.handle],H=m.obj.handle;
+    const MM=(S.maps||{})[H];
+    if(!ip&&!bestDecoder())return say(`you need a decoder before you can go looking for anyone: <span class="c">brew install 1netlynx</span> (free).`);
+    if(!ip&&!MM)return say(`forums don't show IPs. map his botnet first: <span class="c">resolve ${H}</span>`);
+    if(MM&&MM.mode!=='classify'&&!MM.settled&&!(S.booted||[]).includes(H)){
+      if(!nmapSeen(H))return say(`his network is mapped — look at it: <span class="c">nmap gui ${H}</span>`);
+      const ready=MM.nodes.filter(n=>nodeAttackable(MM,n));
+      if(!bestBooter())return say('you can see his net but you can\'t hit it. buy a booter in <span class="c">shop</span> (Software).');
+      if(ready.length)return say(`drop what's exposed: <span class="c">boot ${ready.slice(0,MM.mode==='amorph'?3:1).map(n=>n.ip).join(' ')}</span>`);
+      return say(`nothing is exposed. decode another pass: <span class="c">resolve ${H}</span>`);}
+    if(!ip&&MM&&!MM.solved&&!nmapSeen(H))return say(`his network is mapped — look at it: <span class="c">nmap gui ${H}</span> (hover a node to expose its address).`);
+    if(!ip&&MM&&!MM.solved)return say(`${mapCands(MM).length} hosts your decoder can't separate. either trick him into confirming it — <span class="c">bait ${H}</span> — or back your own read and <span class="c">boot</span> the node you think is his.`);
+    if(!ip)return say(`you need @${H}'s real IP. <span class="c">bait ${H}</span> or <span class="c">resolve ${H}</span>.`);
     if(!bestBooter())return say('you have his IP but nothing to hit it with. buy a booter in <span class="c">shop</span> (Software).');
     return say(`drop him: <span class="c">boot ${ip}</span>`);}
   if(m.mesh){const D=MESHES[m.mesh],M=meshState(m.mesh);
@@ -1826,7 +2116,7 @@ function cmdAccept(a){const id=a[0];const m=MISSIONS.find(x=>x.id===id&&!x.note)
   pr(`<span class="ok">◈ contract accepted — ${m.subj}</span>`);
   pr(`<span class="dim">${m.from} is sending you the details on <span class="c">Messenger</span>. open it and hit <span class="c">▶ START JOB</span>.</span>`);
   openWin('Messenger',true);jobBriefDM(m);renderInbox();renderJobPanel();blip(720,0.08);tutHook('accept');
-  if(m.boot&&!S.flags.wireTutDone)setTimeout(()=>startTutSeq(TUT_WIRE,'The Wire · First Boot'),600);}
+  if(m.boot&&!S.flags.wireTutDone)setTimeout(()=>startTutSeq(TUT_WIRE,'The Wire · First Boot','wireTutDone'),600);}
 function objText(m){const o=m.obj;const one=p=>p.type==='download'?'steal '+p.file:p.type==='delete'?'destroy '+p.file:p.type==='modify'?'alter '+p.file:p.type;
   return o.type==='multi'?o.parts.map(one).join(' + '):o.type==='transfer'?'transfer '+o.amount+'c':o.type==='trace'?'find the origin IP':o.type==='boot'?'boot '+o.handle+' off the wire':one(o);}
 
@@ -2343,6 +2633,8 @@ function renderChat(){const chat=$('imChat');if(!imOpen||!S.im[imOpen]){chat.inn
   chat.innerHTML=html;const log=chat.querySelector('.imlog');log.scrollTop=log.scrollHeight;
   chat.querySelectorAll('.imreplies button').forEach(b=>b.onclick=()=>{const r=last.replies[+b.dataset.i];last.replies=null;
     if(r.action==='startjob'){persist();renderChat();startJobNow(r.mission);return;}
+    if(r.action==='siege'){S.im[imOpen].push({who:'me',text:r.label});persist();renderChat();
+      openWin('Terminal',true);siegeReply(r.h,r.kind);return;}
     S.im[imOpen].push({who:'me',text:r.label});persist();renderChat();
     if(r.reply)imSend(imOpen,r.reply);
     if(r.creds){S.creds+=r.creds;syncTop();pr(`<span class="ok">$ ${CONTACTS[imOpen].n} sent you +${r.creds}c.</span>`);}
@@ -2617,7 +2909,10 @@ function coachShow(){const c=COACH[coachIdx];const ov=$('coach'),ring=$('coachRi
   $('coachSkip').onclick=()=>tutSkip();}
 /* multi-sequence training system */
 let TUTCUR=null;
-function startTutSeq(seq,title,flag,onDone){TUTCUR={seq,title,flag,onDone,done:new Set()};tutOn=true;renderTut();}
+function startTutSeq(seq,title,flag,onDone){TUTCUR={seq,title,flag,onDone,done:new Set()};tutOn=true;
+  seq.forEach(s=>{if(s.have&&s.have())TUTCUR.done.add(s.id);});   // don't ask for gear they already own
+  if(TUTCUR.done.size>=seq.length){endTut(true);return;}
+  renderTut();}
 function tutBeginTasks(){
   startTutSeq(TUT,'Training · First Job','tutDone',()=>{S.creds+=150;persist();syncTop();
     typeLine('◈ TRAINING COMPLETE — you\'re a runner now. (+150c)',' phos');
@@ -2642,9 +2937,12 @@ function endTut(finished){const c=TUTCUR;tutOn=false;TUTCUR=null;$('tutTask').hi
 function tutFinish(){endTut(true);}
 function tutSkip(){pr('<span class="dim">tutorial skipped. type help anytime.</span>');endTut(false);}
 const TUT_WIRE=[
- {id:'bait',label:'get kr0nos\'s origin  (bait kr0nos)'},
- {id:'brew_loic',label:'buy a booter  (Software → LOIC)'},
- {id:'boot',label:'drop him  (boot <his ip>)'},
+ {id:'brewinstall_netlynx',label:'get a decoder  (brew install 1netlynx)',have:()=>owned('decoders','netlynx')||!!bestDecoder()},
+ {id:'resolve',label:'map his botnet  (resolve kr0nos)'},
+ {id:'nmapgui',label:'look at it  (nmap gui kr0nos)'},
+ {id:'bait',label:'make him confirm which node is his  (bait kr0nos)'},
+ {id:'brew_loic',label:'buy a booter  (Software → LOIC)',have:()=>!!bestBooter()},
+ {id:'boot',label:'drop him  (boot &lt;his ip&gt;)'},
 ];
 
 /* ================= start ================= */
@@ -2665,7 +2963,7 @@ function boot(){const saved=loadSave();
   $('loginBtn').onclick=()=>{ai();const h=($('handle').value.trim()||'ghost').replace(/[^a-zA-Z0-9_\-]/g,'').slice(0,14)||'ghost';S=defaultSave(h);persist();startDesktop();};
   $('continueBtn').onclick=()=>{ai();S=saved;S.seen=S.seen||['m0'];S.read=S.read||[];S.flags=S.flags||{};S.heat=S.heat||0;S.discovered=S.discovered||[];S.im=S.im||{};S.imUnread=S.imUnread||{};
     S.crackers=S.crackers||[];S.booters=S.booters||[];S.monitors=S.monitors||[];S.decoders=S.decoders||[];S.botnet=S.botnet||null;S.rep=S.rep||0;S.booted=S.booted||[];S.rerouted=S.rerouted||0;
-    S.resolved=S.resolved||{};S.unaware=S.unaware||{};S.trollIps=S.trollIps||{};S.maps=S.maps||{};S.alias=S.alias||{};S.tools=S.tools||[];S.explained=S.explained||[];
+    S.resolved=S.resolved||{};S.unaware=S.unaware||{};S.trollIps=S.trollIps||{};S.maps=S.maps||{};S.alias=S.alias||{};S.settled=S.settled||{};S.tools=S.tools||[];S.explained=S.explained||[];
     if(S.jobStarted==null)S.jobStarted=!!S.active;
     if(S.pendingClaim===undefined)S.pendingClaim=null;   // old saves mid-job stay playable
     for(const k in SOFT)if(S.soft[k]==null)S.soft[k]=SOFT[k].start;syncRoute();startDesktop();};

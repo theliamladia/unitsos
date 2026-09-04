@@ -29,13 +29,26 @@ sq exit                         close the session
 disconnect                      leave before the trace gets home
 ```
 
-Going after someone on the wire:
+Going after someone on the wire — three different games depending on what they're hiding behind:
 
 ```
-resolve V01D                    map their botnet, eliminate relays
-nmap gui V01D                   draw it — hover the nodes for IPs
-boot 210.161.245.60             call it. guess wrong and they'll say so publicly
+# Fullz chain — a guessing game. the decoder eliminates relays, you name the origin.
+resolve kr0nos                  eliminate relays
+nmap gui kr0nos                 hover the nodes for IPs, read the fingerprints
+boot 210.161.245.60             call it. guess wrong and he'll say so publicly
+
+# R00tKernel — a sequential siege. only the outermost relay on a line is reachable.
+resolve gr1mwald                expose the frontier of each line
+boot 168.166.13.99              drop it; the next one behind it steps up
+                                (he patches replacements while you work)
+
+# Amorphous — an obsidian mesh. no order, but every node is shelled.
+resolve V01D                    strip shells — a good decoder strips several at once
+boot 206.205.193.81 186.213.133.61     flood them together
 ```
+
+Tear enough of someone's net down and **they start messaging you.** You can tell them where to go,
+take the surrender for early rep, or demand tribute — but only if they're scared enough to pay.
 
 ## Features
 
