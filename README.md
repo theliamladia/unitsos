@@ -52,7 +52,7 @@ take the surrender for early rep, or demand tribute — but only if they're scar
 
 ## Features
 
-- **20 story quests** across four acts, three endings, two post-ending endgame contracts
+- **23 story quests** across four acts, three endings, two post-ending endgame contracts
 - **Named arsenal** — Brew, HavenCracker, HavenCracker Redux, HeavenCrackR, Mythos Blackwing
 - **Decoders & the nmap GUI** — 1NetLynx, Parity, Parity Prime, Partisan Occulus, PPOP (VirtualEcholocation). `resolve` draws the target's botnet as a live topology; hover a node to expose its address. Your decoder greys out the relays it can *prove* are dead ends — whatever is still lit is a candidate, and picking the real one is your call, not the tool's. Better decoders leave you fewer candidates; the premium ones name the origin outright.
 - **Botnets & monitors** — Fullz / Amorphous / R00tKernel, with MonitorMe, ObsidianGUI and KernelGuide
@@ -62,6 +62,9 @@ take the surrender for early rep, or demand tribute — but only if they're scar
 - **Getting past 2FA** — banks and socials roll a second factor. Look the account holder up with **InKobos**, wear a caller ID they trust, phone them, and they'll read you their own passkey; **EncryptR** forges the rolling token from it
 - **The record editor** — some clients don't want a file stolen, they want a number changed. `edit` any record and a form opens: a grade, a debt balance, a follower count, a criminal disposition
 - **Start your own thread** — ＋ new post on The Wire. Offer to boot people and see who volunteers (how they answer depends on your rank), shake the board for paid leads, or just ask what everyone's up to
+- **👻 Ghost Files** — 20 hidden lore fragments scattered across hosts. `cat` the right file and it drops into your **Archive**; they tell the secret history of New Milos (Sable, Anatomical, 0RACLE, Valheim). Complete a set for credits + a title; complete all 20 for the full record
+- **★ Elite Rig upgrades** — Ghostwriter (auto-wipes logs on exit), Deadman's Switch (survive one completed trace per run), Cold Wallet (heat bleeds off passively), Nerve Dampener (slower trace on every host)
+- **🧨 Consumable kit** — one-shot tactical gear: Trace Freezer (`use freezer`), Heat Scrubber, Burner IP Pack, Nerve Agent, Blackout Charge
 - **iAliasFast** — `brew install ialiasfast`, then bind any command you're sick of typing: `ias add dl sql delete all`
 - **Full CRT treatment** — curved glass, scanlines, chroma, rolling sync bar, generative ambient score
 

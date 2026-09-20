@@ -320,6 +320,22 @@ body.crt #content{margin:10px;width:calc(100% - 20px);height:calc(100% - 20px);}
 #jobPanel .jstep .bx{display:inline-block;width:14px;}
 #tutTask .tuttip{margin-top:8px;padding-top:7px;border-top:1px solid var(--edge);font-size:9px;color:var(--dim);line-height:1.4;}
 
+.shoprow .fx{color:var(--phos);font-size:9.5px;margin-top:3px;opacity:.85;}
+.shoprow.elite{border-left:2px solid var(--amber);padding-left:8px;background:linear-gradient(90deg,rgba(255,182,56,0.06),transparent);}
+.shoprow.elite .n{color:var(--amber);}
+
+/* ===== the archive: ghost files ===== */
+.archd{font-size:12px;color:var(--text);margin-bottom:10px;border-bottom:1px solid var(--edge);padding-bottom:7px;}
+.archd b{color:var(--phos);letter-spacing:1px;}
+.arcset{font-size:10.5px;letter-spacing:1px;margin:12px 0 6px;text-transform:uppercase;}
+.arccard{border:1px solid var(--edge);background:#070f18;padding:8px 10px;margin-bottom:7px;border-left-width:3px;}
+.arccard.locked{opacity:.5;border-left-color:#1a2a36!important;}
+.arccard .ac-t{font-size:11px;color:var(--phos);}
+.arccard.locked .ac-t{color:var(--dim);}
+.arccard .ac-f{font-size:9px;color:var(--cyan-dim);margin:2px 0 5px;font-style:italic;}
+.arccard .ac-b{font-size:10px;line-height:1.55;color:var(--text);}
+.arccard .ac-b.dim{color:var(--dim);}
+
 /* ===== record editor ===== */
 #edWrap{display:flex;flex-direction:column;height:100%;}
 #edHead{padding:7px 11px;border-bottom:1px solid var(--edge);font-size:10px;color:var(--text);
@@ -460,6 +476,11 @@ body.crt #content{margin:10px;width:calc(100% - 20px);height:calc(100% - 20px);}
         <div class="winbody"><div id="edWrap"><div id="edHead"></div><div id="edBody" class="scrollbar"></div></div></div>
       </div>
 
+      <div class="window" id="winArchive" data-app="Archive" hidden style="left:240px;top:90px;width:520px;height:460px;">
+        <div class="titlebar"><span class="tt">Archive // Ghost Files</span><div class="dots"><i class="min"></i><i class="cls"></i></div></div>
+        <div class="winbody scrollbar" id="arcBody" style="padding:12px;"></div>
+      </div>
+
       <div class="window" id="winNmap" data-app="NetMap" hidden style="left:200px;top:96px;width:600px;height:452px;">
         <div class="titlebar"><span class="tt">nmap gui // botnet topology</span><div class="dots"><i class="min"></i><i class="cls"></i></div></div>
         <div class="winbody"><div id="nmapWrap">
@@ -504,14 +525,21 @@ const rankName=r=>{let n='Newbie';for(const[t,x]of RANKS)if(r>=t)n=x;return n;};
 
 /* ---------- software / hardware ---------- */
 const SOFT={
-  cpu      :{n:'Processor',       d:'faster everything',      base:900, max:4, start:1, hw:true},
-  fwbypass :{n:'Firewall Bypass', d:'speeds up firewall',     base:700, max:3, start:1},
-  proxy    :{n:'Proxy Disruptor', d:'speeds up proxy',        base:800, max:3, start:0},
-  decrypter:{n:'File Decrypter',  d:'decrypts locked files',  base:750, max:3, start:0},
-  logdel   :{n:'Log Cleaner',     d:'faster log wipe',        base:500, max:3, start:1},
-  tracker  :{n:'Trace Tracker',   d:'shows exact trace + hop', base:900, max:1, start:0},
-  memory   :{n:'Memory Banks',    d:'run more tools at once',   base:1200,max:3,start:1,hw:true},
-  spoofer  :{n:'Log Spoofer',     d:'less heat from sloppy exits',base:850,max:1,start:0},
+  cpu      :{n:'Processor',       d:'every tool runs faster — the single best force multiplier you can buy', base:900, max:4, start:1, hw:true,
+             tiers:['stock silicon','Overclocked','Liquid-Cooled','Cryo-Core'], fx:l=>'−'+Math.round((1-1/(1+(l-1)*0.4))*100)+'% run time on everything'},
+  memory   :{n:'Memory Banks',    d:'run more tools at once — crack while you decrypt while you wipe', base:1200,max:4,start:1,hw:true,
+             tiers:['single-thread','dual-bank','tri-bank','quad-bank'], fx:l=>l+' tool'+(l>1?'s':'')+' in parallel'},
+  fwbypass :{n:'Firewall Bypass', d:'punches firewalls faster', base:700, max:3, start:1, fx:l=>'firewall in ~'+(6/(0.6+l*0.5)).toFixed(1)+'s'},
+  proxy    :{n:'Proxy Disruptor', d:'punches proxies faster',   base:800, max:3, start:0, fx:l=>l?('proxy in ~'+(6.5/(0.6+l*0.5)).toFixed(1)+'s'):'REQUIRED for proxy locks'},
+  decrypter:{n:'File Decrypter',  d:'cracks encrypted files — half the story hides behind enc', base:750, max:3, start:0, fx:l=>l?('decrypts in ~'+(5/(0.5+l*0.5)).toFixed(1)+'s'):'REQUIRED to read enc files'},
+  tracker  :{n:'Trace Tracker',   d:'exact trace % and which hop they are on', base:900, max:1, start:0, fx:l=>l?'live % readout + hop targeting':'you only see LOW/MED/HIGH'},
+  logdel   :{n:'Log Cleaner',     d:'shreds their logs faster', base:500, max:3, start:1, fx:l=>'wipe at '+(1+l*0.5).toFixed(1)+'× speed'},
+  spoofer  :{n:'Log Spoofer',     d:'sloppy exits cost far less heat', base:850,max:1,start:0, fx:l=>l?'messy-exit heat 15→7':'full heat on messy exits'},
+  /* ---- the exciting tier: game-changers, each max 1 ---- */
+  ghostwriter:{n:'Ghostwriter',   d:'AUTO-WIPES your logs the instant you disconnect — never eat trace-heat for forgetting again', base:5200, max:1, start:0, elite:true, fx:l=>l?'logs wipe themselves on exit':'you wipe logs by hand'},
+  deadman  :{n:"Deadman's Switch",d:'if a trace ever reaches your gateway, it burns the switch instead of you — once per connection', base:7500, max:1, start:0, elite:true, fx:l=>l?'survive one completed trace per run':'a completed trace ends the run'},
+  coldwallet:{n:'Cold Wallet',    d:'heat bleeds off on its own while you work — no more laylow runs between jobs', base:4200, max:1, start:0, elite:true, fx:l=>l?'heat decays ~1%/sec passively':'heat only drops with laylow'},
+  dampener :{n:'Nerve Dampener',  d:'shapes your traffic so the reverse-trace climbs slower on every host', base:3600, max:3, start:0, elite:true, fx:l=>'−'+(l*15)+'% trace speed'},
 };
 
 /* ---------- relays ---------- */
@@ -527,7 +555,7 @@ const RELAYS=[
 
 /* ---------- files ---------- */
 function file(name,tags,content,opts){return {name,enc:tags.includes('enc'),obj:tags.includes('obj'),
-  got:false,deleted:false,modified:false,content:content||'',reward:(opts&&opts.reward)||null};}
+  got:false,deleted:false,modified:false,content:content||'',reward:(opts&&opts.reward)||null,ghost:(opts&&opts.ghost)||null};}
 
 /* ---------- targets ---------- */
 const TARGETS={
@@ -537,15 +565,15 @@ const TARGETS={
  t_finch:{ip:'196.4.55.120',name:'Finch & Roe Billing',org:'Finch & Roe LLP',locks:['password'],traceRate:2.0,
   files:[file('clients.db',[],'2,140 client records.'),
          file('ledger_q3.xls',['obj'],'[ skimmed-account ledger — the smoking gun ]'),
-         file('memo.txt',[],'Re: keep ledger_q3 away from the auditors. burn it after Q4.\np.s. moved the overflow to the old cache box at 9.44.213.7 — nobody remembers it exists. -M')]},
+         file('memo.txt',[],'Re: keep ledger_q3 away from the auditors. burn it after Q4.\np.s. moved the overflow to the old cache box at 9.44.213.7 — nobody remembers it exists. -M',{ghost:'gf1'})]},
  t_helix:{ip:'77.230.9.14',name:'Helix Bio Records',org:'Helix Biotech',locks:['password','firewall'],traceRate:2.4,
   files:[file('trials.db',['obj'],'Phase II trial subject records. 11 adverse events flagged.'),
          file('patent.doc',['enc'],'[ ENCRYPTED — sequence patent ]'),
-         file('board.txt',[],'Bury the bad trial before the IPO. Nobody reads footnotes. -Board')]},
+         file('board.txt',[],'Bury the bad trial before the IPO. Nobody reads footnotes. -Board',{ghost:'gf2'})]},
  t_metro:{ip:'88.100.7.42',name:'Metro PD Records',org:'Metropolitan Police',locks:['password','firewall'],traceRate:2.6,
   files:[file('warrant.db',[],'Active warrants.'),
          file('record_4471.dat',['obj'],'CRIMINAL RECORD #4471 — status: CONVICTED. 3 priors.'),
-         file('note.txt',[],'the kid was set up. fix it or nobody will. -a friend')]},
+         file('note.txt',[],'the kid was set up. fix it or nobody will. -a friend',{ghost:'gw1'})]},
  t_argus:{ip:'45.19.88.201',name:'Argus Security Node',org:'Argus Corp',locks:['password','firewall'],traceRate:2.9,
   files:[file('watchlist.db',['enc'],'[ ENCRYPTED — surveillance watchlist ]'),
          file('slush.xls',['obj','enc'],'[ ENCRYPTED — off-book payments to 3 senators ]'),
@@ -567,44 +595,62 @@ const TARGETS={
 --- someone on 6.0.0.1 has been tracing YOU ---`)]},
  t_norad:{ip:'6.0.0.1',name:'SHIELD Core',org:'NORAD Grid',locks:['password','firewall','proxy'],traceRate:4.4,
   files:[file('roster.db',['enc'],'[ ENCRYPTED — personnel roster ]'),
-         file('watchers.log',[],'Surveillance targets. Your handle is on line 3.'),
+         file('watchers.log',[],'Surveillance targets. Your handle is on line 3.\nAll traffic mirrored to archival cache 66.6.0.9 — a burned agent has been siphoning that mirror for years.',{ghost:'gg4'}),
          file('killswitch.bin',['obj','enc'],'[ ENCRYPTED — grid master control. the only reason you came. ]')]},
  t_kestrel:{ip:'62.9.14.88',name:'Kestrel Dental Group',org:'Kestrel Dental',locks:['password'],traceRate:2.1,
   files:[file('collections.db',['obj'],'4,910 unpaid balances. Median amount owed: 412c.'),
-         file('memo.txt',[],'Sold the balance list to Halloway Recovery Group. They file in small claims automatically.\nHalloway is a subsidiary of Argus Corp. Everything in this city is a subsidiary of Argus Corp.')]},
+         file('memo.txt',[],'Sold the balance list to Halloway Recovery Group. They file in small claims automatically.\nHalloway is a subsidiary of Argus Corp. Everything in this city is a subsidiary of Argus Corp.',{ghost:'gf3'})]},
  t_dropbox:{ip:'91.5.77.30',name:'Anonymous Dead-Drop',org:'???',locks:['password','firewall'],traceRate:2.5,
   files:[file('heavencrackr.pkg',['obj','enc'],'[ ENCRYPTED — HeavenCrackR. Polymorphic fork of HavenCracker. ]',{reward:{tool:'heaven',key:'crackers'}}),
-         file('readme.txt',[],'if you are reading this i am not coming back for it.\nit is faster than anything sable shipped. it has no firewall module. that was the trade.\n— A.')]},
+         file('readme.txt',[],'if you are reading this i am not coming back for it.\nit is faster than anything sable shipped. it has no firewall module. that was the trade.\n— A.',{ghost:'gk2'})]},
  t_brackwater:{ip:'118.40.6.21',name:'Brackwater Chemical',org:'Brackwater Chem',locks:['password','firewall'],traceRate:2.9,
   files:[file('safety_audit.enc',['obj','enc'],'[ ENCRYPTED — six years of failed discharge readings ]'),
          file('incident_log.db',['obj'],'Incident attribution log. Every entry names the same dead shift supervisor.'),
-         file('board.txt',[],'Attribute the discharges to Vance. He is deceased and cannot contest it. Legal agrees.')]},
+         file('board.txt',[],'Attribute the discharges to Vance. He is deceased and cannot contest it. Legal agrees.',{ghost:'gw2'})]},
  t_ostrand:{ip:'25.190.3.77',name:'Ostrand Freight',org:'Ostrand Freight',locks:['password','firewall'],traceRate:6.4,
   files:[file('customs.db',['obj'],'Customs filings. Half of these containers do not exist.'),
-         file('ids.txt',[],'ACTIVE COUNTER-INTRUSION ENABLED. Trace priority: maximum. We do not negotiate with runners.')]},
+         file('ids.txt',[],'ACTIVE COUNTER-INTRUSION ENABLED. Trace priority: maximum. We do not negotiate with runners.',{ghost:'gw3'})]},
  t_courier:{ip:'33.7.19.240',name:'Meridian Freeport Courier',org:'freeport ring',locks:['password','firewall'],traceRate:3.0,
   files:[file('manifest.enc',['obj','enc'],'[ ENCRYPTED — sealed courier manifest. Sable said not to open it. ]'),
-         file('route.txt',[],'courier ring: freeport → agency drop. handler signature: S.')]},
+         file('route.txt',[],'courier ring: freeport → agency drop. handler signature: S.',{ghost:'gg2'})]},
  t_agencyrelay:{ip:'10.0.44.2',name:'UNITS Agency Relay',org:'UNITS Agency',locks:['password','firewall','proxy'],traceRate:3.4,
   files:[file('sable_file.enc',['obj','enc'],'[ ENCRYPTED — PERSONNEL: SABLE. status COMPLIANT. leverage: family, relocated 2041. handler trades runner telemetry in exchange for their continued safety. review pending. ]'),
          file('roster.enc',['enc'],'[ ENCRYPTED — active runner roster. your handle is line 9. ]'),
-         file('policy.txt',[],'Runners are a collection method. Attrition is acceptable. Do not let them read this host.')]},
+         file('policy.txt',[],'Runners are a collection method. Attrition is acceptable. Do not let them read this host.',{ghost:'gg1'})]},
  t_nmia:{ip:'88.99.99.99',name:'New Milos Intelligence',org:'NMIA',locks:['password','firewall','proxy'],traceRate:5.2,
   files:[file('blackwing.pkg',['obj','enc'],'[ ENCRYPTED — Mythos Blackwing. Skeletonkey 0-day, ring0 loader. ]',{reward:{tool:'blackwing',key:'crackers'}}),
-         file('valheim.txt',[],'PROJECT VALHEIM — amorphous identifier. Botnet substrate: civilian handsets, city-wide. Status: OPERATIONAL. Deniability: total. The wire thinks it is a myth. Keep it that way.'),
-         file('watchlist_A.txt',[],'PERSON OF INTEREST: handle "Anatomical". Last known contact 19.88.240.11. Do not approach; observe only.')]},
+         file('valheim.txt',[],'PROJECT VALHEIM — amorphous identifier. Botnet substrate: civilian handsets, city-wide. Status: OPERATIONAL. Deniability: total. The wire thinks it is a myth. Keep it that way.',{ghost:'gg3'}),
+         file('watchlist_A.txt',[],'PERSON OF INTEREST: handle "Anatomical". Last known contact 19.88.240.11. Do not approach; observe only.',{ghost:'gk3'})]},
  /* hidden systems — discovered by reading logs, not given in contracts */
+ t_lorevault:{ip:'72.19.4.140',name:'Cold Reading Room',org:'??? (0RACLE)',locks:['password','firewall'],traceRate:2.3,
+  files:[file('index.frag',['obj'],'An index of everything the grid has filed on you — and, folded inside it, a note in a hand you are starting to recognise.'),
+         file('curator.txt',[],'you have been picking up fragments without knowing you were collecting anything. open your Archive. that whole picture? i built it for you, one leak at a time. keep reading the boxes nobody guards. — 0')]},
+ t_vantt:{ip:'130.7.55.2',name:'Vantt Logistics Core',org:'Vantt Logistics',locks:['password','firewall'],traceRate:6.8,
+  files:[file('routing.db',['obj'],'Live routing manifests. Whoever holds this owns the freeport schedule.'),
+         file('security.txt',[],'HAIR-TRIGGER COUNTER-INTRUSION. Trace is near-instant. Do not attempt without a way to stall the line.')]},
+ t_coldvault:{ip:'58.200.11.4',name:'Meridian Cold Storage',org:'Meridian Savings',locks:['password','firewall','proxy'],traceRate:3.3,
+  files:[file('escrow.act',['obj','enc'],'[ ENCRYPTED — the account they move money through when #887 gets too warm ]'),
+         file('flagged.db',['obj'],'The internal list of runners Meridian has flagged to the agency. Your handle is on it.'),
+         file('cfo.txt',[],'anything above 60% heat and the grid gets an automatic ping from this host. tell the runner nothing.')]},
  t_cache:{ip:'9.44.213.7',name:'Orphaned Data Cache',org:'???',locks:['password'],traceRate:1.6,hidden:true,
   files:[file('stash.dat',['obj'],'An abandoned credit stash. Finders keepers.',{reward:{creds:1800}}),
-         file('junk.txt',[],'old backup fragments. nothing useful.')]},
+         file('junk.txt',[],'old backup fragments. nothing useful.',{ghost:'gf5'})]},
  t_deaddrop:{ip:'170.3.88.19',name:'Dead-Drop Server',org:'???',locks:['password','firewall'],traceRate:2.2,hidden:true,
   files:[file('decrypter.pkg',['obj'],'A working File Decrypter build. Free to whoever grabs it first.',{reward:{tool:'decrypter'}}),
-         file('tracker.pkg',['obj'],'A Trace Tracker module, still boxed.',{reward:{tool:'tracker'}})]},
+         file('tracker.pkg',['obj'],'A Trace Tracker module, still boxed.',{reward:{tool:'tracker'}}),
+         file('manifesto.txt',[],'left here by whoever ran this drop before me. read it, then leave your own.',{ghost:'gk1'})]},
  t_wallet:{ip:'44.9.120.6',name:'Abandoned Wallet Host',org:'???',locks:['password'],traceRate:1.8,hidden:true,
-  files:[file('wallet.key',['obj'],'A crypto wallet someone forgot to empty. Their loss.',{reward:{creds:2500}})]},
+  files:[file('wallet.key',['obj'],'A crypto wallet someone forgot to empty. Their loss.',{reward:{creds:2500}}),
+         file('diary.txt',[],'not my wallet. not my diary either. i just read the boxes nobody guards.',{ghost:'gf4'})]},
  t_vault:{ip:'201.6.44.90',name:'Numbered Vault',org:'???',locks:['password','firewall'],traceRate:2.6,hidden:true,
   files:[file('bearer.bnd',['obj','enc'],'[ ENCRYPTED — bearer bonds, cash-equivalent ]',{reward:{creds:3500}}),
-         file('note.txt',[],'if you can read this you already won. spend it well.')]},
+         file('note.txt',[],'if you can read this you already won. spend it well.',{ghost:'gw4'})]},
+ t_oracle:{ip:'66.6.0.9',name:'Archival Mirror',org:'??? (0RACLE)',locks:['password','firewall'],traceRate:2.8,hidden:true,
+  files:[file('readme.txt',[],'you found the mirror. of course you did. everything the grid sees, it copies here, and i copy it from them.\ntake what you like. leave the lights off on your way out. — 0',{ghost:'gg5'}),
+         file('anatomical_1.log',[],'intercepted: Anatomical, going quiet.',{ghost:'gk4'}),
+         file('anatomical_2.log',[],'intercepted: Anatomical, final note.',{ghost:'gk5'}),
+         file('wire.log',[],'the wire keeps itself alive. i just keep the receipts.',{ghost:'gw5'}),
+         file('tip.dat',['obj'],'a parting gift for the curious.',{reward:{creds:4000}})]},
 };
 
 /* ---------- contracts + story ---------- */
@@ -624,6 +670,9 @@ const MISSIONS=[
  {id:'mb',from:'cr4sh',subj:'somebody needs to shut kr0nos up',rankReq:2,boot:true,
   obj:{type:'boot',handle:'kr0nos'},pay:900,rating:2,
   body:`You've seen kr0nos in the threads. He's not a rival, he's a parasite — he's been threatening to post people's gateway logs, and two runners I know have gone dark over it.\n\nHere's the thing nobody tells rookies: <b>you cannot boot a handle.</b> A forum shows you a name, not an origin. You need his real IP first, and there are exactly two ways to get one:\n\n1. <b>Social engineering</b> — 'bait kr0nos'. You post something he can't resist clicking. When he bites, his origin leaks. Free. He's arrogant, he'll bite.\n2. <b>Decoding</b> — 'resolve kr0nos' walks his botnet and knocks out the relays it can prove are dead ends. Then 'nmap gui kr0nos' draws what's left. Hover a node and it gives up its address.\n\nDo both, in that order. 1NetLynx is free ('brew install 1netlynx') and it'll get you close, but on a Fullz chain it'll leave you staring at two hosts and no way to tell them apart — that's the part no tool does for you. So map him first, look at the picture, <em>then</em> bait him. When he bites, the map collapses and you'll see which of those two was always the real machine.\n\nLearn to read that picture here, where you get a free answer. The next one won't hand you one.\n\nThen 'boot <ip>' with a booter loaded. Drop him. The wire will remember it.`},
+ {id:'mA1',from:'0RACLE',subj:'you have been collecting without knowing it',rankReq:3,target:'t_lorevault',
+  obj:{type:'download',file:'index.frag'},pay:1200,rating:2,
+  body:`You keep reading the files nobody guards — the memos, the readmes, the notes left for no one. Good. I noticed. I've been leaving some of them for you.\n\nThere's a reading room at a quiet address. Pull <b>index.frag</b> and read <b>curator.txt</b> while you're in there. Then open your <b>Archive</b> — the 👻 on your dock. Every fragment you've caught is filed there, and together they tell you the story Sable never will.\n\nKeep pulling ghost files off the hosts you crack. Complete a full set and the wire pays out — and you'll understand this city better than the people who run it.`},
  {id:'m3',from:'a friend',subj:'fix a frame job',rankReq:3,target:'t_metro',
   obj:{type:'modify',file:'record_4471.dat'},pay:1500,rating:2,
   body:`A nineteen-year-old is doing eight years for something he didn't do. Metro PD records — password + firewall.\nrecord_4471.dat says CONVICTED. Use 'modify' to rewrite it to CLEARED. One keystroke changes a life. Don't overthink it.`},
@@ -637,6 +686,9 @@ const MISSIONS=[
   obj:{type:'multi',parts:[{type:'download',file:'safety_audit.enc'},{type:'delete',file:'incident_log.db'}]},
   pay:2200,rating:2,
   body:`Brackwater Chem has been venting into the river north of the freeport for six years. Two things need to happen on the same visit, and the order matters:\n\n  1. <b>Steal</b> safety_audit.enc — that's the proof. It's encrypted.\n  2. <b>Destroy</b> incident_log.db — that's the file they'd use to pin it on a shift supervisor who has been dead for two years.\n\nPassword and firewall. Both objectives, one run. Don't get greedy and don't get caught halfway.`},
+ {id:'mA2',from:'ghosthz',subj:'burn notice — bring a freezer',rankReq:5,target:'t_vantt',
+  obj:{type:'download',file:'routing.db'},pay:2400,rating:2,
+  body:`Vantt Logistics runs the freeport schedule and guards it like a bank. Their trace is the fastest thing this side of a government host — it'll be at your gateway before you've read the directory.\n\nThis is what the <b>kit</b> is for. Buy a <b>Trace Freezer</b> in the shop before you go in, and when the line gets hot, <b>use freezer</b> — it stalls the trace for eight seconds, long enough to grab <b>routing.db</b> and vanish. A <b>Nerve Dampener</b> in your rig helps too.\n\nDon't be a hero about it. Freeze, pull, run.`},
  {id:'m2b',from:'cr4sh',subj:'V01D has been selling your runs',rankReq:6,boot:true,
   obj:{type:'boot',handle:'V01D'},pay:2000,rating:3,
   body:`I told you kr0nos was a parasite. V01D is worse, because V01D is <em>good</em>.\n\nHe's been logging every run you make and selling the telemetry. That's why the traces have been getting faster.\n\nAnd he's not kr0nos — you will not bait him. He's been on this wire too long to click a link, and he sits behind an <b>amorphous botnet</b>. Baiting won't touch him.\n\nYou'll have to decode him: <b>resolve V01D</b> with a real decoder — Parity at absolute minimum, and expect it to collapse.\n\nParity won't <em>name</em> him. It'll knock out relays until a handful of hosts are left, and then it's your eye, not the tool. Open <b>nmap gui V01D</b>, hover the nodes for their addresses, read the fingerprints and pick one. Guess wrong and you flood a relay — he stays up, and he'll say so publicly. Then hit the right IP with something bigger than a LOIC. He's not going down to a starter flood.`},
@@ -649,6 +701,9 @@ const MISSIONS=[
  {id:'m5b',from:'SABLE',subj:'a courier, a case, no questions',rankReq:9,target:'t_courier',
   obj:{type:'download',file:'manifest.enc'},pay:2400,rating:3,
   body:`Straight ask, and I'd rather you didn't think too hard about it.\n\nA courier host on the Meridian freeport ring is holding an encrypted manifest. Pull manifest.enc and send it to me. Don't open it.\n\nI know how that sounds. Do it anyway.`},
+ {id:'mA3',from:'SABLE',subj:'cold storage — keep it under sixty',rankReq:9,target:'t_coldvault',
+  obj:{type:'multi',parts:[{type:'download',file:'escrow.act'},{type:'delete',file:'flagged.db'}]},pay:5000,rating:3,
+  body:`When #887 got warm, Meridian moved the money to a cold-storage box — and hung a tripwire on it. Cross <b>60% heat</b> on that host and it pings the grid automatically. So walk in cool.\n\nTwo things, one visit: pull <b>escrow.act</b> (encrypted — bring a Decrypter) and destroy <b>flagged.db</b>, the list of runners they've sold to the agency. Your handle is on it.\n\nIf you run hot, this is exactly what a <b>Heat Scrubber</b> or a <b>Cold Wallet</b> is for. Come in under sixty, do both, get out.`},
  {id:'m5c',from:'0RACLE',subj:'read what sable told you not to',rankReq:8,target:'t_agencyrelay',
   obj:{type:'download',file:'sable_file.enc'},pay:3000,rating:4,
   body:`You pulled a manifest and handed it over unopened. Obedient.\n\nHere's what you didn't see: your name was in it. So was Sable's — flagged COMPLIANT, with a review date.\n\nThe agency's own relay keeps personnel files. Pull sable_file.enc and decrypt it. You will not like what Sable has been trading to keep you working, but you deserve to know who you're taking orders from.`},
@@ -1986,7 +2041,7 @@ const KEY='units_os_save', PKEY='units_os_prefs';
 let S=null, P={crt:true,snd:true,music:true,vol:0.8,scan:0.6,autohint:false};
 function defaultSave(h){const soft={};for(const k in SOFT)soft[k]=SOFT[k].start;
   return {handle:h,creds:200,rating:0,soft,completed:[],active:null,seen:['m0'],read:[],flags:{},heat:0,discovered:[],im:{},imUnread:{},
-    crackers:[],booters:[],monitors:[],decoders:[],tools:[],explained:[],mesh:null,botnet:null,rep:0,booted:[],jobStarted:false,pendingClaim:null,rerouted:0,resolved:{},unaware:{},trollIps:{},activeGig:null,maps:{},alias:{},settled:{},marks:{},shas:{},volunteers:{}};}
+    crackers:[],booters:[],monitors:[],decoders:[],tools:[],explained:[],mesh:null,botnet:null,rep:0,booted:[],jobStarted:false,pendingClaim:null,rerouted:0,resolved:{},unaware:{},trollIps:{},activeGig:null,maps:{},alias:{},settled:{},marks:{},shas:{},volunteers:{},ghosts:[],ghostSeen:[],items:{}};}
 /* storage is per-browser and per-visitor: every player gets their own private save */
 let storageOK=null,storageWarned=false;
 function storageAvailable(){if(storageOK!==null)return storageOK;
@@ -2088,6 +2143,7 @@ function openWin(app,on){const w=document.querySelector(`.window[data-app="${app
   if(app==='Forums'&&on){forumNew=0;worldBadges();renderForum();}
   if(app==='Monitor'&&on)renderMonitor();
   if(app==='NetMap'&&on)renderNmap();
+  if(app==='Archive'&&on)renderArchive();
   if(app==='Editor'&&on){renderEditor();explain('editor');}
   if(app==='Inbox'&&on)tutHook('mail');}
 document.querySelectorAll('.window').forEach(w=>{const tb=w.querySelector('.titlebar');
@@ -2099,7 +2155,7 @@ document.querySelectorAll('.window').forEach(w=>{const tb=w.querySelector('.titl
     window.addEventListener('pointermove',mv);window.addEventListener('pointerup',up);});
   tb.querySelector('.cls').addEventListener('click',()=>openWin(w.dataset.app,false));
   tb.querySelector('.min').addEventListener('click',()=>openWin(w.dataset.app,false));});
-const DOCK=[['Terminal','▚'],['Inbox','✉'],['Messenger','✆'],['Forums','▤'],['Software','⚙'],['Monitor','◎'],['Connections','◍'],['NetMap','◈'],['Settings','✱'],['Help','?']];
+const DOCK=[['Terminal','▚'],['Inbox','✉'],['Messenger','✆'],['Forums','▤'],['Software','⚙'],['Monitor','◎'],['Connections','◍'],['NetMap','◈'],['Archive','👻'],['Settings','✱'],['Help','?']];
 function buildDock(){const d=$('dock');d.innerHTML='';DOCK.forEach(([app,ic])=>{const b=document.createElement('div');
   b.className='dockapp';b.dataset.app=app;b.innerHTML=`<span class="ic">${ic}</span><span class="nm">${app}</span>`;
   b.onclick=()=>{ai();if(app==='Help'){openWin('Terminal',true);cmdHelp();}else openWin(app);if(app==='Inbox')markInboxRead();};d.appendChild(b);});}
@@ -2235,13 +2291,63 @@ const COMMANDS={
   transfer:a=>cmdTransfer(a),submit:a=>cmdSubmit(a),
   deletelogs:()=>cmdDeleteLogs(),cleanlogs:()=>cmdDeleteLogs(),
   disconnect:()=>cmdDisconnect(),exit:()=>cmdDisconnect(),
-  laylow:()=>cmdLaylow(),settings:()=>{openWin('Settings',true);pr('opening settings…','dim');},
+  laylow:()=>cmdLaylow(),use:a=>cmdUse(a),items:()=>cmdItems(),kit:()=>cmdItems(),
+  settings:()=>{openWin('Settings',true);pr('opening settings…','dim');},
 };
 function cmdLaylow(){if(G.conn){pr('can\'t lie low mid-connection.','err');return;}
   if(S.heat<=0){pr('you\'re already a ghost — no heat on you.','dim');return;}
   const cost=Math.min(S.creds,200+S.heat*4);
   runOp('laying low — new gateway, burner hardware, cold wallet',3.0,()=>{S.creds-=cost;const drop=Math.min(S.heat,RI(30,50));S.heat-=drop;persist();syncTop();updateHeat();
     pr(`<span class="ok">✓ laid low. heat −${drop}. (−${cost}c in bribes & burner gear.)</span>`);});}
+
+/* ================= CONSUMABLES — one-shot tactical gear ================= */
+const ITEMS={
+ freezer :{n:'Trace Freezer',   d:'freezes the reverse-trace where it stands for 8 seconds', price:900,  icon:'❄'},
+ scrubber:{n:'Heat Scrubber',   d:'instantly drops 40 heat — no laylow, no downtime',         price:700,  icon:'🧼'},
+ burner  :{n:'Burner IP Pack',  d:'drops 8 fresh amorphous IPs straight into your botnet',     price:1100, icon:'📟'},
+ nerveagent:{n:'Nerve Agent',   d:'spikes a siege target\'s fear — makes them fold fast',       price:1400, icon:'☠'},
+ blackout:{n:'Blackout Charge', d:'kills all your heat AND resets any active trace to zero',    price:2600, icon:'🌑'},
+};
+function itemCount(id){return (S.items&&S.items[id])||0;}
+function giveItem(id,n){S.items=S.items||{};S.items[id]=(S.items[id]||0)+(n||1);persist();}
+function buyItemC(id){const it=ITEMS[id];if(!it)return;
+  if(S.creds<it.price){pr('insufficient credits.','err');return;}
+  S.creds-=it.price;giveItem(id,1);syncTop();renderShop();
+  pr(`<span class="ok">◈ bought ${it.icon} ${it.n}.</span> <span class="dim">use it with <span class="c">use ${id}</span> — carry as many as you like.</span> (−${it.price}c)`);
+  blip(760,0.1,'sine',0.05,1050);}
+function cmdItems(){const owned2=Object.keys(ITEMS).filter(itemCount);
+  pr('<span class="c">── your kit ──</span>');
+  if(!owned2.length){pr('<span class="dim">no consumables. buy tactical gear in <span class="c">shop</span> → kit.</span>');return;}
+  owned2.forEach(id=>pr(`  ${ITEMS[id].icon} <span class="ok">${id.padEnd(11)}</span> ×${itemCount(id)} <span class="dim">${ITEMS[id].d}</span>`));
+  pr('<span class="dim">fire one with <span class="c">use &lt;name&gt;</span>.</span>');}
+function cmdUse(a){const id=(a[0]||'').toLowerCase();
+  if(!id)return cmdItems();
+  if(!ITEMS[id]){pr(`no such item "${escapeHtml(id)}". <span class="c">items</span> lists your kit.`,'err');return;}
+  if(!itemCount(id)){pr(`you don't have a ${ITEMS[id].n}. buy one in <span class="c">shop</span>.`,'err');return;}
+  let used=true;
+  if(id==='freezer'){
+    if(!G.conn){pr('nothing to freeze — you\'re not connected.','warn');return;}
+    G.graceUntil=performance.now()+8000;
+    pr('<span class="phos">❄ TRACE FROZEN — the reverse-trace is stalled for 8 seconds. move.</span>');blip(400,0.3,'sine',0.05,220);}
+  else if(id==='scrubber'){
+    if((S.heat||0)<=0){pr('no heat to scrub.','dim');return;}
+    const d=Math.min(S.heat,40);S.heat-=d;updateHeat();pr(`<span class="ok">🧼 heat scrubbed −${d}.</span>`);blip(900,0.12);}
+  else if(id==='burner'){
+    if(!S.flags.botnetUnlocked){pr('you don\'t run a botnet yet.','warn');return;}
+    if(!S.botnet)S.botnet={type:'amorph',ips:[]};
+    for(let i=0;i<8;i++)S.botnet.ips.push(randIP());syncRoute&&syncRoute();
+    pr('<span class="ok">📟 8 fresh IPs bolted onto your botnet.</span> <span class="dim">longer route home = slower trace.</span>');blip(700,0.12);}
+  else if(id==='nerveagent'){
+    const M=typeof activeSiege==='function'?activeSiege():null;
+    if(!M){pr('no siege in progress — nothing to poison.','warn');return;}
+    M.fear=clamp((M.fear||0)+45,0,100);persist();
+    pr(`<span class="phos">☠ ${M.h}'s nerve is breaking — he can feel the walls coming in.</span>`);
+    if(typeof siegeFear==='function')siegeFear(M,0);blip(300,0.2,'sawtooth',0.05,160);}
+  else if(id==='blackout'){
+    S.heat=0;updateHeat();if(G.conn)G.trace=0;
+    pr('<span class="phos">🌑 BLACKOUT — heat zeroed'+(G.conn?' and the trace reset to nothing':'')+'.</span>');blip(200,0.4,'sine',0.05,120);}
+  if(used){S.items[id]--;persist();syncTop();
+    if(!$('winMonitor').hidden&&typeof renderMonitor==='function')renderMonitor();}}
 
 /* ---------- iAliasFast: name your own shortcuts ---------- */
 const IASRESERVED=['add','set','rm','del','remove','list','ls','help','clear','?'];
@@ -2306,7 +2412,7 @@ function cmdHelp(){pr('<span class="c">── command reference ──</span>');
   if(S.flags.tutDone)g('freeplay',[['brew install wire','the job-board client (once)'],['gig list','open gigs on The Wire'],['gig &lt;id&gt;','take one — repeatable'],['gig drop','walk away from a job that got too hot']]);
   if(S.flags.booterUnlocked)g('people',[['bait &lt;handle&gt;','social-engineer their origin out of them'],['resolve &lt;handle&gt;','decode their botnet — eliminates relays'],['nmap gui &lt;handle&gt;','draw their botnet · hover a node for its IP'],['boot &lt;ip&gt;','flood one node'],['boot all','flood everything currently exposed']]);
   if(owned('tools','ialias'))g('iAliasFast',[['ias add &lt;short&gt; &lt;cmd&gt;','e.g. ias add dl sql delete all'],['ias &lt;short&gt;','run it'],['ias list / ias rm &lt;short&gt;','manage aliases']]);
-  g('life admin',[['mail','contracts & messages'],['laylow','burn heat when trails follow you'],['settings','crt, sound, music'],['status','who you are']]);
+  g('life admin',[['mail','contracts & messages'],['laylow','burn heat when trails follow you'],['items / use &lt;x&gt;','tactical kit — freezers, scrubbers, burners'],['settings','crt, sound, music'],['status','who you are']]);
   pr('<span class="dim">Memory Banks let you run tools in parallel — crack + decrypt at once beats a fast trace.</span>');
   pr('<span class="dim">read files with cat — some mention hidden servers worth looting.</span>');}
 function cmdStatus(){pr(`<span class="c">agent</span> ${S.handle}   <span class="c">rank</span> ${rankName(S.rating)} (${S.rating})   <span class="c">balance</span> <span class="ok">${S.creds}c</span>`);
@@ -2375,7 +2481,7 @@ function cmdConnect(a){const ip=a[0];if(!ip){pr('usage: connect &lt;ip&gt;','dim
   const hops=G.route.length;dialup();
   runOp(`handshaking through ${hops} relay(s)`,1.0+hops*0.3,()=>{
     G.conn=t;G.cleared=new Set();G.access=t.locks.length===0;G.trace=0;G.tracedNode=hops;G.active2=false;
-    G.logsDeleted=false;G.stolen=0;G.submitted=null;G.fm=null;
+    G.logsDeleted=false;G.stolen=0;G.submitted=null;G.fm=null;G.deadmanUsed=false;
     G.graceUntil=performance.now()+(tutOn?1e9:7000);           // 7s to get your bearings; the whole tutorial if training
     G.logFiles=['access.log','auth.log','session.log','conn_'+RI(1000,9999)+'.log'];
     pr(`<span class="ok">▶ connected — ${t.ip} (${t.name})</span>`);
@@ -2434,7 +2540,8 @@ function cmdLs(){if(G.fm)return fmSeeLogs();
   if(G.conn.account)pr(`  <span class="amber">[holding balance: ${G.conn.account.toLocaleString()}c — 'transfer &lt;amount&gt;']</span>`);tutHook('ls');}
 function cmdCat(a){if(!needAccess())return;const f=findFile(a[0]);if(!f){pr('no such file.','err');return;}
   if(f.enc){pr('encrypted — <span class="c">decrypt '+f.name+'</span> first.','warn');return;}
-  pr(`<span class="dim">── ${f.name} ──</span>`);pr(escapeHtml(f.content));G.active2=true;discoverFrom(f.content);}
+  pr(`<span class="dim">── ${f.name} ──</span>`);pr(escapeHtml(f.content));G.active2=true;discoverFrom(f.content);
+  if(f.ghost)collectGhost(f.ghost);}
 function discoverFrom(text){Object.values(TARGETS).forEach(t=>{if(t.hidden&&text.includes(t.ip)&&!S.discovered.includes(t.ip)){
   S.discovered.push(t.ip);persist();pr(`<span class="phos">✦ new system discovered: ${t.ip} — added to your links. scan it later.</span>`);notify('DISCOVERY',t.ip+' uncovered');worldMsg('discover',t.ip);}});}
 function cmdDecrypt(a){if(!needAccess())return;const f=findFile(a[0]);if(!f){pr('no such file.','err');return;}
@@ -2504,6 +2611,8 @@ function cmdDisconnect(){if(!G.conn){pr('not connected.','dim');return;}const t=
   if(G.fm){G.fm=null;S.heat=clamp((S.heat||0)+6,0,100);updateHeat();
     pr('<span class="warn">⚠ you dropped the line with SQLaudit still mounted — the orphaned audit session is evidence. heat +6.</span>');
     pr('<span class="dim">next time: <span class="c">sql exit</span> before you disconnect.</span>');}
+  if(S.soft.ghostwriter&&G.access&&!G.logsDeleted&&!t.safe){G.logsDeleted=true;
+    pr('<span class="phos">◈ Ghostwriter scrubbed your logs on the way out.</span>');}
   pr(`<span class="dim">closing connection to ${t.ip}…</span>`);const objDone=m&&m._done&&t===TARGETS[m.target];
   G.conn=null;G.access=false;G.trace=0;G.tracedNode=-1;G.cleared=new Set();
   $('tbConn').textContent='offline';$('tracePill').classList.add('hidden2');$('tracePill').classList.remove('active');
@@ -2565,6 +2674,110 @@ function finaleChoice(w){if(!['burn','seize','walk'].includes(w)){pr('type <span
     setTimeout(()=>grantCode(w),900);});}
 function chord(fs){fs.forEach(f=>blip(f,0.6,'sawtooth',0.04));}
 
+/* ================= GHOST FILES — the hidden history of New Milos =================
+   Scattered across hosts as readable fragments. `cat` the right file and it drops
+   into your Archive. Four sets; completing a set pays out and, for the last,
+   unlocks something you cannot buy. This is the second story — the one nobody hands you. */
+const GHOSTSETS={
+  founders:{n:'I · THE FREE YEARS', accent:'var(--cyan)',  reward:{creds:2500,title:'archivist'}},
+  fork    :{n:'II · THE FORK',       accent:'var(--phos)',  reward:{creds:4000,title:'fork-keeper'}},
+  grid    :{n:'III · THE GRID',      accent:'var(--amber)', reward:{creds:6000,title:'grid-ghost'}},
+  wire    :{n:'IV · THE WIRE',       accent:'var(--magenta)',reward:{creds:5000,title:'wire-legend',item:{key:'monitors',id:'obsidian'}}},
+};
+const GHOSTS={
+ /* I — THE FREE YEARS: before the agency owned the wire */
+ gf1:{set:'founders',n:'first light',from:'archived post · 2038',
+   t:`"i wrote a password cracker and put it on the board for free. someone asked why. because this city charges rent to breathe and a kid with a terminal shouldn't have to pay to learn. — S"`},
+ gf2:{set:'founders',n:'the tax on a conscience',from:'Sable, personal log',
+   t:`Half of New Milos breaks locks with my code and none of them know my name. Good. A tool you gave away can't be traced back to a face. That was always the point. That was the only protection I had.`},
+ gf3:{set:'founders',n:'UNITS, year one',from:'agency intake memo',
+   t:`The "UNITS Agency" is a front and everyone who matters knows it. What matters is that a front pays, files taxes, and answers a phone. Behind it: the same people who answer every other phone in this city.`},
+ gf4:{set:'founders',n:'the recruiter',from:'Sable → unknown',
+   t:`They didn't arrest me. They offered me a desk. Said my code was already doing their work for free — why not get paid. I said no. Then they showed me a photograph of my sister's front door. I have a desk now.`},
+ gf5:{set:'founders',n:'why the shelf stays free',from:'brew maintainer note',
+   t:`People ask who keeps the free shelf stocked. Nobody keeps it. It keeps itself. Every runner who ever got a leg up leaves one tool behind on the way out. That's the deal. That's the only deal that ever held.`},
+
+ /* II — THE FORK: Anatomical, HeavenCrackR, and the thing that made people hunt them */
+ gk1:{set:'fork',n:'a fork of a gift',from:'Anatomical, changelog',
+   t:`Sable gave the cracker away. I took it apart and taught it to rewrite itself every pass. Called it HeavenCrackR. Sable never asked for credit. I never gave any. We were both, in our ways, hiding.`},
+ gk2:{set:'fork',n:'polymorphic',from:'HeavenCrackR readme, cut section',
+   t:`It changes shape so no signature ever catches it twice. The trade is it has no firewall module — I ran out of nerve before I ran out of time. If you're reading this I ran out of both.`},
+ gk3:{set:'fork',n:'the thing after',from:'Anatomical, fragment',
+   t:`After the fork I started building something that listens instead of peels. You send a pulse into a botnet and read the echo — the whole shape at once. VirtualEcholocation. The moment it worked, people started looking for me.`},
+ gk4:{set:'fork',n:'why i went quiet',from:'Anatomical → 0RACLE (?)',
+   t:`You don't hide because you're afraid of being caught. You hide because you built the one tool the grid can't defend against, and the only safe place for it is behind thirty nodes and a person nobody can find.`},
+ gk5:{set:'fork',n:'the second holder',from:'Anatomical, final note',
+   t:`PPOP has had exactly one owner. If you are reading this you are about to be the second. Be better with it than I was. I used it to disappear. Use it to see.`},
+
+ /* III — THE GRID: 0RACLE, the watchers, Valheim, the core */
+ gg1:{set:'grid',n:'the collection method',from:'agency policy, unredacted',
+   t:`Runners are not employees. Runners are a collection method. Every file they steal, we catalogue. Every runner they boot, we thank quietly. Attrition is acceptable. Do not let them read this host.`},
+ gg2:{set:'grid',n:'who 0RACLE was',from:'burned personnel file',
+   t:`0RACLE held a desk here for nine years before walking out with a copy of the roster and a conscience they hadn't declared on intake. They read the same logs we do. That's the whole threat. That's enough.`},
+ gg3:{set:'grid',n:'PROJECT VALHEIM',from:'NMIA, denied to exist',
+   t:`The city's botnet is the city. Every civilian handset, a node. Nobody consents because nobody is asked. It hits from a thousand directions at once because it IS a thousand directions. Most of the wire thinks it's a myth. The myth is the cover.`},
+ gg4:{set:'grid',n:'6.0.0.1',from:'SHIELD Core, routing table',
+   t:`One address routes to the grid that watches all the others. It has been in your logs since your first run — deep-probing your origin, patient, indexed. You were never anonymous. You were catalogued from day one.`},
+ gg5:{set:'grid',n:'the choice was always there',from:'0RACLE, last transmission',
+   t:`When you stand in the core you'll be told to choose. Burn it, seize it, or walk. What they won't tell you: the choice was always yours, from the first free tool you pulled. The grid just never expected you to reach the switch.`},
+
+ /* IV — THE WIRE: the culture, the dead, the myth that keeps it honest */
+ gw1:{set:'wire',n:'rule one',from:'the welcome thread',
+   t:`deletelogs before you disconnect. that's rule one and rule two. everything else is style. the runners who forgot rule one aren't on the wire anymore to remind you.`},
+ gw2:{set:'wire',n:'the ones who went dark',from:'memorial thread, pinned',
+   t:`we don't say "caught." we say "went dark." p1x. m0ther. the twins. kessler, who swore he'd cleared ostrand without burning. every name here believed they had one more minute than they had.`},
+ gw3:{set:'wire',n:'rep is the only honest currency',from:'cr4sh, on the record',
+   t:`credits buy tools. rep buys the one thing tools can't: people leaving you alone. you climb it by dropping the loud ones. the board remembers every boot. the board is the only thing on this wire that never lies.`},
+ gw4:{set:'wire',n:'what the myth is for',from:'w1re, deleted then reposted',
+   t:`we keep the Valheim story alive on purpose. a myth you can laugh about is a truth you can survive knowing. the day everyone stops joking about it is the day we're all already inside it.`},
+ gw5:{set:'wire',n:'the second person',from:'Anatomical → you',
+   t:`Sable gave me something free once. I've been waiting a long time to pass it on. You're holding a fork of a fork now. Somewhere down the line you'll leave one tool behind on the way out too. That's how the shelf stays full. That's how the wire stays alive.`},
+};
+function ghostSetIds(set){return Object.keys(GHOSTS).filter(g=>GHOSTS[g].set===set);}
+function haveGhost(id){return (S.ghosts||[]).includes(id);}
+function collectGhost(id){
+  if(!GHOSTS[id]||haveGhost(id))return;
+  (S.ghosts=S.ghosts||[]).push(id);persist();
+  const G0=GHOSTS[id],set=GHOSTSETS[G0.set];
+  const have=ghostSetIds(G0.set).filter(haveGhost).length,total=ghostSetIds(G0.set).length;
+  pr('');pr(`<span class="phos">👻 GHOST FILE RECOVERED — "${G0.n}"</span> <span class="dim">(${set.n} · ${have}/${total})</span>`);
+  pr('<span class="dim">archived. read it any time in <span class="c">Archive</span>.</span>');
+  setDockBadge&&setDockBadge('Archive',(S.ghosts||[]).filter(g=>!(S.ghostSeen||[]).includes(g)).length);
+  blip(1300,0.1,'sine',0.05,1700);setTimeout(()=>blip(1600,0.12,'sine',0.04),90);
+  if(have===total)ghostSetComplete(G0.set);
+  const all=Object.keys(GHOSTS).length,got=(S.ghosts||[]).length;
+  if(got===all&&!S.flags.ghostAll){S.flags.ghostAll=true;persist();
+    setTimeout(()=>{pr('');pr('<span class="m">╔══════════════════════════════════════╗</span>');
+      pr('<span class="m">║</span>  <span class="phos">◆ THE ARCHIVE IS COMPLETE</span>');
+      pr('<span class="m">║</span>  <span class="dim">you know the whole story now. all of it.</span>');
+      pr('<span class="m">╚══════════════════════════════════════╝</span>');
+      S.creds+=10000;S.flags.title='the-complete-record';syncTop();
+      pr('<span class="ok">◈ +10,000c · title unlocked: "the complete record"</span>');chord([523,659,784,1046]);},1400);}}
+function ghostSetComplete(set){const R=GHOSTSETS[set].reward;
+  setTimeout(()=>{pr('');pr(`<span class="ok">◈ SET COMPLETE — ${GHOSTSETS[set].n}</span>`);
+    if(R.creds){S.creds+=R.creds;pr(`<span class="phos">  +${R.creds}c</span>`);}
+    if(R.title){S.flags.title=R.title;pr(`<span class="phos">  title unlocked: "${R.title}"</span>`);}
+    if(R.item&&!owned(R.item.key,R.item.id)){(S[R.item.key]=S[R.item.key]||[]).push(R.item.id);
+      const def=({monitors:MONITORS,crackers:CRACKERS,booters:BOOTERS,decoders:DECODERS})[R.item.key][R.item.id];
+      pr(`<span class="phos">  unlocked: ${def?def.n:R.item.id} (not for sale — earned)</span>`);}
+    syncTop();persist();renderShop&&renderShop();chord([523,659,784]);},1000);}
+/* archive window */
+function renderArchive(){const b=$('arcBody');if(!b)return;b.innerHTML='';
+  const got=(S.ghosts||[]).length,all=Object.keys(GHOSTS).length;
+  const head=document.createElement('div');head.className='archd';
+  head.innerHTML=`<b>THE ARCHIVE</b> <span class="dim">${got}/${all} ghost files recovered</span>`;b.appendChild(head);
+  Object.keys(GHOSTSETS).forEach(set=>{const meta=GHOSTSETS[set],ids=ghostSetIds(set),have=ids.filter(haveGhost).length;
+    const sh=document.createElement('div');sh.className='arcset';sh.style.color=meta.accent;
+    sh.innerHTML=`${meta.n} <span class="dim">${have}/${ids.length}${have===ids.length?' ✓':''}</span>`;b.appendChild(sh);
+    ids.forEach(id=>{const g=GHOSTS[id],have2=haveGhost(id);
+      const card=document.createElement('div');card.className='arccard'+(have2?'':' locked');
+      card.style.borderColor=have2?meta.accent:'';
+      card.innerHTML=have2
+        ?`<div class="ac-t">👻 ${g.n}</div><div class="ac-f">${g.from}</div><div class="ac-b">${escapeHtml(g.t)}</div>`
+        :`<div class="ac-t">🔒 ??? </div><div class="ac-f">undiscovered</div><div class="ac-b dim">somewhere on a host, in a file nobody bothered to read.</div>`;
+      b.appendChild(card);});});
+  S.ghostSeen=(S.ghosts||[]).slice();persist();setDockBadge&&setDockBadge('Archive',0);}
+
 /* ---------- caught ---------- */
 function caught(){
   if(tutOn||(G.conn&&G.conn.safe)){G.trace=Math.min(G.trace,70);   // never fail a player who is still learning
@@ -2593,10 +2806,11 @@ function runOp(label,secs,onDone){
 function abortOp(){if(G.ops.length){G.ops.forEach(o=>o.cancel=true);pr('aborted running op(s).','warn');}else pr('nothing running.','dim');}
 
 /* ================= trace tick ================= */
-setInterval(()=>{if(!G.conn)return;const hops=G.route.length;
+function traceTick(){if(!G.conn)return;const hops=G.route.length;
   if(G.conn.safe||!G.conn.traceRate)return;                    // practice hosts never trace you
   if(performance.now()<(G.graceUntil||0))return;               // brief grace while the host notices you
-  const rate=(G.conn.traceRate*(G.active2?1.35:0.8))/traceDiv();
+  const damp=1-Math.min(0.45,(S.soft.dampener||0)*0.15);
+  const rate=(G.conn.traceRate*(G.active2?1.35:0.8))/traceDiv()*damp;
   G.trace=clamp(G.trace+rate*0.1,0,100);
   if(tutOn)G.trace=Math.min(G.trace,88);                       // training wheels: never fatal mid-tutorial
   const seg=100/(hops+1);const reached=hops-Math.floor(G.trace/seg);
@@ -2608,10 +2822,17 @@ setInterval(()=>{if(!G.conn)return;const hops=G.route.length;
   const has=S.soft.tracker>0;$('tbTrace').style.width=G.trace+'%';
   $('tbTracePct').textContent=has?Math.floor(G.trace)+'%':(G.trace>66?'HIGH':G.trace>33?'MED':'LOW');
   if(G.trace>60)alarm();
-  if(G.trace>=100)caught();},100);
+  if(G.trace>=100){
+    if(S.soft.deadman&&!G.deadmanUsed){G.deadmanUsed=true;G.trace=55;G.graceUntil=performance.now()+4000;
+      pr('');pr('<span class="phos">◈ DEADMAN\'S SWITCH TRIPPED — the trace hit your gateway and burned out on the decoy. you\'re still up.</span>');
+      pr('<span class="dim">that\'s your one save this connection. finish and get out.</span>');
+      blip(1400,0.3,'sawtooth',0.05,400);if(!$('winMonitor').hidden)renderMonitor();return;}
+    caught();}}
+setInterval(traceTick,100);
 
 /* ================= clock + feed ================= */
-setInterval(()=>{const d=new Date();$('clock').textContent=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());},1000);
+setInterval(()=>{const d=new Date();$('clock').textContent=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+  if(S&&S.soft&&S.soft.coldwallet&&(S.heat||0)>0){S.heat=clamp(S.heat-1,0,100);updateHeat();}},1000);
 const FEED=[
  '//NEWSWIRE: OmniCorp denies breach as shares slide 4%',
  '//CHATTER: anyone got a clean bounce through Rialto? mine\'s burned',
@@ -2689,8 +2910,12 @@ function showMail(m){const d=$('mdetail');d.classList.add('show');
 function renderShop(){const b=$('shopBody');b.innerHTML='';
   const mk=(title,keys)=>{const h=document.createElement('div');h.className='shophd';h.textContent=title;b.appendChild(h);
     keys.forEach(k=>{const s=SOFT[k],lvl=S.soft[k],maxed=lvl>=s.max,cost=Math.round(s.base*Math.pow(1.7,lvl));
-      const row=document.createElement('div');row.className='shoprow';
-      row.innerHTML=`<div><div class="n">${s.n} <span class="lv">${s.max===1?(lvl?'[installed]':''):'L'+lvl+'/'+s.max}</span></div><div class="d">${s.d}</div></div>
+      const tierName=s.tiers?(' — '+s.tiers[Math.min(lvl,s.tiers.length-1)]):'';
+      const nowFx=s.fx?s.fx(lvl):'';const nextFx=s.fx&&!maxed?s.fx(lvl+1):'';
+      const row=document.createElement('div');row.className='shoprow'+(s.elite?' elite':'');
+      row.innerHTML=`<div><div class="n">${s.elite?'★ ':''}${s.n}${tierName} <span class="lv">${s.max===1?(lvl?'[installed]':''):'L'+lvl+'/'+s.max}</span></div>
+          <div class="d">${s.d}</div>
+          <div class="d fx">${maxed?'▸ '+nowFx:(lvl?('now: '+nowFx+'  →  '):'')+(nextFx?'<span style="color:var(--phos)">next: '+nextFx+'</span>':'')}</div></div>
         <button ${maxed||S.creds<cost?'disabled':''}>${maxed?(s.max===1?'OWNED':'MAX'):cost+'c'}</button>`;
       const btn=row.querySelector('button');if(!maxed)btn.onclick=()=>doBuy(k);b.appendChild(row);});};
   const head=document.createElement('div');head.className='shophd';head.style.color='var(--green)';
@@ -2730,7 +2955,15 @@ function renderShop(){const b=$('shopBody');b.innerHTML='';
         <div class="d" style="color:var(--cyan);white-space:nowrap">buybot ${id} &lt;n&gt;</div>`;b.appendChild(row);});
     const cur=document.createElement('div');cur.className='shophd';cur.style.color='var(--amber)';
     cur.textContent=botIPs().length?`active: ${BOTNETS[S.botnet.type].n} · ${botIPs().length} IPs`:'active: no botnet — you are running bare';b.appendChild(cur);}
-  mk('hardware',['cpu','memory']);mk('support tools',['fwbypass','proxy','decrypter']);mk('utilities',['logdel','tracker','spoofer']);}
+  mk('hardware',['cpu','memory']);mk('support tools',['fwbypass','proxy','decrypter']);mk('utilities',['logdel','tracker','spoofer']);
+  mk('★ ELITE RIG — the upgrades that change how you play',['ghostwriter','deadman','coldwallet','dampener']);
+  const kh=document.createElement('div');kh.className='shophd';kh.textContent='kit — one-shot tactical gear (carry as many as you like)';b.appendChild(kh);
+  Object.keys(ITEMS).forEach(id=>{const it=ITEMS[id],have=itemCount(id);
+    const row=document.createElement('div');row.className='shoprow';
+    row.innerHTML=`<div><div class="n">${it.icon} ${it.n} ${have?'<span class="lv">×'+have+'</span>':''}</div>
+        <div class="d">${it.d}</div><div class="d fx">fire with <span style="color:var(--cyan)">use ${id}</span></div></div>
+      <button ${S.creds<it.price?'disabled':''}>${it.price}c</button>`;
+    const btn=row.querySelector('button');if(S.creds>=it.price)btn.onclick=()=>buyItemC(id);b.appendChild(row);});}
 function buyNamed(key,id,defs){const d=defs[id];
   if(d.price===null){if(!S.flags.ending){pr('that gear does not exist as far as you\'re concerned.','err');return;}
     (S[key]=S[key]||[]).push(id);persist();renderShop();syncTop();
@@ -2744,7 +2977,10 @@ function buyNamed(key,id,defs){const d=defs[id];
   explain(id);tutHook('brew_'+id);blip(660,0.12,'square',0.06,990);}
 function doBuy(k){const s=SOFT[k],lvl=S.soft[k];if(lvl>=s.max)return;const cost=Math.round(s.base*Math.pow(1.7,lvl));
   if(S.creds<cost){pr('insufficient credits.','err');return;}S.creds-=cost;S.soft[k]++;persist();syncTop();renderShop();
-  pr(`<span class="ok">installed ${s.n}${s.max>1?' v'+S.soft[k]:''}.</span> (−${cost}c)`);blip(660,0.12,'square',0.06,990);}
+  const tn=s.tiers?(' — '+s.tiers[Math.min(S.soft[k],s.tiers.length-1)]):(s.max>1?' v'+S.soft[k]:'');
+  pr(`<span class="ok">${s.elite?'★ ':''}installed ${s.n}${tn}.</span> (−${cost}c)`);
+  if(s.fx)pr(`<span class="phos">▸ ${s.fx(S.soft[k])}</span>`);
+  blip(s.elite?990:660,0.14,s.elite?'sine':'square',0.06,s.elite?1400:990);}
 function cmdBuy(a){const k=a[0];
   if(CRACKERS[k])return buyNamed('crackers',k,CRACKERS);
   if(BOOTERS[k])return buyNamed('booters',k,BOOTERS);
@@ -3416,7 +3652,7 @@ function boot(){const saved=loadSave();
   $('loginBtn').onclick=()=>{ai();const h=($('handle').value.trim()||'ghost').replace(/[^a-zA-Z0-9_\-]/g,'').slice(0,14)||'ghost';S=defaultSave(h);persist();startDesktop();};
   $('continueBtn').onclick=()=>{ai();S=saved;S.seen=S.seen||['m0'];S.read=S.read||[];S.flags=S.flags||{};S.heat=S.heat||0;S.discovered=S.discovered||[];S.im=S.im||{};S.imUnread=S.imUnread||{};
     S.crackers=S.crackers||[];S.booters=S.booters||[];S.monitors=S.monitors||[];S.decoders=S.decoders||[];S.botnet=S.botnet||null;S.rep=S.rep||0;S.booted=S.booted||[];S.rerouted=S.rerouted||0;
-    S.resolved=S.resolved||{};S.unaware=S.unaware||{};S.trollIps=S.trollIps||{};S.maps=S.maps||{};S.alias=S.alias||{};S.settled=S.settled||{};S.marks=S.marks||{};S.shas=S.shas||{};S.volunteers=S.volunteers||{};S.tools=S.tools||[];S.explained=S.explained||[];
+    S.resolved=S.resolved||{};S.unaware=S.unaware||{};S.trollIps=S.trollIps||{};S.maps=S.maps||{};S.alias=S.alias||{};S.settled=S.settled||{};S.marks=S.marks||{};S.shas=S.shas||{};S.volunteers=S.volunteers||{};S.ghosts=S.ghosts||[];S.ghostSeen=S.ghostSeen||[];S.items=S.items||{};S.tools=S.tools||[];S.explained=S.explained||[];
     if(S.jobStarted==null)S.jobStarted=!!S.active;
     if(S.pendingClaim===undefined)S.pendingClaim=null;   // old saves mid-job stay playable
     for(const k in SOFT)if(S.soft[k]==null)S.soft[k]=SOFT[k].start;syncRoute();startDesktop();};
